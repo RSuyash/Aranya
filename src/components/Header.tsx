@@ -1,21 +1,34 @@
 import React from 'react';
-import { List, Bell } from 'phosphor-react';
+import { List, Bell, SidebarSimple } from 'phosphor-react';
 
 interface HeaderProps {
     title?: string;
     onMenuClick?: () => void;
+    onToggleSidebar?: () => void;
+    collapsed?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title = 'Dashboard', onMenuClick }) => {
+export const Header: React.FC<HeaderProps> = ({ title = 'Dashboard', onMenuClick, onToggleSidebar, collapsed }) => {
     return (
-        <header className="h-16 bg-bg-app/80 backdrop-blur-md border-b border-border sticky top-0 z-10 flex items-center justify-between px-4 md:px-8">
+        <header className="h-16 bg-bg-app/80 backdrop-blur-md border-b border-border sticky top-0 z-20 flex items-center justify-between px-4 md:px-8 transition-all duration-300">
             <div className="flex items-center gap-4">
+                {/* Mobile Menu Toggle */}
                 <button
                     onClick={onMenuClick}
                     className="p-2 -ml-2 text-text-muted hover:text-text-main hover:bg-white/5 rounded-lg md:hidden transition-colors"
                 >
                     <List size={24} />
                 </button>
+
+                {/* Desktop Sidebar Toggle */}
+                <button
+                    onClick={onToggleSidebar}
+                    className="hidden md:flex p-2 -ml-2 text-text-muted hover:text-text-main hover:bg-white/5 rounded-lg transition-colors"
+                    title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                >
+                    <SidebarSimple size={24} weight={collapsed ? "fill" : "regular"} />
+                </button>
+
                 <h2 className="text-lg font-semibold text-text-main">{title}</h2>
             </div>
 

@@ -31,19 +31,23 @@ export const AppShell: React.FC = () => {
                 isDesktopCollapsed ? "md:w-20" : "md:w-64",
                 "w-64" // Mobile width is always fixed
             )}>
+
                 <Sidebar
                     collapsed={isDesktopCollapsed}
                     onToggleCollapse={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
                 />
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
-                <Header onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
-                <main className="flex-1 p-4 md:p-6 overflow-y-auto scroll-smooth">
-                    <div className="max-w-7xl mx-auto w-full animate-in fade-in duration-500 pb-20">
-                        <Outlet />
-                    </div>
+            {/* Main Content Area */}
+            <div className="flex-1 min-w-0 h-full overflow-y-auto scroll-smooth relative">
+                <Header
+                    onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    onToggleSidebar={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
+                    collapsed={isDesktopCollapsed}
+                />
+
+                <main className="p-4 md:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500 pb-20">
+                    <Outlet />
                 </main>
             </div>
         </div>

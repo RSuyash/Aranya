@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { House, TreeStructure, Gear, MapTrifold, CaretLeft } from 'phosphor-react';
+import { House, TreeStructure, Gear, MapTrifold } from 'phosphor-react';
 import clsx from 'clsx';
 
 interface SidebarProps {
@@ -8,7 +8,7 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCollapse }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
   const navItems = [
     { icon: House, label: 'Dashboard', path: '/' },
     { icon: TreeStructure, label: 'Projects', path: '/projects' },
@@ -18,8 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
 
   return (
     <aside className={clsx(
-      "h-full bg-panel border-r border-border flex flex-col transition-all duration-300",
-      collapsed ? "w-20" : "w-64"
+      "h-full bg-panel border-r border-border flex flex-col transition-all duration-300 w-full"
     )}>
       {/* Logo Section */}
       <div className={clsx(
@@ -67,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         ))}
       </nav>
 
-      {/* User Profile & Toggle */}
+      {/* User Profile */}
       <div className="p-3 border-t border-border space-y-2">
         <div className={clsx(
           "flex items-center gap-3 p-2 rounded-lg bg-panel-soft border border-border transition-all",
@@ -83,14 +82,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
             </div>
           )}
         </div>
-
-        {/* Desktop Collapse Toggle */}
-        <button
-          onClick={onToggleCollapse}
-          className="hidden md:flex w-full items-center justify-center p-2 text-text-muted hover:text-text-main hover:bg-panel-soft rounded-lg transition-colors"
-        >
-          <CaretLeft size={20} className={clsx("transition-transform duration-300", collapsed && "rotate-180")} />
-        </button>
       </div>
     </aside>
   );
