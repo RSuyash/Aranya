@@ -3,10 +3,11 @@ import clsx from 'clsx';
 import { CircleNotch } from 'phosphor-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+    variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'success';
     size?: 'sm' | 'md' | 'lg';
     isLoading?: boolean;
     leftIcon?: React.ReactNode;
+    rightIcon?: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -15,6 +16,7 @@ export const Button: React.FC<ButtonProps> = ({
     size = 'md',
     isLoading,
     leftIcon,
+    rightIcon,
     className,
     disabled,
     ...props
@@ -24,6 +26,7 @@ export const Button: React.FC<ButtonProps> = ({
         secondary: 'bg-panel border border-border text-text-main hover:bg-panel-soft focus:ring-primary/50',
         danger: 'bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 focus:ring-danger/50',
         ghost: 'bg-transparent text-text-muted hover:text-text-main hover:bg-white/5',
+        success: 'bg-success text-bg-app hover:bg-success/90 focus:ring-success/50',
     };
 
     const sizes = {
@@ -46,6 +49,7 @@ export const Button: React.FC<ButtonProps> = ({
             {isLoading && <CircleNotch className="animate-spin" size={16} />}
             {!isLoading && leftIcon}
             {children}
+            {!isLoading && rightIcon}
         </button>
     );
 };

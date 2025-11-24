@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppShell } from './layouts/AppShell';
 import { DashboardPage } from './pages/DashboardPage';
@@ -13,6 +13,7 @@ function App() {
         <Route path="/" element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/vegetation" element={<ProjectsPage />} /> {/* Temporary mapping */}
           <Route path="map" element={<MapPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
