@@ -1,27 +1,35 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   /* Backgrounds */
-  --bg-app: #050814;       /* Deep Space Blue/Black */
-  --bg-panel: #0b1020;     /* Dark Navy */
-  --bg-panel-soft: #11182b; /* Hover state */
-  
+  --bg-app: #0f172a;
+  /* Slate 900 - Richer Blue-Black */
+  --bg-panel: #1e293b;
+  /* Slate 800 */
+  --bg-panel-soft: #334155;
+  /* Slate 700 */
+
   /* Accents */
-  --primary: #56ccf2;      /* Cyan */
-  --primary-dim: #56ccf220;
-  --success: #52d273;      /* Neon Green */
-  --warning: #f2c94c;      /* Amber */
-  --danger: #ff7e67;       /* Coral Red */
-  
+  --primary: #38bdf8;
+  /* Sky 400 */
+  --primary-dim: #38bdf820;
+  --success: #4ade80;
+  /* Green 400 */
+  --warning: #fbbf24;
+  /* Amber 400 */
+  --danger: #f87171;
+  /* Red 400 */
+
   /* Text */
-  --text-main: #f5f7ff;    /* Off-white */
-  --text-muted: #9ba2c0;   /* Blue-grey */
-  
+  --text-main: #f8fafc;
+  /* Slate 50 */
+  --text-muted: #94a3b8;
+  /* Slate 400 */
+
   /* Borders */
-  --border: #1d2440;       /* Subtle blue-grey */
-  
+  --border: #334155;
+  /* Slate 700 - Higher contrast */
+
   /* Font */
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -39,6 +47,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--bg-app);
+  background-image: radial-gradient(circle at top center, #1e293b 0%, #0f172a 60%);
+  background-attachment: fixed;
 }
 
 /* Scrollbar */
@@ -46,15 +56,18 @@ body {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--bg-app); 
+  background: var(--bg-app);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--border); 
+  background: var(--border);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted); 
+  background: var(--text-muted);
 }
 
 /* Glassmorphism Utilities */
