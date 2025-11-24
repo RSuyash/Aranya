@@ -12,7 +12,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 h-screen bg-panel border-r border-border flex flex-col fixed left-0 top-0">
+    <aside className="w-full h-full bg-panel border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
         <h1 className="text-xl font-bold tracking-wide text-primary">TERRA</h1>
         <p className="text-xs text-text-muted mt-1">Eco-Science Platform</p>
