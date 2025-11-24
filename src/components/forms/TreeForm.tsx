@@ -3,9 +3,12 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Camera, ArrowRight, Check, Tree } from 'phosphor-react';
+import { useRepositories } from '../../hooks/useRepositories';
 
 export const TreeForm: React.FC = () => {
+    const { addTree } = useRepositories();
     const [step, setStep] = useState<1 | 2 | 3>(1);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         tag: '',
         species: '',
@@ -16,12 +19,35 @@ export const TreeForm: React.FC = () => {
     const handleNext = () => setStep((prev) => Math.min(prev + 1, 3) as any);
     // const handleBack = () => setStep((prev) => Math.max(prev - 1, 1) as any); // Not used yet
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Submitted:', formData);
-        alert('Tree Saved!');
-        setStep(1);
-        setFormData({ tag: '', species: '', gbh: '', height: '' });
+        setIsSubmitting(true);
+
+        try {
+            // Mock IDs for now - in real app these come from context/route
+            const projectId = 'project-1';
+            const moduleId = 'vegetation';
+            const plotId = 'plot-1';
+
+            await addTree({
+                projectId,
+                moduleId,
+                plotId,
+                tagNumber: formData.tag,
+                speciesName: formData.species,
+                gbh: Number(formData.gbh),
+                height: Number(formData.height),
+            });
+
+            alert('Tree Saved to Database!');
+            setStep(1);
+            setFormData({ tag: '', species: '', gbh: '', height: '' });
+        } catch (error) {
+            console.error('Failed to save tree:', error);
+            alert('Error saving tree');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -101,7 +127,12 @@ export const TreeForm: React.FC = () => {
                             Next Step
                         </Button>
                     ) : (
-                        <Button type="submit" variant="success" leftIcon={<Check size={16} />}>
+                        <Button
+                            type="submit"
+                            variant="success"
+                            leftIcon={<Check size={16} />}
+                            isLoading={isSubmitting}
+                        >
                             Save Tree
                         </Button>
                     )}
