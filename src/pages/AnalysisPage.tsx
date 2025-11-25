@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { calculateShannonIndex, calculateSimpsonIndex, calculateCommunityMetrics, type SpeciesStats } from '../analysis/indices';
-import { calculateSAC, type SACPoint } from '../analysis/sac';
+import { calculateSAC } from '../analysis/sac';
 import { TreeStructure, ChartLineUp, Table, Leaf } from 'phosphor-react';
+import { SpeciesAreaCurveChart } from '../components/charts/SpeciesAreaCurveChart';
 
 export const AnalysisPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -112,29 +113,12 @@ export const AnalysisPage: React.FC = () => {
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                             <ChartLineUp /> Species Area Curve (Randomized)
                         </h3>
-                        <div className="h-64 flex items-end gap-2 px-2 pb-2 border-b border-l border-[#1d2440]">
-                            {metrics.sacData.map((point: SACPoint, idx: number) => {
-                                const maxRichness = metrics.sacData[metrics.sacData.length - 1].richness;
-                                const heightPct = (point.richness / maxRichness) * 100;
-                                console.log(`SAC Bar ${idx + 1}: richness=${point.richness}, max=${maxRichness}, height=${heightPct}%`);
-                                return (
-                                    <div key={idx} className="flex-1 flex flex-col justify-end group relative min-w-[40px]">
-                                        <div
-                                            className="w-full bg-[#56ccf2]/60 border-t-4 border-[#56ccf2] rounded-t-sm hover:bg-[#56ccf2]/80 transition-all"
-                                            style={{ height: `${heightPct}%`, minHeight: '8px' }}
-                                        ></div>
-                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#0b1020] border border-[#1d2440] px-2 py-1 text-xs rounded text-white opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10">
-                                            Plots: {point.plotsSampled}, Spp: {point.richness}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                        <div className="flex justify-between text-xs text-text-muted mt-2">
-                            <span>1 Plot</span>
-                            <span>Cumulative Area Sampled &rarr;</span>
-                            <span>{metrics.sacData.length} Plots</span>
-                        </div>
+                        <SpeciesAreaCurveChart
+                            data={metrics.sacData}
+                            mode="random"
+                            height={280}
+                            className="mt-2"
+                        />
                     </div>
 
                     <div className="glass-panel p-6 rounded-xl overflow-hidden">
