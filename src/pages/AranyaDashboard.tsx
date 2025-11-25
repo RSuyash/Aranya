@@ -161,7 +161,7 @@ const AranyaDashboard: React.FC = () => {
                             icon={<BarChart3 className="w-6 h-6" />}
                             title="Analysis"
                             description="Generate reports"
-                            onClick={() => { alert('Analysis module coming soon!') }}
+                            onClick={() => navigate(`/projects/${projectId}/analysis`)}
                         />
                         <ActionCard
                             icon={<TreePine className="w-6 h-6" />}

@@ -1,29 +1,29 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { calculateShannonIndex, calculateSimpsonIndex, calculateCommunityMetrics, type SpeciesStats } from '../analysis/indices';
 import { calculateSAC, type SACPoint } from '../analysis/sac';
-import { Select } from '../components/ui/Select';
 import { TreeStructure, ChartLineUp, Table, Leaf } from 'phosphor-react';
 
 export const AnalysisPage: React.FC = () => {
+    const { projectId } = useParams<{ projectId: string }>();
+    const navigate = useNavigate();
     const { projects, usePlots, useTreeObservations } = useRepositories();
-    const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
-    // Select first project by default
-    React.useEffect(() => {
-        if (projects.length > 0 && !selectedProjectId) {
-            setSelectedProjectId(projects[0].id);
-        }
-    }, [projects]);
+    const project = projects?.find(p => p.id === projectId);
+    const plots = usePlots(projectId);
+    const trees = useTreeObservations(projectId);
 
-    const plots = usePlots(selectedProjectId);
-    const trees = useTreeObservations(selectedProjectId);
-
-    // --- Calculations ---
     const metrics = useMemo(() => {
-        if (!trees.length || !plots.length) return null;
+        console.log('🔬 [AnalysisPage] Calculating metrics...');
+        console.log('  📊 Trees count:', trees.length);
+        console.log('  📍 Plots count:', plots.length);
 
-        // 1. Diversity
+        if (!trees.length || !plots.length) {
+            console.log('  ⚠️  Insufficient data for analysis');
+            return null;
+        }
+
         const counts = Object.values(
             trees.reduce((acc, t) => {
                 if (!t.isUnknown) acc[t.speciesName] = (acc[t.speciesName] || 0) + 1;
@@ -31,34 +31,46 @@ export const AnalysisPage: React.FC = () => {
             }, {} as Record<string, number>)
         );
 
+        console.log('  🌳 Species distribution:', trees.reduce((acc, t) => {
+            if (!t.isUnknown) acc[t.speciesName] = (acc[t.speciesName] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>));
+
         const shannon = calculateShannonIndex(counts);
         const simpson = calculateSimpsonIndex(counts);
-
-        // 2. IVI Table
         const communityStats = calculateCommunityMetrics(trees, plots.length);
-
-        // 3. SAC
         const sacData = calculateSAC(trees, plots.map(p => p.id));
+
+        console.log('  ✅ Shannon Index (H\'):', shannon.toFixed(3));
+        console.log('  ✅ Simpson\'s Index (1-D):', simpson.toFixed(3));
+        console.log('  ✅ Species Richness:', communityStats.length);
+        console.log('  ✅ SAC Data points:', sacData.length);
+        console.log('  🔍 SAC Full Data:', sacData);
+        console.log('  📋 Top 5 species by IVI:');
+        communityStats.slice(0, 5).forEach((stat, idx) => {
+            console.log(`     ${idx + 1}. ${stat.speciesName}: IVI=${stat.ivi.toFixed(2)}, N=${stat.abundance}`);
+        });
 
         return { shannon, simpson, communityStats, sacData };
     }, [trees, plots]);
 
-    if (projects.length === 0) return <div className="p-8 text-text-muted">No projects found.</div>;
+    if (!project) {
+        return <div className="p-8 text-text-muted">Project not found.</div>;
+    }
 
     return (
         <div className="space-y-8 pb-20">
             <div className="flex justify-between items-start">
                 <div>
                     <h2 className="text-2xl font-bold text-text-main">Data Analysis</h2>
-                    <p className="text-text-muted">Real-time ecological insights.</p>
+                    <p className="text-text-muted">Real-time ecological insights for {project.name}</p>
                 </div>
-                <div className="w-64">
-                    <Select
-                        options={projects.map(p => ({ value: p.id, label: p.name }))}
-                        value={selectedProjectId}
-                        onChange={e => setSelectedProjectId(e.target.value)}
-                    />
-                </div>
+                <button
+                    onClick={() => navigate(`/projects/${projectId}`)}
+                    className="px-4 py-2 bg-[#1d2440] text-text-muted rounded-lg hover:bg-[#252d4a] transition"
+                >
+                    Back to Project
+                </button>
             </div>
 
             {(!metrics) ? (
@@ -67,8 +79,6 @@ export const AnalysisPage: React.FC = () => {
                 </div>
             ) : (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-
-                    {/* Alpha Diversity Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="glass-panel p-5 rounded-xl border-l-4 border-l-[#56ccf2]">
                             <div className="flex items-center gap-3 mb-2 text-[#56ccf2]">
@@ -98,7 +108,6 @@ export const AnalysisPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Species Area Curve Visualization */}
                     <div className="glass-panel p-6 rounded-xl">
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                             <ChartLineUp /> Species Area Curve (Randomized)
@@ -107,13 +116,13 @@ export const AnalysisPage: React.FC = () => {
                             {metrics.sacData.map((point: SACPoint, idx: number) => {
                                 const maxRichness = metrics.sacData[metrics.sacData.length - 1].richness;
                                 const heightPct = (point.richness / maxRichness) * 100;
+                                console.log(`SAC Bar ${idx + 1}: richness=${point.richness}, max=${maxRichness}, height=${heightPct}%`);
                                 return (
-                                    <div key={idx} className="flex-1 flex flex-col justify-end group relative">
+                                    <div key={idx} className="flex-1 flex flex-col justify-end group relative min-w-[40px]">
                                         <div
-                                            className="bg-[#56ccf2]/20 border-t-2 border-[#56ccf2] rounded-t-sm hover:bg-[#56ccf2]/40 transition-all"
-                                            style={{ height: `${heightPct}%` }}
+                                            className="w-full bg-[#56ccf2]/60 border-t-4 border-[#56ccf2] rounded-t-sm hover:bg-[#56ccf2]/80 transition-all"
+                                            style={{ height: `${heightPct}%`, minHeight: '8px' }}
                                         ></div>
-                                        {/* Tooltip */}
                                         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#0b1020] border border-[#1d2440] px-2 py-1 text-xs rounded text-white opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10">
                                             Plots: {point.plotsSampled}, Spp: {point.richness}
                                         </div>
@@ -128,7 +137,6 @@ export const AnalysisPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Top Species Table (IVI) */}
                     <div className="glass-panel p-6 rounded-xl overflow-hidden">
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                             <Table /> Dominant Species (IVI)
@@ -158,7 +166,6 @@ export const AnalysisPage: React.FC = () => {
                             </table>
                         </div>
                     </div>
-
                 </div>
             )}
         </div>

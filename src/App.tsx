@@ -24,9 +24,9 @@ function App() {
           <Route path="project/:projectId/module/:moduleId" element={<VegetationModulePage />} />
           <Route path="project/:projectId/module/:moduleId/plot/:plotId" element={<PlotVisualizerPage />} />
           <Route path="projects/:projectId/settings" element={<ProjectSettingsPage />} />
+          <Route path="projects/:projectId/analysis" element={<AnalysisPage />} />
           <Route path="map" element={<MapPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="analysis" element={<AnalysisPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
