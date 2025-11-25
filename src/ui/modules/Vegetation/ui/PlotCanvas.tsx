@@ -112,10 +112,10 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         node: typeof rootInstance,
         globalX: number,
         globalY: number
-    ): { unitId: string; localX: number; localY: number } | null => {
+    ): { unitId: string; label: string; localX: number; localY: number } | null => {
 
         // Recursive search function
-        const search = (current: typeof rootInstance, relX: number, relY: number): { unitId: string; localX: number; localY: number } | null => {
+        const search = (current: typeof rootInstance, relX: number, relY: number): { unitId: string; label: string; localX: number; localY: number } | null => {
             if (!current) return null;
 
             // 1. Check Children First (Reverse order for Z-index correctness: Top first)
@@ -145,6 +145,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
             if (current.type === 'SAMPLING_UNIT') {
                 return {
                     unitId: current.id,
+                    label: current.label,
                     localX: relX, // Already relative to this unit
                     localY: relY
                 };
@@ -156,6 +157,17 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         // Start search from root
         return search(node, globalX, globalY);
     };
+
+    const [hoveredContext, setHoveredContext] = React.useState<{ unitId: string; label: string; localX: number; localY: number } | null>(null);
+
+    React.useEffect(() => {
+        if (digitizationMode && snappedPos && rootInstance) {
+            const context = resolveSpatialContext(rootInstance, snappedPos.metersX, snappedPos.metersY);
+            setHoveredContext(context);
+        } else {
+            setHoveredContext(null);
+        }
+    }, [digitizationMode, snappedPos, rootInstance]);
 
     const handleClick = () => {
         if (digitizationMode && snappedPos && onDigitizeTree && rootInstance) {
@@ -221,16 +233,29 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
                     <div className="w-4 h-4 rounded-full border-2 border-[#52d273] bg-[#52d273]/30 shadow-[0_0_10px_rgba(82,210,115,0.5)]" />
 
                     {/* Smart Label */}
-                    <div className="mt-2 px-2 py-1 bg-[#0b1020]/95 border border-[#52d273]/50 rounded-md shadow-xl text-left">
+                    <div className="mt-2 px-2 py-1 bg-[#0b1020]/95 border border-[#52d273]/50 rounded-md shadow-xl text-left whitespace-nowrap">
                         <div className="text-[10px] text-[#9ba2c0] uppercase tracking-wider font-bold">
-                            TARGET LOCATION
+                            {hoveredContext ? `TARGET: ${hoveredContext.label}` : 'TARGET LOCATION'}
                         </div>
-                        <div className="text-xs text-[#52d273] font-mono font-bold">
-                            X: {snappedPos.metersX.toFixed(2)}m
-                        </div>
-                        <div className="text-xs text-[#52d273] font-mono font-bold">
-                            Y: {snappedPos.metersY.toFixed(2)}m
-                        </div>
+                        {hoveredContext ? (
+                            <>
+                                <div className="text-xs text-[#52d273] font-mono font-bold">
+                                    X: {hoveredContext.localX.toFixed(2)}m (Local)
+                                </div>
+                                <div className="text-xs text-[#52d273] font-mono font-bold">
+                                    Y: {hoveredContext.localY.toFixed(2)}m (Local)
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="text-xs text-[#52d273] font-mono font-bold">
+                                    X: {snappedPos.metersX.toFixed(2)}m
+                                </div>
+                                <div className="text-xs text-[#52d273] font-mono font-bold">
+                                    Y: {snappedPos.metersY.toFixed(2)}m
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
