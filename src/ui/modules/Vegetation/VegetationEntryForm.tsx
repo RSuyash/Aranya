@@ -11,6 +11,7 @@ interface VegetationEntryFormProps {
     plotId: string;
     unitId: string;
     unitLabel: string;
+    initialPosition?: { x: number, y: number };
     onClose: () => void;
     onSaveSuccess: () => void;
 }
@@ -32,6 +33,7 @@ export const VegetationEntryForm: React.FC<VegetationEntryFormProps> = ({
     plotId,
     unitId,
     unitLabel,
+    initialPosition,
     onClose,
     onSaveSuccess
 }) => {
@@ -63,6 +65,8 @@ export const VegetationEntryForm: React.FC<VegetationEntryFormProps> = ({
             abundanceCount: abundanceCount ? parseInt(abundanceCount) : undefined,
             coverPercentage: coverPercentage ? parseFloat(coverPercentage) : undefined,
             avgHeightCm: avgHeight ? parseFloat(avgHeight) : undefined,
+            localX: initialPosition?.x,
+            localY: initialPosition?.y,
             images: [], // Placeholder for now
             validationStatus: 'PENDING',
             createdAt: now,
@@ -136,7 +140,17 @@ export const VegetationEntryForm: React.FC<VegetationEntryFormProps> = ({
                     </button>
                     <div>
                         <h2 className="text-lg font-bold text-[#f5f7ff]">New Vegetation</h2>
-                        <p className="text-xs text-[#9ba2c0]">{unitLabel} • Plot {plotId.slice(0, 4)}...</p>
+                        <div className="flex items-center gap-2 text-xs text-[#9ba2c0]">
+                            <span className="bg-[#1d2440] px-1.5 py-0.5 rounded text-[#56ccf2] font-medium">{unitLabel}</span>
+                            <span>•</span>
+                            {initialPosition ? (
+                                <span className="font-mono text-[#52d273]">
+                                    X:{initialPosition.x.toFixed(1)} Y:{initialPosition.y.toFixed(1)}
+                                </span>
+                            ) : (
+                                <span>Manual Entry</span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 {growthForm && (

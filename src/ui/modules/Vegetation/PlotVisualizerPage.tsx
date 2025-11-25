@@ -11,6 +11,7 @@ import { PlotSettingsMenu } from './ui/PlotSettingsMenu';
 import { usePlotData } from './data/usePlotData';
 import { usePlotObservations } from './data/usePlotObservations';
 import { generateLayout } from '../../../core/plot-engine/generateLayout';
+import { generateDynamicLayout } from '../../../core/plot-engine/dynamicGenerator';
 import { clsx } from 'clsx';
 import type { PlotVisualizationSettings } from '../../../core/data-model/types';
 
@@ -30,18 +31,34 @@ export const PlotVisualizerPage: React.FC = () => {
 
     // Build unit label map from layout
     const unitLabelMap = useMemo(() => {
-        if (!blueprint || !plot) return new Map<string, string>();
+        if (!plot) return new Map<string, string>();
 
-        const layout = generateLayout(blueprint, undefined, plotId);
-        const map = new Map<string, string>();
+        // Use dynamic layout generation for plots that have configuration
+        if (plot.configuration) {
+            const layout = generateDynamicLayout(plot.configuration, plotId);
+            const map = new Map<string, string>();
 
-        const collectLabels = (node: any) => {
-            map.set(node.id, node.label);
-            node.children?.forEach(collectLabels);
-        };
+            const collectLabels = (node: any) => {
+                map.set(node.id, node.label);
+                node.children?.forEach(collectLabels);
+            };
 
-        collectLabels(layout);
-        return map;
+            collectLabels(layout);
+            return map;
+        } else if (blueprint) {
+            const layout = generateLayout(blueprint, undefined, plotId);
+            const map = new Map<string, string>();
+
+            const collectLabels = (node: any) => {
+                map.set(node.id, node.label);
+                node.children?.forEach(collectLabels);
+            };
+
+            collectLabels(layout);
+            return map;
+        }
+
+        return new Map<string, string>();
     }, [blueprint, plot, plotId]);
 
     // Create sorted list of unit IDs for navigation
@@ -66,19 +83,29 @@ export const PlotVisualizerPage: React.FC = () => {
     const [panelHeight, setPanelHeight] = useState<number>(320); // 40vh on typical mobile
 
     // Visualization Settings State
-    const [vizSettings, setVizSettings] = useState<PlotVisualizationSettings>({
+    const defaultVizSettings: PlotVisualizationSettings = {
         showQuadrants: true,
         showSubplots: true,
         showQuadrantLines: false,
-        showTreeVisualization: true,
+        showTreeVisualization: true, // Trees should be visible by default
         showLabels: true,
         subplotOpacity: 0.9,
-    });
+    };
+
+    const [vizSettings, setVizSettings] = useState<PlotVisualizationSettings>(defaultVizSettings);
 
     // Load visualization settings from plot metadata on mount
     useEffect(() => {
         if (plot?.visualizationSettings) {
-            setVizSettings(plot.visualizationSettings);
+            // Merge saved settings with defaults to ensure all properties exist
+            // This ensures that if a setting wasn't previously saved, the default is used
+            setVizSettings({
+                ...defaultVizSettings, // Start with defaults
+                ...plot.visualizationSettings // Override with saved values where they exist
+            });
+        } else {
+            // If no saved settings exist, use defaults (this resets to defaults when no plot settings exist)
+            setVizSettings(defaultVizSettings);
         }
     }, [plot]);
 
@@ -164,7 +191,7 @@ export const PlotVisualizerPage: React.FC = () => {
     };
 
     // Get actual unit label from layout
-    const selectedUnitLabel = selectedUnitId ? (unitLabelMap.get(selectedUnitId) || selectedUnitId.slice(0, 8)) : "";
+    const selectedUnitLabel = selectedUnitId ? (unitLabelMap.get(selectedUnitId) || "Unknown Unit") : "";
 
     return (
         <>

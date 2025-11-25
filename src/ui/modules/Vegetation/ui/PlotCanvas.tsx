@@ -195,17 +195,17 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
                 units={vizModel.units}
                 selectedUnitId={selectedUnitId}
                 onSelectUnit={!digitizationMode ? onSelectUnit : undefined}
-                showQuadrants={visualizationSettings?.showQuadrants}
-                showSubplots={visualizationSettings?.showSubplots}
-                showQuadrantLines={visualizationSettings?.showQuadrantLines}
+                showQuadrants={visualizationSettings?.showQuadrants ?? true}
+                showSubplots={visualizationSettings?.showSubplots ?? true}
+                showQuadrantLines={visualizationSettings?.showQuadrantLines ?? false}
             />
             <TreesLayer
                 trees={vizModel.trees}
-                visible={visualizationSettings?.showTreeVisualization}
+                visible={visualizationSettings?.showTreeVisualization ?? true}
             />
             <LabelsLayer
                 units={vizModel.units}
-                visible={visualizationSettings?.showLabels}
+                visible={visualizationSettings?.showLabels ?? true}
             />
 
             {/* Ghost Tree for Digitization */}

@@ -158,7 +158,7 @@ export function buildPlotVizModel({
     const units: UnitVizNode[] = filteredNodes.map(node => {
         const { width, height } = getNodeDimensions(node);
         const screenX = padding + (node.x - bounds.minX) * scale;
-        const screenY = padding + (node.y - bounds.minY) * scale;
+        const screenY = padding + (bounds.maxY - (node.y + height)) * scale;
         const screenWidth = width * scale;
         const screenHeight = height * scale;
 

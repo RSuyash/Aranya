@@ -1,5 +1,20 @@
-import { v4 as uuidv4 } from 'uuid';
 import type { PlotConfiguration, PlotNodeInstance, ShapeDefinition, SubplotRule } from './types';
+
+// Simple hash function for stable IDs
+function simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(16);
+}
+
+function makeInstanceId(plotId: string | undefined, blueprintId: string, version: number, path: string): string {
+    const raw = `${plotId || ''}:${blueprintId}:v${version}:${path}`;
+    return simpleHash(raw);
+}
 
 /**
  * Generates a dynamic plot layout based on the provided configuration.
@@ -14,7 +29,7 @@ export function generateDynamicLayout(config: PlotConfiguration, plotId: string)
         : { kind: 'CIRCLE', radius: dimensions.radius || 0 };
 
     const root: PlotNodeInstance = {
-        id: uuidv4(),
+        id: makeInstanceId(plotId, 'dynamic', 1, 'root'),
         blueprintId: 'dynamic',
         blueprintVersion: 1,
         plotId: plotId,
@@ -71,7 +86,7 @@ export function generateDynamicLayout(config: PlotConfiguration, plotId: string)
                 }
 
                 const cell: PlotNodeInstance = {
-                    id: uuidv4(),
+                    id: makeInstanceId(plotId, 'dynamic', 1, `root/grid/${r}/${c}`),
                     blueprintId: 'dynamic',
                     blueprintVersion: 1,
                     plotId: plotId,
@@ -138,7 +153,7 @@ function generateSubplots(rule: SubplotRule, plotDims: { width: number; length: 
         }
 
         instances.push({
-            id: uuidv4(),
+            id: makeInstanceId(plotId, 'dynamic', 1, `root/subplot/${rule.position}`),
             blueprintId: 'dynamic',
             blueprintVersion: 1,
             plotId: plotId,

@@ -250,6 +250,10 @@ export interface VegetationObservation {
     // --- Qualitative Data ---
     avgHeightCm?: number;
 
+    // --- Spatial (Optional) ---
+    localX?: number; // Relative to Sampling Unit origin
+    localY?: number;
+
     // --- Verification ---
     isUnknown: boolean;
     confidenceLevel?: 'HIGH' | 'MEDIUM' | 'LOW'; // Added for symmetry
