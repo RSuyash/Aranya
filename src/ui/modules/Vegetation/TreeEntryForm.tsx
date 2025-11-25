@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, ChevronRight, Save, Camera, Leaf, Plus, Trash2 } from 'lucide-react';
+import { X, ChevronRight, Save, Camera, Leaf, Plus, Trash2, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 import { db } from '../../../core/data-model/dexie';
 import { v4 as uuidv4 } from 'uuid';
-import type { TreeObservation } from '../../../core/data-model/types';
+import type { TreeObservation, VegetationModule } from '../../../core/data-model/types';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 interface TreeEntryFormProps {
     projectId: string;
@@ -31,6 +32,8 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     // Form State
     const [tagNumber, setTagNumber] = useState('');
     const [speciesName, setSpeciesName] = useState('');
+    const [speciesSearch, setSpeciesSearch] = useState(''); // For autocomplete search
+    const [selectedSpeciesId, setSelectedSpeciesId] = useState<string | null>(null); // Store species list ID
     const [isUnknown, setIsUnknown] = useState(false);
     const [stems, setStems] = useState<Array<{ id: string; gbh: string }>>([
         { id: uuidv4(), gbh: '' }
@@ -38,6 +41,53 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const [height, setHeight] = useState('');
     const [hasBarkPhoto, setHasBarkPhoto] = useState(false);
     const [hasLeafPhoto, setHasLeafPhoto] = useState(false);
+
+    // Fetch module data to get predefined species list
+    const moduleData = useLiveQuery(() => db.modules.get(moduleId)) as VegetationModule | undefined;
+
+    // Filter species based on search term
+    const filteredSpecies = useMemo(() => {
+        if (!moduleData?.predefinedSpeciesList || !speciesSearch) return [];
+        const term = speciesSearch.toLowerCase();
+        return moduleData.predefinedSpeciesList
+            .filter(s =>
+                s.scientificName.toLowerCase().includes(term) ||
+                s.commonName.toLowerCase().includes(term)
+            )
+            .slice(0, 10); // Performance optimization
+    }, [moduleData, speciesSearch]);
+
+    // Biometric validation - determine if values are within reasonable ranges
+    const validationWarnings = useMemo(() => {
+        const warnings: string[] = [];
+
+        // Check GBH for each stem
+        stems.forEach((s, i) => {
+            const val = parseFloat(s.gbh);
+            if (!isNaN(val)) {
+                if (val < 1) {
+                    warnings.push(`Stem ${i+1}: GBH ${val}cm is too small (likely <1cm).`);
+                } else if (val > 500) {
+                    warnings.push(`Stem ${i+1}: GBH ${val}cm is unusually large (>500cm).`);
+                }
+            }
+        });
+
+        // Check height
+        const h = parseFloat(height);
+        if (!isNaN(h)) {
+            if (h > 70) {
+                warnings.push(`Height ${h}m is exceptionally tall (rare for most species).`);
+            } else if (h < 0.1 && h !== 0) {
+                warnings.push(`Height ${h}m is unusually small (likely >0.1m).`);
+            }
+        }
+
+        return warnings;
+    }, [stems, height]);
+
+    // Determine if biometric data is flagged
+    const hasBiometricWarnings = validationWarnings.length > 0;
 
     // Calculate equivalent GBH using formula: GBH_eq = sqrt(sum(GBH_i^2))
     const equivalentGBH = useMemo(() => {
@@ -72,6 +122,11 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const handleSave = async (addAnother: boolean) => {
         const now = Date.now();
 
+        // Data Hygiene: Clean and validate inputs
+        const cleanTag = tagNumber.trim().toUpperCase();
+        const cleanSpeciesName = (isUnknown ? 'Unknown' : speciesName).trim();
+        const cleanHeight = height ? parseFloat(height) : undefined;
+
         // Build stems array with valid GBH values
         const validStems = stems
             .filter(s => s.gbh && !isNaN(parseFloat(s.gbh)))
@@ -80,24 +135,30 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                 gbh: parseFloat(s.gbh)
             }));
 
+        // Determine validation status based on warnings
+        const status = hasBiometricWarnings ? 'FLAGGED' : 'PENDING';
+        const remarks = hasBiometricWarnings ? validationWarnings.join('; ') : undefined;
+
         const newTree: TreeObservation = {
             id: uuidv4(),
             projectId,
             moduleId,
             plotId,
             samplingUnitId: unitId,
-            tagNumber,
-            speciesName: isUnknown ? 'Unknown' : speciesName,
+            tagNumber: cleanTag,
+            speciesListId: selectedSpeciesId, // Link to master species list
+            speciesName: cleanSpeciesName,
             isUnknown,
             confidenceLevel: isUnknown ? 'LOW' : 'HIGH',
             gbh: equivalentGBH,
-            height: height ? parseFloat(height) : undefined,
+            height: cleanHeight,
             stems: validStems.length > 1 ? validStems : undefined,
             stemCount: validStems.length,
             condition: 'ALIVE',
             phenology: 'VEGETATIVE',
             images: [], // Placeholder for now
-            validationStatus: 'PENDING',
+            validationStatus: status, // Auto-flag if warnings exist
+            remarks, // Store warnings for reviewer
             createdAt: now,
             updatedAt: now
         };
@@ -131,6 +192,8 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             // Reset for next tree
             setTagNumber((prev) => (parseInt(prev) + 1).toString());
             setSpeciesName('');
+            setSpeciesSearch('');
+            setSelectedSpeciesId(null);
             setStems([{ id: uuidv4(), gbh: '' }]);
             setHeight('');
             setHasBarkPhoto(false);
@@ -194,22 +257,64 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                                     autoFocus
                                 />
                             </div>
-                            <div>
+                            <div className="relative">
                                 <label className="block text-xs font-medium text-[#9ba2c0] uppercase mb-2">Species</label>
-                                <input
-                                    type="text"
-                                    value={speciesName}
-                                    onChange={e => setSpeciesName(e.target.value)}
-                                    disabled={isUnknown}
-                                    className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-lg text-[#f5f7ff] focus:border-[#56ccf2] outline-none disabled:opacity-50"
-                                    placeholder="Search species..."
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={isUnknown ? 'Unknown' : speciesSearch}
+                                        onChange={e => {
+                                            setSpeciesSearch(e.target.value);
+                                            setSpeciesName(e.target.value);  // Keep the name field updated
+                                            setSelectedSpeciesId(null);  // Reset selected species ID when typing
+                                        }}
+                                        disabled={isUnknown}
+                                        className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-lg text-[#f5f7ff] focus:border-[#56ccf2] outline-none disabled:opacity-50"
+                                        placeholder="Search species..."
+                                        onFocus={() => !isUnknown && setSpeciesSearch(speciesName)}
+                                    />
+                                    {!isUnknown && (
+                                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#56ccf2]" />
+                                    )}
+                                </div>
+
+                                {/* Species suggestions dropdown */}
+                                {!isUnknown && speciesSearch && filteredSpecies.length > 0 && (
+                                    <div className="absolute z-10 mt-1 w-full bg-[#11182b] border border-[#1d2440] rounded-xl max-h-60 overflow-y-auto shadow-lg">
+                                        {filteredSpecies.map((species) => (
+                                            <div
+                                                key={species.id}
+                                                className="px-4 py-3 hover:bg-[#1d2440] cursor-pointer border-b border-[#1d2440] last:border-b-0"
+                                                onClick={() => {
+                                                    setSpeciesSearch(species.scientificName);
+                                                    setSpeciesName(species.scientificName);
+                                                    setSelectedSpeciesId(species.id);
+                                                }}
+                                            >
+                                                <div className="font-medium text-[#f5f7ff]">{species.scientificName}</div>
+                                                <div className="text-xs text-[#9ba2c0]">{species.commonName}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Unknown species checkbox */}
                                 <div className="mt-3 flex items-center gap-2">
                                     <input
                                         type="checkbox"
                                         id="unknown-species"
                                         checked={isUnknown}
-                                        onChange={e => setIsUnknown(e.target.checked)}
+                                        onChange={(e) => {
+                                            setIsUnknown(e.target.checked);
+                                            if (e.target.checked) {
+                                                setSpeciesSearch('Unknown');
+                                                setSpeciesName('Unknown');
+                                                setSelectedSpeciesId(null);
+                                            } else {
+                                                setSpeciesSearch('');
+                                                setSpeciesName('');
+                                            }
+                                        }}
                                         className="w-4 h-4 rounded border-[#1d2440] bg-[#11182b] text-[#56ccf2]"
                                     />
                                     <label htmlFor="unknown-species" className="text-sm text-[#9ba2c0]">Unknown Species</label>
@@ -229,36 +334,52 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                                 </div>
 
                                 <div className="space-y-3">
-                                    {stems.map((stem, index) => (
-                                        <div key={stem.id} className="flex gap-2 items-center">
-                                            <div className="flex-1 relative">
-                                                <label className="block text-xs text-[#9ba2c0] mb-1">
-                                                    Stem {index + 1} GBH (cm)
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={stem.gbh}
-                                                    onChange={e => {
-                                                        const newStems = [...stems];
-                                                        newStems[index].gbh = e.target.value;
-                                                        setStems(newStems);
-                                                    }}
-                                                    className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-lg font-mono text-[#f5f7ff] focus:border-[#56ccf2] outline-none"
-                                                    placeholder="0"
-                                                    autoFocus={index === 0}
-                                                />
+                                    {stems.map((stem, index) => {
+                                        const val = parseFloat(stem.gbh);
+                                        let borderClass = "border-[#1d2440]"; // default
+                                        if (!isNaN(val)) {
+                                            if (val < 1 || val > 500) {
+                                                borderClass = "border-[#f2c94c]"; // warning color for extreme values
+                                            }
+                                        }
+
+                                        return (
+                                            <div key={stem.id} className="flex gap-2 items-center">
+                                                <div className="flex-1 relative">
+                                                    <label className="block text-xs text-[#9ba2c0] mb-1">
+                                                        Stem {index + 1} GBH (cm)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={stem.gbh}
+                                                        onChange={e => {
+                                                            const newStems = [...stems];
+                                                            newStems[index].gbh = e.target.value;
+                                                            setStems(newStems);
+                                                        }}
+                                                        className={`w-full bg-[#11182b] border ${borderClass} rounded-xl px-4 py-3 text-lg font-mono text-[#f5f7ff] focus:border-[#56ccf2] outline-none`}
+                                                        placeholder="0"
+                                                        autoFocus={index === 0}
+                                                    />
+                                                    {/* Warning indicator */}
+                                                    {!isNaN(val) && (val < 1 || val > 500) && (
+                                                        <div className="absolute -right-6 top-8 text-[#f2c94c] text-xs" title={`GBH ${val}cm is outside typical range`}>
+                                                            ⚠️
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {stems.length > 1 && (
+                                                    <button
+                                                        onClick={() => setStems(stems.filter(s => s.id !== stem.id))}
+                                                        className="mt-5 p-2 text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440] rounded-lg transition"
+                                                        title="Remove stem"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
-                                            {stems.length > 1 && (
-                                                <button
-                                                    onClick={() => setStems(stems.filter(s => s.id !== stem.id))}
-                                                    className="mt-5 p-2 text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440] rounded-lg transition"
-                                                    title="Remove stem"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
 
                                 <button
@@ -287,15 +408,34 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                                 )}
                             </div>
 
-                            <div>
+                            <div className="relative">
                                 <label className="block text-xs font-medium text-[#9ba2c0] uppercase mb-2">Height (m) <span className="text-[#555b75] lowercase">(optional)</span></label>
-                                <input
-                                    type="number"
-                                    value={height}
-                                    onChange={e => setHeight(e.target.value)}
-                                    className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-lg font-mono text-[#f5f7ff] focus:border-[#56ccf2] outline-none"
-                                    placeholder="0.0"
-                                />
+                                {(() => {
+                                    const h = parseFloat(height);
+                                    let borderClass = "border-[#1d2440]"; // default
+                                    if (!isNaN(h)) {
+                                        if (h > 70 || (h < 0.1 && h !== 0)) {
+                                            borderClass = "border-[#f2c94c]"; // warning color
+                                        }
+                                    }
+                                    return (
+                                        <>
+                                            <input
+                                                type="number"
+                                                value={height}
+                                                onChange={e => setHeight(e.target.value)}
+                                                className={`w-full bg-[#11182b] border ${borderClass} rounded-xl px-4 py-3 text-lg font-mono text-[#f5f7ff] focus:border-[#56ccf2] outline-none`}
+                                                placeholder="0.0"
+                                            />
+                                            {/* Warning indicator */}
+                                            {!isNaN(h) && (h > 70 || (h < 0.1 && h !== 0)) && (
+                                                <div className="absolute -right-6 top-12 text-[#f2c94c] text-xs" title={`Height ${h}m is outside typical range`}>
+                                                    ⚠️
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
                     )}
@@ -372,6 +512,26 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                                     <span className="text-[#9ba2c0]">Photos</span>
                                     <span className="text-[#f5f7ff]">{[hasBarkPhoto, hasLeafPhoto].filter(Boolean).length} added</span>
                                 </div>
+
+                                {/* Validation Warnings Display */}
+                                {hasBiometricWarnings && (
+                                    <div className="mt-4 p-3 bg-[#3a3a0a]/30 border border-[#f2c94c]/50 rounded-xl">
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-[#f2c94c] mt-0.5">⚠️</span>
+                                            <div>
+                                                <div className="text-xs font-bold text-[#f2c94c] uppercase mb-1">Validation Warnings</div>
+                                                <ul className="text-sm text-[#f5f7ff] space-y-1">
+                                                    {validationWarnings.map((warning, idx) => (
+                                                        <li key={idx} className="flex items-start">
+                                                            <span className="text-[#f2c94c] mr-2">•</span>
+                                                            {warning}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -390,10 +550,12 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                         </button>
                         <button
                             onClick={() => {
-                                if (!tagNumber || (!speciesName && !isUnknown)) return;
+                                if (!tagNumber) return;
+                                // Check if species is valid (either selected from list, manually entered, or marked as unknown)
+                                if (!isUnknown && !speciesName) return;
                                 setCurrentStep('METRICS');
                             }}
-                            disabled={!tagNumber || (!speciesName && !isUnknown)}
+                            disabled={!tagNumber || (!isUnknown && !speciesName)}
                             className="flex-1 bg-[#56ccf2] text-[#050814] font-bold py-3 rounded-xl hover:bg-[#4ab8de] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Next Step <ChevronRight className="w-5 h-5" />
@@ -437,16 +599,16 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                         <div className="flex-1 flex gap-3">
                             <button
                                 onClick={() => handleSave(true)}
-                                className="flex-1 bg-[#11182b] border border-[#56ccf2] text-[#56ccf2] font-bold py-3 rounded-xl hover:bg-[#1d2440] transition"
+                                className={`flex-1 ${hasBiometricWarnings ? 'bg-[#f2c94c] text-[#050814]' : 'bg-[#11182b] border border-[#56ccf2] text-[#56ccf2]'} font-bold py-3 rounded-xl hover:${hasBiometricWarnings ? 'bg-[#e0b743]' : 'bg-[#1d2440]'} transition`}
                             >
-                                Save & Add Another
+                                {hasBiometricWarnings ? 'Save Flagged & Add Another' : 'Save & Add Another'}
                             </button>
                             <button
                                 onClick={() => handleSave(false)}
-                                className="flex-1 bg-[#52d273] text-[#050814] font-bold py-3 rounded-xl hover:bg-[#45c165] transition flex items-center justify-center gap-2"
+                                className={`flex-1 ${hasBiometricWarnings ? 'bg-[#f2c94c] text-[#050814]' : 'bg-[#52d273] text-[#050814]'} font-bold py-3 rounded-xl hover:${hasBiometricWarnings ? 'bg-[#e0b743]' : 'bg-[#45c165]'} transition flex items-center justify-center gap-2`}
                             >
                                 <Save className="w-5 h-5" />
-                                Finish
+                                {hasBiometricWarnings ? 'Confirm & Finish' : 'Finish'}
                             </button>
                         </div>
                     </>
