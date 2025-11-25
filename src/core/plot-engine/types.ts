@@ -82,3 +82,41 @@ export interface PlotNodeInstance {
 
     children: PlotNodeInstance[];
 }
+
+export interface SubplotRule {
+    type: 'fixed' | 'random';
+    shape: 'RECTANGLE' | 'CIRCLE';
+    dimensions: { width?: number; length?: number; radius?: number };
+    position: 'CORNER_NW' | 'CORNER_NE' | 'CORNER_SW' | 'CORNER_SE' | 'CENTER';
+
+    // CRITICAL: Defines what we measure here
+    strata: ('HERB' | 'SHRUB' | 'SAPLING')[];
+
+    // Does this subplot exclude trees? (Usually false)
+    excludesCanopy: boolean;
+}
+
+export interface PlotConfiguration {
+    // 1. Geometry
+    shape: 'RECTANGLE' | 'CIRCLE';
+    dimensions: { width: number; length: number; radius?: number };
+
+    // 2. The Grid (Quadrants)
+    grid: {
+        enabled: boolean;
+        rows: number;    // e.g., 2
+        cols: number;    // e.g., 2
+        labelStyle: 'Q1-Q4' | 'Alpha' | 'Matrix'; // "Q1", "A,B,C", "1,1"
+    };
+
+    // 3. Nested Sampling Units (Subplots)
+    subplots: {
+        enabled: boolean;
+        rules: SubplotRule[];
+    };
+
+    // 4. Ecological Rules
+    rules: {
+        minInterTreeDistance: number; // meters (default 0.5)
+    };
+}
