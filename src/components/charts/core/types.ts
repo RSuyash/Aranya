@@ -4,7 +4,7 @@ export type AxisValue = number | string;
 export interface ChartDataPoint {
     x: AxisValue;
     y: number | null; // null allows for gaps in line charts
-    meta?: any;       // Extra context for tooltips
+    meta?: Record<string, unknown>;       // Extra context for tooltips
 }
 
 export interface ChartDataSeries {
@@ -28,6 +28,10 @@ export interface ChartConfig {
     height?: number; // Fixed height (width is responsive)
     showGrid?: boolean;
     showLegend?: boolean;
+
+    // NEW: Interactive Controls
+    showConfidenceInterval?: boolean; // Default: true
+    showCrosshair?: boolean;          // Default: true
 
     // Scaling Overrides
     yAxisDomain?: [number, number];

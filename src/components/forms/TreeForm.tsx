@@ -16,7 +16,7 @@ export const TreeForm: React.FC = () => {
         height: '',
     });
 
-    const handleNext = () => setStep((prev) => Math.min(prev + 1, 3) as any);
+    const handleNext = () => setStep((prev) => Math.min(prev + 1, 3) as 1 | 2 | 3);
     // const handleBack = () => setStep((prev) => Math.max(prev - 1, 1) as any); // Not used yet
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -66,7 +66,7 @@ export const TreeForm: React.FC = () => {
                     <h3 className="font-semibold">New Tree Entry</h3>
                 </div>
                 <div className="flex gap-1">
-                    {[1, 2, 3].map((s) => (
+                    {[1, 2, 3].map((s: number) => (
                         <div
                             key={s}
                             className={`w-2 h-2 rounded-full ${s === step ? 'bg-primary' : s < step ? 'bg-success' : 'bg-border'

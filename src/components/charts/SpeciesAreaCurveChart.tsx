@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChartBar, ChartLine, ChartScatter } from 'lucide-react';
+import { ChartBar, ChartLine, ChartScatter, Eye, Crosshair } from 'lucide-react';
 import { SmartChart } from './SmartChart';
 import type { SACPoint } from '../../analysis/sac';
 import type { ChartDataSeries } from './core/types';
@@ -22,6 +22,10 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
     defaultChartType = 'line'
 }) => {
     const [chartType, setChartType] = useState<ChartType>(defaultChartType);
+
+    // NEW: View Controls State
+    const [showCI, setShowCI] = useState(true);
+    const [showCrosshair, setShowCrosshair] = useState(true);
 
     // Adapter: Transform SAC Points into SmartChart Series
     const series: ChartDataSeries[] = [
@@ -50,9 +54,44 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
     ];
 
     return (
-        <div className="space-y-3">
-            {/* Chart Type Selector - Above the chart */}
-            <div className="flex items-center justify-end">
+        <div className="space-y-4">
+            {/* Enhanced Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+
+                {/* Left: View Toggles */}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowCI(!showCI)}
+                        className={`
+                            flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border
+                            ${showCI
+                                ? 'bg-[#56ccf2]/10 border-[#56ccf2]/30 text-[#56ccf2]'
+                                : 'bg-transparent border-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff]'
+                            }
+                        `}
+                        title="Toggle 95% Confidence Interval"
+                    >
+                        <Eye size={14} />
+                        <span className="hidden sm:inline">Uncertainty</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowCrosshair(!showCrosshair)}
+                        className={`
+                            flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border
+                            ${showCrosshair
+                                ? 'bg-[#56ccf2]/10 border-[#56ccf2]/30 text-[#56ccf2]'
+                                : 'bg-transparent border-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff]'
+                            }
+                        `}
+                        title="Toggle Crosshair Tool"
+                    >
+                        <Crosshair size={14} />
+                        <span className="hidden sm:inline">Inspect</span>
+                    </button>
+                </div>
+
+                {/* Right: Chart Type Switcher (Existing) */}
                 <div className="flex items-center gap-1 bg-[#0b1020] border border-[#1d2440] rounded-lg p-1">
                     {chartOptions.map(option => (
                         <button
@@ -74,7 +113,7 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
                 </div>
             </div>
 
-            {/* Chart */}
+            {/* Chart Component */}
             <SmartChart
                 series={series}
                 config={{
@@ -82,7 +121,11 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
                     yAxisLabel: 'Species Richness (S)',
                     showGrid: true,
                     height: height,
-                    forceZeroBaseline: chartType === 'bar'
+                    forceZeroBaseline: chartType === 'bar',
+
+                    // NEW: Pass state to config
+                    showConfidenceInterval: showCI,
+                    showCrosshair: showCrosshair
                 }}
                 className={className}
             />
