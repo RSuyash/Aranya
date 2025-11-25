@@ -26,25 +26,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                         key={item.path}
                         to={item.path}
                         className={({ isActive }) => clsx(
-                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
+                            "group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative overflow-hidden",
                             isActive
-                                ? "bg-[#56ccf2]/10 text-[#56ccf2]"
-                                : "text-[#9ba2c0] hover:bg-white/5 hover:text-[#f5f7ff]"
+                                ? "text-[#56ccf2] bg-[#56ccf2]/10 shadow-[0_0_15px_rgba(86,204,242,0.1)] border border-[#56ccf2]/20"
+                                : "text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440]"
                         )}
                     >
-                        <item.icon size={18} weight="duotone" className="group-hover:scale-110 transition-transform" />
-                        <span>{item.label}</span>
+                        {({ isActive }) => (
+                            <>
+                                <item.icon size={18} weight="duotone" className="group-hover:scale-110 transition-transform" />
+                                <span>{item.label}</span>
 
-                        {item.beta && (
-                            <span className="ml-auto text-[9px] bg-[#56ccf2]/10 text-[#56ccf2] px-1.5 py-0.5 rounded border border-[#56ccf2]/20">
-                                BETA
-                            </span>
+                                {item.beta && (
+                                    <span className="ml-auto text-[9px] bg-[#56ccf2]/10 text-[#56ccf2] px-1.5 py-0.5 rounded border border-[#56ccf2]/20">
+                                        BETA
+                                    </span>
+                                )}
+
+                                {/* Active Indicator Line - using div instead of nested NavLink to avoid <a> nesting error */}
+                                <div className={clsx(
+                                    "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-[#56ccf2] rounded-r-full transition-all duration-300",
+                                    isActive ? "h-5 opacity-100" : "h-0 opacity-0"
+                                )} />
+                            </>
                         )}
-
-                        <NavLink to={item.path} className={({isActive}) => clsx(
-                            "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-[#56ccf2] rounded-r-full transition-all duration-300",
-                            isActive ? "h-5 opacity-100" : "h-0 opacity-0"
-                        )} />
                     </NavLink>
                 ))}
             </div>
