@@ -35,6 +35,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const [speciesSearch, setSpeciesSearch] = useState(''); // For autocomplete search
     const [selectedSpeciesId, setSelectedSpeciesId] = useState<string | null>(null); // Store species list ID
     const [isUnknown, setIsUnknown] = useState(false);
+    const [morphospeciesCode, setMorphospeciesCode] = useState(''); // For morphospecies tracking
     const [stems, setStems] = useState<Array<{ id: string; gbh: string }>>([
         { id: uuidv4(), gbh: '' }
     ]);
@@ -42,7 +43,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const [hasBarkPhoto, setHasBarkPhoto] = useState(false);
     const [hasLeafPhoto, setHasLeafPhoto] = useState(false);
 
-    // Fetch module data to get predefined species list
+    // Fetch module data to get predefined species list and validation settings
     const moduleData = useLiveQuery(() => db.modules.get(moduleId)) as VegetationModule | undefined;
 
     // Filter species based on search term
@@ -57,6 +58,10 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             .slice(0, 10); // Performance optimization
     }, [moduleData, speciesSearch]);
 
+    // Get validation thresholds from module settings (with defaults)
+    const heightThreshold = moduleData?.validationSettings?.maxExpectedHeightM || 70; // Default to 70m if not specified
+    const gbhThreshold = moduleData?.validationSettings?.maxExpectedGbhCm || 500; // Default to 500cm if not specified
+
     // Biometric validation - determine if values are within reasonable ranges
     const validationWarnings = useMemo(() => {
         const warnings: string[] = [];
@@ -67,8 +72,8 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             if (!isNaN(val)) {
                 if (val < 1) {
                     warnings.push(`Stem ${i+1}: GBH ${val}cm is too small (likely <1cm).`);
-                } else if (val > 500) {
-                    warnings.push(`Stem ${i+1}: GBH ${val}cm is unusually large (>500cm).`);
+                } else if (val > gbhThreshold) {
+                    warnings.push(`Stem ${i+1}: GBH ${val}cm is unusually large (>${gbhThreshold}cm).`);
                 }
             }
         });
@@ -76,18 +81,29 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
         // Check height
         const h = parseFloat(height);
         if (!isNaN(h)) {
-            if (h > 70) {
-                warnings.push(`Height ${h}m is exceptionally tall (rare for most species).`);
+            if (h > heightThreshold) {
+                warnings.push(`Height ${h}m is exceptionally tall (>${heightThreshold}m for this biome).`);
             } else if (h < 0.1 && h !== 0) {
                 warnings.push(`Height ${h}m is unusually small (likely >0.1m).`);
             }
         }
 
         return warnings;
-    }, [stems, height]);
+    }, [stems, height, heightThreshold, gbhThreshold]);
 
     // Determine if biometric data is flagged
     const hasBiometricWarnings = validationWarnings.length > 0;
+
+    // Function to validate tag uniqueness within the plot
+    const validateTagUniqueness = async (): Promise<boolean> => {
+        if (!plotId || !tagNumber) return false;
+
+        const existingTree = await db.treeObservations
+            .where({ plotId, tagNumber: tagNumber.trim().toUpperCase() })
+            .first();
+
+        return !existingTree; // Returns true if tag is unique
+    };
 
     // Calculate equivalent GBH using formula: GBH_eq = sqrt(sum(GBH_i^2))
     const equivalentGBH = useMemo(() => {
@@ -120,11 +136,21 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     }, [plotId]);
 
     const handleSave = async (addAnother: boolean) => {
+        // Validate tag uniqueness before saving
+        const isTagUnique = await validateTagUniqueness();
+        if (!isTagUnique) {
+            alert(`Tag "${tagNumber.trim().toUpperCase()}" already exists in this plot. Please use a different tag number.`);
+            return;
+        }
+
         const now = Date.now();
 
         // Data Hygiene: Clean and validate inputs
         const cleanTag = tagNumber.trim().toUpperCase();
-        const cleanSpeciesName = (isUnknown ? 'Unknown' : speciesName).trim();
+        // Clean species name based on whether it's unknown or morphospecies
+        const cleanSpeciesName = isUnknown
+            ? (morphospeciesCode || 'Unknown Specimen').trim()
+            : speciesName.trim();
         const cleanHeight = height ? parseFloat(height) : undefined;
 
         // Build stems array with valid GBH values
@@ -156,7 +182,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             stemCount: validStems.length,
             condition: 'ALIVE',
             phenology: 'VEGETATIVE',
-            images: [], // Placeholder for now
+            images: [], // Placeholder for future image handling
             validationStatus: status, // Auto-flag if warnings exist
             remarks, // Store warnings for reviewer
             createdAt: now,
@@ -193,6 +219,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             setTagNumber((prev) => (parseInt(prev) + 1).toString());
             setSpeciesName('');
             setSpeciesSearch('');
+            setMorphospeciesCode(''); // Reset morphospecies code
             setSelectedSpeciesId(null);
             setStems([{ id: uuidv4(), gbh: '' }]);
             setHeight('');
@@ -260,21 +287,35 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                             <div className="relative">
                                 <label className="block text-xs font-medium text-[#9ba2c0] uppercase mb-2">Species</label>
                                 <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={isUnknown ? 'Unknown' : speciesSearch}
-                                        onChange={e => {
-                                            setSpeciesSearch(e.target.value);
-                                            setSpeciesName(e.target.value);  // Keep the name field updated
-                                            setSelectedSpeciesId(null);  // Reset selected species ID when typing
-                                        }}
-                                        disabled={isUnknown}
-                                        className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-lg text-[#f5f7ff] focus:border-[#56ccf2] outline-none disabled:opacity-50"
-                                        placeholder="Search species..."
-                                        onFocus={() => !isUnknown && setSpeciesSearch(speciesName)}
-                                    />
-                                    {!isUnknown && (
-                                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#56ccf2]" />
+                                    {isUnknown ? (
+                                        // Morphospecies input when unknown is selected
+                                        <div className="space-y-3">
+                                            <input
+                                                type="text"
+                                                value={morphospeciesCode}
+                                                onChange={e => setMorphospeciesCode(e.target.value)}
+                                                className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-lg text-[#f5f7ff] focus:border-[#56ccf2] outline-none"
+                                                placeholder="Morphospecies code (e.g. 'Unknown A')"
+                                            />
+                                            <div className="text-xs text-[#9ba2c0]">Enter a morphospecies identifier for unknown specimens</div>
+                                        </div>
+                                    ) : (
+                                        // Standard species search when known
+                                        <>
+                                            <input
+                                                type="text"
+                                                value={speciesSearch}
+                                                onChange={e => {
+                                                    setSpeciesSearch(e.target.value);
+                                                    setSpeciesName(e.target.value);  // Keep the name field updated
+                                                    setSelectedSpeciesId(null);  // Reset selected species ID when typing
+                                                }}
+                                                className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-lg text-[#f5f7ff] focus:border-[#56ccf2] outline-none"
+                                                placeholder="Search species..."
+                                                onFocus={() => setSpeciesSearch(speciesName)}
+                                            />
+                                            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#56ccf2]" />
+                                        </>
                                     )}
                                 </div>
 
@@ -305,19 +346,19 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                                         id="unknown-species"
                                         checked={isUnknown}
                                         onChange={(e) => {
-                                            setIsUnknown(e.target.checked);
-                                            if (e.target.checked) {
-                                                setSpeciesSearch('Unknown');
-                                                setSpeciesName('Unknown');
-                                                setSelectedSpeciesId(null);
-                                            } else {
+                                            const checked = e.target.checked;
+                                            setIsUnknown(checked);
+                                            if (checked) {
                                                 setSpeciesSearch('');
                                                 setSpeciesName('');
+                                                setSelectedSpeciesId(null);
+                                            } else {
+                                                setMorphospeciesCode('');
                                             }
                                         }}
                                         className="w-4 h-4 rounded border-[#1d2440] bg-[#11182b] text-[#56ccf2]"
                                     />
-                                    <label htmlFor="unknown-species" className="text-sm text-[#9ba2c0]">Unknown Species</label>
+                                    <label htmlFor="unknown-species" className="text-sm text-[#9ba2c0]">Unknown Species (Morphospecies)</label>
                                 </div>
                             </div>
                         </div>
@@ -479,7 +520,11 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                                 </div>
                                 <div className="flex justify-between border-b border-[#1d2440] pb-2">
                                     <span className="text-[#9ba2c0]">Species</span>
-                                    <span className="font-medium text-[#f5f7ff]">{isUnknown ? 'Unknown' : speciesName}</span>
+                                    <span className="font-medium text-[#f5f7ff]">
+                                        {isUnknown
+                                            ? `${morphospeciesCode || 'Unknown Specimen'}`
+                                            : speciesName}
+                                    </span>
                                 </div>
 
                                 {/* Stem Details */}
@@ -553,9 +598,11 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                                 if (!tagNumber) return;
                                 // Check if species is valid (either selected from list, manually entered, or marked as unknown)
                                 if (!isUnknown && !speciesName) return;
+                                // If unknown, check if morphospecies code is provided
+                                if (isUnknown && !morphospeciesCode) return;
                                 setCurrentStep('METRICS');
                             }}
-                            disabled={!tagNumber || (!isUnknown && !speciesName)}
+                            disabled={!tagNumber || (!isUnknown && !speciesName) || (isUnknown && !morphospeciesCode)}
                             className="flex-1 bg-[#56ccf2] text-[#050814] font-bold py-3 rounded-xl hover:bg-[#4ab8de] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Next Step <ChevronRight className="w-5 h-5" />

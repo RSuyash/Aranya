@@ -59,6 +59,8 @@ export interface VegetationModule extends BaseModule {
     validationSettings: {
         maxGpsAccuracyM?: number;
         mandatoryPhotos: boolean;
+        maxExpectedHeightM?: number;  // Maximum expected tree height for the project/biome
+        maxExpectedGbhCm?: number;    // Maximum expected GBH for the project/biome
     };
 
     // --- Custom Attributes ---

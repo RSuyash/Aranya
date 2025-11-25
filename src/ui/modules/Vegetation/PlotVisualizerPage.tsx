@@ -124,152 +124,167 @@ export const PlotVisualizerPage: React.FC = () => {
     // Get actual unit label from layout
     const selectedUnitLabel = selectedUnitId ? (unitLabelMap.get(selectedUnitId) || selectedUnitId.slice(0, 8)) : "";
 
-    if (plotLoading || !plot) return <div className="p-8 text-white">Loading Plot...</div>;
-
     return (
-        <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-10 bg-[#050814]">
-            <div className="h-full flex flex-col bg-[#050814] overflow-hidden relative">
-                {/* Main Content Area (Map/List) */}
-                <div className="flex-1 flex flex-col relative min-h-0">
-                    {/* Tabs / Toolbar */}
-                    <div className="h-12 border-b border-[#1d2440] flex items-center px-4 gap-4 bg-[#0b1020] z-10 flex-shrink-0">
-                        {/* Back Button */}
-                        <button
-                            onClick={() => navigate(`/project/${projectId}/module/${moduleId}`)}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440] transition"
-                            title="Back to Project"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            <span className="hidden sm:inline">Back</span>
-                        </button>
+        <>
+            {plotLoading || !plot ? (
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-20 bg-[#050814] flex items-center justify-center">
+                    <div className="p-8 text-white">Loading Plot...</div>
+                </div>
+            ) : (
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-20 bg-[#050814]">
+                    <div className="h-full flex flex-col bg-[#050814] overflow-hidden relative">
+                        {/* Main Content Area (Map/List) */}
+                        <div className="flex-1 flex flex-col relative min-h-0">
+                            {/* Tabs / Toolbar */}
+                            <div className="h-12 border-b border-[#1d2440] flex items-center px-4 gap-4 bg-[#0b1020] z-10 flex-shrink-0">
+                                {/* Back Button */}
+                                <button
+                                    onClick={() => navigate(`/project/${projectId}/module/${moduleId}`)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440] transition"
+                                    title="Back to Project"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Back</span>
+                                </button>
 
-                        {/* Vertical Divider */}
-                        <div className="h-6 w-px bg-[#1d2440]" />
+                                {/* Vertical Divider */}
+                                <div className="h-6 w-px bg-[#1d2440]" />
 
-                        <button
-                            onClick={() => setActiveTab('MAP')}
-                            className={clsx(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
-                                activeTab === 'MAP' ? "bg-[#1d2440] text-[#56ccf2]" : "text-[#9ba2c0] hover:text-[#f5f7ff]"
-                            )}
-                        >
-                            <MapIcon className="w-4 h-4" /> Map
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('LIST')}
-                            className={clsx(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
-                                activeTab === 'LIST' ? "bg-[#1d2440] text-[#56ccf2]" : "text-[#9ba2c0] hover:text-[#f5f7ff]"
-                            )}
-                        >
-                            <Info className="w-4 h-4" /> List
-                        </button>
-                    </div>
-
-                    {/* Canvas Area */}
-                    <div
-                        className="flex-1 relative overflow-hidden bg-[#050814]"
-                        ref={containerRef}
-                        onClick={() => setPanelFocus('map')}
-                        style={{ minHeight: '200px' }}
-                    >
-                        {activeTab === 'MAP' && (
-                            <PlotCanvas
-                                plotId={plotId}
-                                viewportWidth={containerWidth || (containerRef.current?.getBoundingClientRect().width || 400)}
-                                viewportHeight={containerHeight || (containerRef.current?.getBoundingClientRect().height || 400)}
-                                selectedUnitId={selectedUnitId || undefined}
-                                onSelectUnit={handleSelectUnit}
-                            />
-                        )}
-                        {activeTab === 'LIST' && (
-                            <div className="p-8 text-[#9ba2c0] text-center">
-                                List View Coming Soon
+                                <button
+                                    onClick={() => setActiveTab('MAP')}
+                                    className={clsx(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
+                                        activeTab === 'MAP' ? "bg-[#1d2440] text-[#56ccf2]" : "text-[#9ba2c0] hover:text-[#f5f7ff]"
+                                    )}
+                                >
+                                    <MapIcon className="w-4 h-4" /> Map
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('LIST')}
+                                    className={clsx(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
+                                        activeTab === 'LIST' ? "bg-[#1d2440] text-[#56ccf2]" : "text-[#9ba2c0] hover:text-[#f5f7ff]"
+                                    )}
+                                >
+                                    <Info className="w-4 h-4" /> List
+                                </button>
                             </div>
-                        )}
+
+                            {/* Canvas Area */}
+                            <div
+                                className="flex-1 relative overflow-hidden bg-[#050814]"
+                                ref={containerRef}
+                                onClick={() => setPanelFocus('map')}
+                                style={{ minHeight: '200px' }}
+                            >
+                                {activeTab === 'MAP' && (
+                                    <PlotCanvas
+                                        plotId={plotId}
+                                        viewportWidth={containerWidth || (containerRef.current?.getBoundingClientRect().width || 400)}
+                                        viewportHeight={containerHeight || (containerRef.current?.getBoundingClientRect().height || 400)}
+                                        selectedUnitId={selectedUnitId || undefined}
+                                        onSelectUnit={handleSelectUnit}
+                                    />
+                                )}
+                                {activeTab === 'LIST' && (
+                                    <div className="p-8 text-[#9ba2c0] text-center">
+                                        List View Coming Soon
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Right Panel / Bottom Sheet Area - Overlay on Desktop, Bottom sheet on Mobile */}
+                        <div
+                            className={clsx(
+                                "bg-[#0b1020] border-[#1d2440] shadow-2xl transition-all duration-300 overflow-y-auto",
+                                // Mobile: bottom sheet
+                                "fixed bottom-0 left-0 right-0 border-t md:border-t-0",
+                                // Desktop: right sidebar overlay - wider for better content display
+                                "md:fixed md:top-[64px] md:right-0 md:bottom-0 md:left-auto md:w-[480px] md:border-l md:p-6",
+                                (isAddingTree || isAddingVeg) && "hidden", // Hide panel when forms are open
+                                "z-20"
+                            )}
+                            style={{
+                                height: (window.innerWidth >= 768 ? 'calc(100vh - 64px)' : `${panelHeight}px`),
+                            }}
+                            onClick={() => setPanelFocus('panel')}
+                        >
+                            {selectedUnitId ? (
+                                <UnitDetailPanel
+                                    projectId={projectId}
+                                    moduleId={moduleId}
+                                    plotId={plotId}
+                                    unitId={selectedUnitId}
+                                    unitLabel={selectedUnitLabel}
+                                    onClose={() => setSelectedUnitId(null)}
+                                    progress={progressByUnit[selectedUnitId]}
+                                    obsSummary={obsSummaryByUnit[selectedUnitId]}
+                                    onAddTree={() => setIsAddingTree(true)}
+                                    onAddVeg={() => setIsAddingVeg(true)}
+                                    onNextUnit={(() => {
+                                        const currentIndex = sortedUnitIds.indexOf(selectedUnitId);
+                                        const nextIndex = currentIndex + 1;
+                                        if (nextIndex < sortedUnitIds.length) {
+                                            return () => setSelectedUnitId(sortedUnitIds[nextIndex]);
+                                        }
+                                        return undefined;
+                                    })()}
+                                    onPrevUnit={(() => {
+                                        const currentIndex = sortedUnitIds.indexOf(selectedUnitId);
+                                        const prevIndex = currentIndex - 1;
+                                        if (prevIndex >= 0) {
+                                            return () => setSelectedUnitId(sortedUnitIds[prevIndex]);
+                                        }
+                                        return undefined;
+                                    })()}
+                                />
+                            ) : (
+                                <PlotOverviewPanel
+                                    plot={plot}
+                                    progressByUnit={progressByUnit}
+                                    obsSummaryByUnit={obsSummaryByUnit}
+                                    onStartSurvey={handleStartSurvey}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
+            )}
 
-                {/* Right Panel / Bottom Sheet Area - Overlay on Desktop, Bottom sheet on Mobile */}
-                <div
-                    className={clsx(
-                        "bg-[#0b1020] border-[#1d2440] shadow-2xl transition-all duration-300 overflow-y-auto",
-                        // Mobile: bottom sheet
-                        "fixed bottom-0 left-0 right-0 border-t md:border-t-0",
-                        // Desktop: right sidebar overlay - wider for better content display
-                        "md:fixed md:top-[64px] md:right-0 md:bottom-0 md:left-auto md:w-[480px] md:border-l md:p-6",
-                        (isAddingTree || isAddingVeg) && "h-full top-0 md:top-[64px] z-30",
-                        !isAddingTree && !isAddingVeg && "z-20"
-                    )}
-                    style={{
-                        height: (isAddingTree || isAddingVeg) ? '100%' : (window.innerWidth >= 768 ? 'calc(100vh - 64px)' : `${panelHeight}px`),
-                    }}
-                    onClick={() => !(isAddingTree || isAddingVeg) && setPanelFocus('panel')}
-                >
-                    {isAddingTree && selectedUnitId ? (
-                        <TreeEntryForm
-                            projectId={projectId}
-                            moduleId={moduleId}
-                            plotId={plotId}
-                            unitId={selectedUnitId}
-                            unitLabel={selectedUnitLabel}
-                            onClose={() => setIsAddingTree(false)}
-                            onSaveSuccess={() => {
-                                // Refresh data handled by live query
-                            }}
-                        />
-                    ) : isAddingVeg && selectedUnitId ? (
-                        <VegetationEntryForm
-                            projectId={projectId}
-                            moduleId={moduleId}
-                            plotId={plotId}
-                            unitId={selectedUnitId}
-                            unitLabel={selectedUnitLabel}
-                            onClose={() => setIsAddingVeg(false)}
-                            onSaveSuccess={() => {
-                                // Refresh data handled by live query
-                            }}
-                        />
-                    ) : selectedUnitId ? (
-                        <UnitDetailPanel
-                            projectId={projectId}
-                            moduleId={moduleId}
-                            plotId={plotId}
-                            unitId={selectedUnitId}
-                            unitLabel={selectedUnitLabel}
-                            onClose={() => setSelectedUnitId(null)}
-                            progress={progressByUnit[selectedUnitId]}
-                            obsSummary={obsSummaryByUnit[selectedUnitId]}
-                            onAddTree={() => setIsAddingTree(true)}
-                            onAddVeg={() => setIsAddingVeg(true)}
-                            onNextUnit={(() => {
-                                const currentIndex = sortedUnitIds.indexOf(selectedUnitId);
-                                const nextIndex = currentIndex + 1;
-                                if (nextIndex < sortedUnitIds.length) {
-                                    return () => setSelectedUnitId(sortedUnitIds[nextIndex]);
-                                }
-                                return undefined;
-                            })()}
-                            onPrevUnit={(() => {
-                                const currentIndex = sortedUnitIds.indexOf(selectedUnitId);
-                                const prevIndex = currentIndex - 1;
-                                if (prevIndex >= 0) {
-                                    return () => setSelectedUnitId(sortedUnitIds[prevIndex]);
-                                }
-                                return undefined;
-                            })()}
-                        />
-                    ) : (
-                        <PlotOverviewPanel
-                            plot={plot}
-                            progressByUnit={progressByUnit}
-                            obsSummaryByUnit={obsSummaryByUnit}
-                            onStartSurvey={handleStartSurvey}
-                        />
-                    )}
+            {/* Full-screen forms rendered separately to ensure they overlay everything properly */}
+            {plot && !plotLoading && isAddingTree && selectedUnitId && (
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-[#050814]">
+                    <TreeEntryForm
+                        projectId={projectId}
+                        moduleId={moduleId}
+                        plotId={plotId}
+                        unitId={selectedUnitId}
+                        unitLabel={selectedUnitLabel}
+                        onClose={() => setIsAddingTree(false)}
+                        onSaveSuccess={() => {
+                            // Refresh data handled by live query
+                        }}
+                    />
                 </div>
-            </div>
-        </div>
+            )}
+
+            {plot && !plotLoading && isAddingVeg && selectedUnitId && (
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-[#050814]">
+                    <VegetationEntryForm
+                        projectId={projectId}
+                        moduleId={moduleId}
+                        plotId={plotId}
+                        unitId={selectedUnitId}
+                        unitLabel={selectedUnitLabel}
+                        onClose={() => setIsAddingVeg(false)}
+                        onSaveSuccess={() => {
+                            // Refresh data handled by live query
+                        }}
+                    />
+                </div>
+            )}
+        </>
     );
 };
 
