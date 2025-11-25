@@ -1,5 +1,5 @@
 import type { PlotNodeInstance } from '../../../../core/plot-engine/types';
-import type { TreeObservation, VegetationObservation, SamplingUnitProgress } from '../../../../core/data-model/types';
+import type { TreeObservation, VegetationObservation, SamplingUnitProgress, PlotVisualizationSettings } from '../../../../core/data-model/types';
 import { positionTrees } from './physics';
 
 export interface UnitVizNode {
@@ -56,6 +56,7 @@ interface BuildVizModelArgs {
     progress: SamplingUnitProgress[];
     viewportWidth: number;
     viewportHeight: number;
+    visualizationSettings?: PlotVisualizationSettings;
 }
 
 function getNodeDimensions(node: PlotNodeInstance): { width: number; height: number } {
@@ -113,6 +114,7 @@ export function buildPlotVizModel({
     progress,
     viewportWidth,
     viewportHeight,
+    visualizationSettings,
 }: BuildVizModelArgs): PlotVizModel {
     const padding = 16;
     const allNodes = collectAllNodes(rootInstance);
@@ -142,8 +144,14 @@ export function buildPlotVizModel({
         vegCountMap.set(v.samplingUnitId, (vegCountMap.get(v.samplingUnitId) || 0) + 1);
     });
 
+    // Filter nodes based on visualization settings
+    const showSubplots = visualizationSettings?.showSubplots !== false; // Default true
+    const filteredNodes = showSubplots
+        ? allNodes
+        : allNodes.filter(node => node.role !== 'SUBPLOT');
+
     // Map nodes to viz units
-    const units: UnitVizNode[] = allNodes.map(node => {
+    const units: UnitVizNode[] = filteredNodes.map(node => {
         const { width, height } = getNodeDimensions(node);
         const screenX = padding + (node.x - bounds.minX) * scale;
         const screenY = padding + (node.y - bounds.minY) * scale;

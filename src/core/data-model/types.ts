@@ -4,6 +4,14 @@ export type SyncStatus = 'LOCAL_ONLY' | 'SYNCED' | 'DIRTY' | 'CONFLICT';
 
 export type ValidationStatus = 'PENDING' | 'VERIFIED' | 'FLAGGED';
 
+export interface PlotVisualizationSettings {
+    showSubplots: boolean;
+    showQuadrantLines: boolean;
+    showTreeVisualization: boolean;
+    showLabels: boolean;
+    subplotOpacity: number; // 0-1
+}
+
 export interface Project {
     id: string; // UUID
     name: string; // e.g. "Pune Metro EIA 2025"
@@ -136,6 +144,9 @@ export interface Plot {
 
     createdAt: number;
     updatedAt: number;
+
+    // --- Visualization Settings ---
+    visualizationSettings?: PlotVisualizationSettings;
 
     // Sync Meta
     syncStatus?: SyncStatus;

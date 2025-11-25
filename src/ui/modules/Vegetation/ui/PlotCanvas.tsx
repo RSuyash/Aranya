@@ -6,6 +6,7 @@ import { buildPlotVizModel } from '../viz/buildPlotVizModel';
 import { UnitsLayer } from './layers/UnitsLayer';
 import { TreesLayer } from './layers/TreesLayer';
 import { LabelsLayer } from './layers/LabelsLayer';
+import type { PlotVisualizationSettings } from '../../../../core/data-model/types';
 
 interface PlotCanvasProps {
     plotId: string;
@@ -13,6 +14,7 @@ interface PlotCanvasProps {
     viewportHeight: number;
     selectedUnitId?: string;
     onSelectUnit?: (unitId: string) => void;
+    visualizationSettings?: PlotVisualizationSettings;
 }
 
 export const PlotCanvas: React.FC<PlotCanvasProps> = ({
@@ -21,6 +23,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
     viewportHeight,
     selectedUnitId,
     onSelectUnit,
+    visualizationSettings,
 }) => {
     const { blueprint, isLoading: dataLoading } = usePlotData(plotId);
     const { trees, veg, progress } = usePlotObservations(plotId);
@@ -55,11 +58,12 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
             progress,
             viewportWidth,
             viewportHeight,
+            visualizationSettings,
         });
 
         console.log('PlotCanvas: Built viz model', model);
         return model;
-    }, [rootInstance, trees, veg, progress, viewportWidth, viewportHeight]);
+    }, [rootInstance, trees, veg, progress, viewportWidth, viewportHeight, visualizationSettings]);
 
     console.log('PlotCanvas render:', { dataLoading, vizModel: !!vizModel, viewportWidth, viewportHeight });
 
@@ -81,9 +85,17 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
                 units={vizModel.units}
                 selectedUnitId={selectedUnitId}
                 onSelectUnit={onSelectUnit}
+                showSubplots={visualizationSettings?.showSubplots}
+                showQuadrantLines={visualizationSettings?.showQuadrantLines}
             />
-            <TreesLayer trees={vizModel.trees} />
-            <LabelsLayer units={vizModel.units} />
+            <TreesLayer
+                trees={vizModel.trees}
+                visible={visualizationSettings?.showTreeVisualization}
+            />
+            <LabelsLayer
+                units={vizModel.units}
+                visible={visualizationSettings?.showLabels}
+            />
         </div>
     );
 };

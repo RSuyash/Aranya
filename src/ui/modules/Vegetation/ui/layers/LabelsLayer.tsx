@@ -3,9 +3,11 @@ import type { UnitVizNode } from '../../viz/buildPlotVizModel';
 
 interface LabelsLayerProps {
     units: UnitVizNode[];
+    visible?: boolean;
 }
 
-export const LabelsLayer: React.FC<LabelsLayerProps> = ({ units }) => {
+export const LabelsLayer: React.FC<LabelsLayerProps> = ({ units, visible = true }) => {
+    if (!visible) return null;
     return (
         <div className="absolute inset-0 pointer-events-none">
             {units

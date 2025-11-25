@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../../core/data-model/dexie';
 import { BlueprintRegistry } from '../../../../core/plot-engine/blueprints';
+import type { PlotVisualizationSettings } from '../../../../core/data-model/types';
 
 export function usePlotData(plotId: string) {
     const plot = useLiveQuery(() => db.plots.get(plotId), [plotId]);
@@ -17,11 +18,16 @@ export function usePlotData(plotId: string) {
 
     const blueprint = plot ? BlueprintRegistry.get(plot.blueprintId) : undefined;
 
+    const updateVisualizationSettings = async (settings: PlotVisualizationSettings) => {
+        await db.plots.update(plotId, { visualizationSettings: settings });
+    };
+
     return {
         plot,
         module,
         project,
         blueprint,
-        isLoading: !plot || !blueprint
+        isLoading: !plot || !blueprint,
+        updateVisualizationSettings,
     };
 }

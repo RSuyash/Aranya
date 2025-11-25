@@ -3,9 +3,11 @@ import type { TreeVizNode } from '../../viz/buildPlotVizModel';
 
 interface TreesLayerProps {
     trees: TreeVizNode[];
+    visible?: boolean;
 }
 
-export const TreesLayer: React.FC<TreesLayerProps> = ({ trees }) => {
+export const TreesLayer: React.FC<TreesLayerProps> = ({ trees, visible = true }) => {
+    if (!visible) return null;
     return (
         <svg
             className="absolute inset-0 pointer-events-none"
@@ -25,7 +27,7 @@ export const TreesLayer: React.FC<TreesLayerProps> = ({ trees }) => {
                 </filter>
             </defs>
 
-            {trees.map((tree, idx) => (
+            {trees.map((tree) => (
                 <g key={tree.id} className="tree-marker pointer-events-auto cursor-pointer group">
                     {/* Outer ring for depth */}
                     <circle

@@ -68,13 +68,13 @@ export const useRepositories = () => {
         }, [plotId]) || [];
     };
 
-    const addTree = async (data: Omit<TreeObservation, 'id' | 'syncStatus' | 'lastModifiedAt' | 'images' | 'createdAt' | 'updatedAt' | 'validationStatus'>) => {
+    const addTree = async (data: Omit<TreeObservation, 'id' | 'syncStatus' | 'lastModifiedAt' | 'images' | 'createdAt' | 'updatedAt'>) => {
         const id = uuidv4();
         const newTree: TreeObservation = {
             ...data,
             id,
             images: [],
-            validationStatus: 'PENDING',
+            validationStatus: data.validationStatus || 'PENDING',
             createdAt: Date.now(),
             updatedAt: Date.now(),
             syncStatus: 'LOCAL_ONLY',

@@ -5,11 +5,14 @@ interface UnitsLayerProps {
     units: UnitVizNode[];
     selectedUnitId?: string;
     onSelectUnit?: (unitId: string) => void;
+    showSubplots?: boolean;
+    showQuadrantLines?: boolean;
 }
 
-export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, onSelectUnit }) => {
-    // Sort by z-index
-    const sortedUnits = [...units].sort((a, b) => a.zIndex - b.zIndex);
+export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, onSelectUnit, showSubplots = true, showQuadrantLines = false }) => {
+    // Sort by z-index and filter based on showSubplots setting
+    const filteredUnits = showSubplots ? units : units.filter(u => u.role !== 'SUBPLOT');
+    const sortedUnits = [...filteredUnits].sort((a, b) => a.zIndex - b.zIndex);
 
     // Debug logging
     console.log('UnitsLayer: Rendering', units.length, 'units');
@@ -52,6 +55,40 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                     </feMerge>
                 </filter>
             </defs>
+
+            {/* Quadrant Lines - render for main plot */}
+            {showQuadrantLines && (() => {
+                const mainPlot = units.find(u => u.role === 'MAIN_PLOT');
+                if (!mainPlot) return null;
+
+                const centerX = mainPlot.screenX + mainPlot.screenWidth / 2;
+                const centerY = mainPlot.screenY + mainPlot.screenHeight / 2;
+
+                return (
+                    <g className="quadrant-lines" opacity={0.6}>
+                        {/* Horizontal line */}
+                        <line
+                            x1={mainPlot.screenX}
+                            y1={centerY}
+                            x2={mainPlot.screenX + mainPlot.screenWidth}
+                            y2={centerY}
+                            stroke="#52d273"
+                            strokeWidth={2}
+                            strokeDasharray="8 4"
+                        />
+                        {/* Vertical line */}
+                        <line
+                            x1={centerX}
+                            y1={mainPlot.screenY}
+                            x2={centerX}
+                            y2={mainPlot.screenY + mainPlot.screenHeight}
+                            stroke="#52d273"
+                            strokeWidth={2}
+                            strokeDasharray="8 4"
+                        />
+                    </g>
+                );
+            })()}
 
             {sortedUnits.map(unit => {
                 const isSelected = selectedUnitId === unit.id;

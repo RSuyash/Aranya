@@ -7,10 +7,12 @@ import { TreeEntryForm } from './TreeEntryForm';
 import { VegetationEntryForm } from './VegetationEntryForm';
 import { normalizeProgress, summarizeObservations } from './plotVisualizerUtils';
 import { PlotCanvas } from './ui/PlotCanvas';
+import { PlotSettingsPanel } from './ui/PlotSettingsPanel';
 import { usePlotData } from './data/usePlotData';
 import { usePlotObservations } from './data/usePlotObservations';
 import { generateLayout } from '../../../core/plot-engine/generateLayout';
 import { clsx } from 'clsx';
+import type { PlotVisualizationSettings } from '../../../core/data-model/types';
 
 export const PlotVisualizerPage: React.FC = () => {
     const { projectId, moduleId, plotId } = useParams<{ projectId: string; moduleId: string; plotId: string }>();
@@ -19,7 +21,7 @@ export const PlotVisualizerPage: React.FC = () => {
     if (!projectId || !moduleId || !plotId) return <div>Invalid URL Parameters</div>;
 
     // Data
-    const { plot, blueprint, isLoading: plotLoading } = usePlotData(plotId);
+    const { plot, blueprint, isLoading: plotLoading, updateVisualizationSettings } = usePlotData(plotId);
     const { trees, veg, progress } = usePlotObservations(plotId);
 
     // Derived state
@@ -59,6 +61,22 @@ export const PlotVisualizerPage: React.FC = () => {
     // Panel interaction state
     const [panelFocus, setPanelFocus] = useState<'map' | 'panel' | 'none'>('none');
     const [panelHeight, setPanelHeight] = useState<number>(320); // 40vh on typical mobile
+
+    // Visualization Settings State
+    const [vizSettings, setVizSettings] = useState<PlotVisualizationSettings>({
+        showSubplots: true,
+        showQuadrantLines: false,
+        showTreeVisualization: true,
+        showLabels: true,
+        subplotOpacity: 0.9,
+    });
+
+    // Load visualization settings from plot metadata on mount
+    useEffect(() => {
+        if (plot?.visualizationSettings) {
+            setVizSettings(plot.visualizationSettings);
+        }
+    }, [plot]);
 
     // Resize Observer
     useEffect(() => {
@@ -136,7 +154,7 @@ export const PlotVisualizerPage: React.FC = () => {
                         {/* Main Content Area (Map/List) */}
                         <div className="flex-1 flex flex-col relative min-h-0">
                             {/* Tabs / Toolbar */}
-                            <div className="h-12 border-b border-[#1d2440] flex items-center px-4 gap-4 bg-[#0b1020] z-10 flex-shrink-0">
+                            <div className="h-12 border-b border-[#1d2440] flex items-center px-4 md:pr-[496px] gap-4 bg-[#0b1020] z-10 flex-shrink-0 overflow-x-auto min-w-0">
                                 {/* Back Button */}
                                 <button
                                     onClick={() => navigate(`/project/${projectId}/module/${moduleId}`)}
@@ -168,6 +186,18 @@ export const PlotVisualizerPage: React.FC = () => {
                                 >
                                     <Info className="w-4 h-4" /> List
                                 </button>
+
+                                {/* Spacer */}
+                                <div className="flex-1" />
+
+                                {/* Visualization Settings Panel */}
+                                <PlotSettingsPanel
+                                    settings={vizSettings}
+                                    onSettingsChange={(newSettings) => {
+                                        setVizSettings(newSettings);
+                                        updateVisualizationSettings(newSettings);
+                                    }}
+                                />
                             </div>
 
                             {/* Canvas Area */}
@@ -184,6 +214,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                         viewportHeight={containerHeight || (containerRef.current?.getBoundingClientRect().height || 400)}
                                         selectedUnitId={selectedUnitId || undefined}
                                         onSelectUnit={handleSelectUnit}
+                                        visualizationSettings={vizSettings}
                                     />
                                 )}
                                 {activeTab === 'LIST' && (

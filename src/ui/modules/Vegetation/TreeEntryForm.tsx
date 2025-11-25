@@ -71,9 +71,9 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             const val = parseFloat(s.gbh);
             if (!isNaN(val)) {
                 if (val < 1) {
-                    warnings.push(`Stem ${i+1}: GBH ${val}cm is too small (likely <1cm).`);
+                    warnings.push(`Stem ${i + 1}: GBH ${val}cm is too small (likely <1cm).`);
                 } else if (val > gbhThreshold) {
-                    warnings.push(`Stem ${i+1}: GBH ${val}cm is unusually large (>${gbhThreshold}cm).`);
+                    warnings.push(`Stem ${i + 1}: GBH ${val}cm is unusually large (>${gbhThreshold}cm).`);
                 }
             }
         });
@@ -182,7 +182,6 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             stemCount: validStems.length,
             condition: 'ALIVE',
             phenology: 'VEGETATIVE',
-            images: [], // Placeholder for future image handling
             validationStatus: status, // Auto-flag if warnings exist
             remarks, // Store warnings for reviewer
             createdAt: now,
@@ -249,7 +248,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     );
 
     return (
-        <div className="fixed inset-0 z-50 bg-[#050814] flex flex-col animate-in slide-in-from-bottom duration-300">
+        <div className="fixed inset-0 z-[60] bg-[#050814] flex flex-col animate-in slide-in-from-bottom duration-300">
             {/* Header */}
             <div className="px-4 py-4 border-b border-[#1d2440] flex items-center justify-between bg-[#0b1020]">
                 <div className="flex items-center gap-3">
@@ -584,7 +583,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             </div>
 
             {/* Footer Actions */}
-            <div className="p-4 border-t border-[#1d2440] bg-[#0b1020] flex gap-3">
+            <div className="p-4 pb-24 md:pb-4 border-t border-[#1d2440] bg-[#0b1020] flex gap-3">
                 {currentStep === 'ID' ? (
                     <>
                         <button
