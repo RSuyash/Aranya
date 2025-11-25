@@ -145,10 +145,13 @@ export function buildPlotVizModel({
     });
 
     // Filter nodes based on visualization settings
+    const showQuadrants = visualizationSettings?.showQuadrants !== false; // Default true
     const showSubplots = visualizationSettings?.showSubplots !== false; // Default true
-    const filteredNodes = showSubplots
-        ? allNodes
-        : allNodes.filter(node => node.role !== 'SUBPLOT');
+    const filteredNodes = allNodes.filter(node => {
+        if (node.role === 'QUADRANT' && !showQuadrants) return false;
+        if (node.role === 'SUBPLOT' && !showSubplots) return false;
+        return true;
+    });
 
     // Map nodes to viz units
     const units: UnitVizNode[] = filteredNodes.map(node => {

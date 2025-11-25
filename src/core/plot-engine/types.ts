@@ -55,7 +55,7 @@ export interface PlotNodeDefinition {
     childrenGenerator?: ChildrenGenerator;
 
     // Metadata for analytics
-    role?: 'MAIN_PLOT' | 'SUBPLOT' | 'TRANSECT' | 'POINT' | 'OTHER';
+    role?: 'MAIN_PLOT' | 'QUADRANT' | 'SUBPLOT' | 'TRANSECT' | 'POINT' | 'OTHER';
     tags?: string[];
 }
 
@@ -77,7 +77,7 @@ export interface PlotNodeInstance {
     rotation?: number;       // Degrees
 
     // [NEW] Propagated Metadata for Querying/Styling
-    role?: 'MAIN_PLOT' | 'SUBPLOT' | 'TRANSECT' | 'POINT' | 'OTHER';
+    role?: 'MAIN_PLOT' | 'QUADRANT' | 'SUBPLOT' | 'TRANSECT' | 'POINT' | 'OTHER';
     tags?: string[];
 
     children: PlotNodeInstance[];

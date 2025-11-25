@@ -5,6 +5,7 @@ export type SyncStatus = 'LOCAL_ONLY' | 'SYNCED' | 'DIRTY' | 'CONFLICT';
 export type ValidationStatus = 'PENDING' | 'VERIFIED' | 'FLAGGED';
 
 export interface PlotVisualizationSettings {
+    showQuadrants: boolean;
     showSubplots: boolean;
     showQuadrantLines: boolean;
     showTreeVisualization: boolean;

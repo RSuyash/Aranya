@@ -7,7 +7,7 @@ import { TreeEntryForm } from './TreeEntryForm';
 import { VegetationEntryForm } from './VegetationEntryForm';
 import { normalizeProgress, summarizeObservations } from './plotVisualizerUtils';
 import { PlotCanvas } from './ui/PlotCanvas';
-import { PlotSettingsPanel } from './ui/PlotSettingsPanel';
+import { PlotSettingsMenu } from './ui/PlotSettingsMenu';
 import { usePlotData } from './data/usePlotData';
 import { usePlotObservations } from './data/usePlotObservations';
 import { generateLayout } from '../../../core/plot-engine/generateLayout';
@@ -64,6 +64,7 @@ export const PlotVisualizerPage: React.FC = () => {
 
     // Visualization Settings State
     const [vizSettings, setVizSettings] = useState<PlotVisualizationSettings>({
+        showQuadrants: true,
         showSubplots: true,
         showQuadrantLines: false,
         showTreeVisualization: true,
@@ -154,7 +155,7 @@ export const PlotVisualizerPage: React.FC = () => {
                         {/* Main Content Area (Map/List) */}
                         <div className="flex-1 flex flex-col relative min-h-0">
                             {/* Tabs / Toolbar */}
-                            <div className="h-12 border-b border-[#1d2440] flex items-center px-4 md:pr-[496px] gap-4 bg-[#0b1020] z-10 flex-shrink-0 overflow-x-auto min-w-0">
+                            <div className="h-12 border-b border-[#1d2440] flex items-center px-4 md:pr-[496px] gap-4 bg-[#0b1020] z-10 flex-shrink-0 min-w-0">
                                 {/* Back Button */}
                                 <button
                                     onClick={() => navigate(`/project/${projectId}/module/${moduleId}`)}
@@ -190,8 +191,8 @@ export const PlotVisualizerPage: React.FC = () => {
                                 {/* Spacer */}
                                 <div className="flex-1" />
 
-                                {/* Visualization Settings Panel */}
-                                <PlotSettingsPanel
+                                {/* Visualization Settings Menu */}
+                                <PlotSettingsMenu
                                     settings={vizSettings}
                                     onSettingsChange={(newSettings) => {
                                         setVizSettings(newSettings);

@@ -5,13 +5,18 @@ interface UnitsLayerProps {
     units: UnitVizNode[];
     selectedUnitId?: string;
     onSelectUnit?: (unitId: string) => void;
+    showQuadrants?: boolean;
     showSubplots?: boolean;
     showQuadrantLines?: boolean;
 }
 
-export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, onSelectUnit, showSubplots = true, showQuadrantLines = false }) => {
-    // Sort by z-index and filter based on showSubplots setting
-    const filteredUnits = showSubplots ? units : units.filter(u => u.role !== 'SUBPLOT');
+export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, onSelectUnit, showQuadrants = true, showSubplots = true, showQuadrantLines = false }) => {
+    // Filter based on role-specific visibility settings
+    const filteredUnits = units.filter(u => {
+        if (u.role === 'QUADRANT' && !showQuadrants) return false;
+        if (u.role === 'SUBPLOT' && !showSubplots) return false;
+        return true;
+    });
     const sortedUnits = [...filteredUnits].sort((a, b) => a.zIndex - b.zIndex);
 
     // Debug logging

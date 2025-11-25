@@ -113,7 +113,7 @@ function processNode(
                         type: 'SAMPLING_UNIT',
                         label: label,
                         shape: childShape,
-                        role: 'SUBPLOT',
+                        role: 'QUADRANT', // Grid children are quadrants, not subplots
                     };
 
                     instance.children.push(processNode(

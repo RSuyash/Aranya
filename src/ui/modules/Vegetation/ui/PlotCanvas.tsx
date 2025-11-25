@@ -85,6 +85,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
                 units={vizModel.units}
                 selectedUnitId={selectedUnitId}
                 onSelectUnit={onSelectUnit}
+                showQuadrants={visualizationSettings?.showQuadrants}
                 showSubplots={visualizationSettings?.showSubplots}
                 showQuadrantLines={visualizationSettings?.showQuadrantLines}
             />
