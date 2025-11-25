@@ -9,32 +9,56 @@ export const TreesLayer: React.FC<TreesLayerProps> = ({ trees }) => {
     return (
         <svg
             className="absolute inset-0 pointer-events-none"
-            style={{ width: '100%', height: '100%', zIndex: 10 }}
+            style={{ width: '100%', height: '100%' }}
         >
-            {trees.map(tree => (
-                <g key={tree.id}>
-                    {/* Tree shadow */}
+            <defs>
+                {/* Radial gradient for tree markers */}
+                <radialGradient id="tree-gradient">
+                    <stop offset="0%" style={{ stopColor: '#52d273', stopOpacity: 1 }} />
+                    <stop offset="70%" style={{ stopColor: '#3ab65c', stopOpacity: 0.95 }} />
+                    <stop offset="100%" style={{ stopColor: '#2a9847', stopOpacity: 0.9 }} />
+                </radialGradient>
+
+                {/* Drop shadow filter */}
+                <filter id="tree-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#52d273" floodOpacity="0.4" />
+                </filter>
+            </defs>
+
+            {trees.map((tree, idx) => (
+                <g key={tree.id} className="tree-marker pointer-events-auto cursor-pointer group">
+                    {/* Outer ring for depth */}
                     <circle
                         cx={tree.screenX}
-                        cy={tree.screenY + 2}
-                        r={tree.radius}
-                        fill="rgba(0, 0, 0, 0.2)"
-                        className="pointer-events-none"
+                        cy={tree.screenY}
+                        r={tree.radius + 2}
+                        fill="none"
+                        stroke="rgba(82, 210, 115, 0.3)"
+                        strokeWidth={1.5}
+                        className="transition-all duration-300 group-hover:stroke-[rgba(82,210,115,0.6)]"
                     />
 
-                    {/* Tree body */}
+                    {/* Main tree circle */}
                     <circle
                         cx={tree.screenX}
                         cy={tree.screenY}
                         r={tree.radius}
-                        fill="#52d273"
-                        stroke="#45b564"
-                        strokeWidth={2}
-                        className="pointer-events-auto cursor-pointer hover:scale-110 transition-transform"
-                        style={{ transformOrigin: `${tree.screenX}px ${tree.screenY}px` }}
-                    >
-                        <title>{tree.speciesName} - {tree.gbh || 'N/A'} cm GBH</title>
-                    </circle>
+                        fill="url(#tree-gradient)"
+                        filter="url(#tree-shadow)"
+                        className="transition-all duration-300"
+                    />
+
+                    {/* Inner highlight for 3D effect */}
+                    <circle
+                        cx={tree.screenX - tree.radius * 0.3}
+                        cy={tree.screenY - tree.radius * 0.3}
+                        r={tree.radius * 0.4}
+                        fill="rgba(255, 255, 255, 0.3)"
+                        className="pointer-events-none"
+                    />
+
+                    {/* Tooltip */}
+                    <title>{tree.speciesName}{tree.gbh ? ` (${tree.gbh}cm)` : ''}</title>
                 </g>
             ))}
         </svg>

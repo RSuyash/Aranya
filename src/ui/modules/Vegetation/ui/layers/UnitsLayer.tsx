@@ -16,41 +16,109 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
             className="absolute inset-0 pointer-events-none"
             style={{ width: '100%', height: '100%' }}
         >
+            <defs>
+                {/* Gradient definitions for modern look */}
+                <linearGradient id="quadrant-gradient-not-started" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: '#1a2332', stopOpacity: 0.8 }} />
+                    <stop offset="100%" style={{ stopColor: '#0f1419', stopOpacity: 0.9 }} />
+                </linearGradient>
+                <linearGradient id="quadrant-gradient-in-progress" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: '#1e3a5f', stopOpacity: 0.85 }} />
+                    <stop offset="100%" style={{ stopColor: '#0f1e33', stopOpacity: 0.95 }} />
+                </linearGradient>
+                <linearGradient id="quadrant-gradient-done" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: '#1a3d2e', stopOpacity: 0.85 }} />
+                    <stop offset="100%" style={{ stopColor: '#0d2419', stopOpacity: 0.95 }} />
+                </linearGradient>
+
+                {/* Glow filter for selection */}
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                    <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+
             {sortedUnits.map(unit => {
                 const isSelected = selectedUnitId === unit.id;
                 const isInteractive = unit.type === 'SAMPLING_UNIT' && unit.role !== 'MAIN_PLOT';
 
+                // Choose gradient based on status
+                let gradientId = 'quadrant-gradient-not-started';
+                if (unit.status === 'IN_PROGRESS') gradientId = 'quadrant-gradient-in-progress';
+                if (unit.status === 'DONE') gradientId = 'quadrant-gradient-done';
+
                 return (
                     <g key={unit.id}>
+                        {/* Main unit rectangle with glassmorphism effect */}
                         <rect
                             x={unit.screenX}
                             y={unit.screenY}
                             width={unit.screenWidth}
                             height={unit.screenHeight}
-                            fill={unit.fillColor}
+                            fill={unit.role === 'MAIN_PLOT' ? unit.fillColor : `url(#${gradientId})`}
                             stroke={unit.strokeColor}
-                            strokeWidth={unit.strokeWidth}
-                            strokeDasharray={unit.role === 'SUBPLOT' ? '4 2' : undefined}
-                            className={isInteractive ? 'pointer-events-auto cursor-pointer hover:opacity-80 transition-opacity' : ''}
+                            strokeWidth={unit.role === 'SUBPLOT' ? 2.5 : isSelected ? 3 : 1.5}
+                            strokeDasharray={unit.role === 'SUBPLOT' ? '6 4' : undefined}
+                            opacity={unit.role === 'MAIN_PLOT' ? 0.3 : 0.95}
+                            className={isInteractive ? 'pointer-events-auto cursor-pointer transition-all duration-300' : ''}
                             onClick={isInteractive && onSelectUnit ? () => onSelectUnit(unit.id) : undefined}
-                            style={{
-                                filter: isSelected ? 'drop-shadow(0 0 8px rgba(86, 204, 242, 0.6))' : undefined,
-                            }}
+                            filter={isSelected ? 'url(#glow)' : undefined}
+                            rx={unit.role === 'SUBPLOT' ? 4 : 2}
                         />
 
-                        {/* Selection ring */}
-                        {isSelected && (
+                        {/* Subtle inner border for depth */}
+                        {isInteractive && (
                             <rect
-                                x={unit.screenX - 3}
-                                y={unit.screenY - 3}
-                                width={unit.screenWidth + 6}
-                                height={unit.screenHeight + 6}
+                                x={unit.screenX + 2}
+                                y={unit.screenY + 2}
+                                width={unit.screenWidth - 4}
+                                height={unit.screenHeight - 4}
                                 fill="none"
-                                stroke="#56ccf2"
-                                strokeWidth={2}
-                                rx={2}
-                                className="pointer-events-none animate-pulse"
+                                stroke="rgba(255, 255, 255, 0.1)"
+                                strokeWidth={1}
+                                rx={unit.role === 'SUBPLOT' ? 3 : 1}
+                                className="pointer-events-none"
                             />
+                        )}
+
+                        {/* Selection ring with pulse animation */}
+                        {isSelected && (
+                            <>
+                                <rect
+                                    x={unit.screenX - 4}
+                                    y={unit.screenY - 4}
+                                    width={unit.screenWidth + 8}
+                                    height={unit.screenHeight + 8}
+                                    fill="none"
+                                    stroke="#56ccf2"
+                                    strokeWidth={2.5}
+                                    rx={unit.role === 'SUBPLOT' ? 6 : 3}
+                                    className="pointer-events-none"
+                                    opacity={0.8}
+                                >
+                                    <animate
+                                        attributeName="opacity"
+                                        values="0.8;0.4;0.8"
+                                        dur="2s"
+                                        repeatCount="indefinite"
+                                    />
+                                </rect>
+                                <rect
+                                    x={unit.screenX - 6}
+                                    y={unit.screenY - 6}
+                                    width={unit.screenWidth + 12}
+                                    height={unit.screenHeight + 12}
+                                    fill="none"
+                                    stroke="#56ccf2"
+                                    strokeWidth={1}
+                                    rx={unit.role === 'SUBPLOT' ? 7 : 4}
+                                    className="pointer-events-none"
+                                    opacity={0.3}
+                                />
+                            </>
                         )}
                     </g>
                 );
