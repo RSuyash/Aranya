@@ -1,11 +1,11 @@
-import { db } from '../../db/db';
-import type { Project, Module, Plot, TreeObservation, VegetationObservation, SamplingUnitProgress } from '../../db/schema';
+import { db } from '../../core/data-model/dexie';
+import type { Project, VegetationModule, Plot, TreeObservation, VegetationObservation, SamplingUnitProgress } from '../../core/data-model/types';
 
 export interface ProjectExportData {
     version: number;
     timestamp: number;
     project: Project;
-    modules: Module[];
+    modules: VegetationModule[]; // Typed specifically for now, can be union later
     plots: Plot[];
     treeObservations: TreeObservation[];
     vegetationObservations: VegetationObservation[];
@@ -19,7 +19,7 @@ export const exportProject = async (projectId: string): Promise<Blob> => {
         db.plots,
         db.treeObservations,
         db.vegetationObservations,
-        db.samplingUnitProgress
+        db.samplingUnits // Changed from samplingUnitProgress to match Dexie table name
     ], async () => {
         const project = await db.projects.get(projectId);
         if (!project) {
@@ -30,7 +30,7 @@ export const exportProject = async (projectId: string): Promise<Blob> => {
         const plots = await db.plots.where('projectId').equals(projectId).toArray();
         const treeObservations = await db.treeObservations.where('projectId').equals(projectId).toArray();
         const vegetationObservations = await db.vegetationObservations.where('projectId').equals(projectId).toArray();
-        const samplingUnitProgress = await db.samplingUnitProgress.where('projectId').equals(projectId).toArray();
+        const samplingUnitProgress = await db.samplingUnits.where('projectId').equals(projectId).toArray();
 
         const exportData: ProjectExportData = {
             version: 1,

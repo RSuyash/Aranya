@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../core/data-model/dexie';
 import type { Plot, VegetationModule } from '../../../core/data-model/types';
-import { Plus, Map, ArrowRight, Calendar, User, X, ArrowLeft, MapPin } from 'lucide-react';
+import { Plus, Map, ArrowRight, Calendar, User, X, ArrowLeft, MapPin, Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { BlueprintRegistry, STD_10x10_QUADRANTS } from '../../../core/plot-engine/blueprints';
 import { generateLayout } from '../../../core/plot-engine/generateLayout';
@@ -56,7 +56,6 @@ export const VegetationModulePage: React.FC = () => {
         const id = uuidv4();
         const now = Date.now();
 
-        // Use module default or fallback to standard
         const vegModule = moduleData as VegetationModule;
         const blueprintId = vegModule.defaultBlueprintId || STD_10x10_QUADRANTS.id;
         const blueprint = BlueprintRegistry.get(blueprintId) || STD_10x10_QUADRANTS;
@@ -88,14 +87,9 @@ export const VegetationModulePage: React.FC = () => {
         };
 
         await db.plots.add(newPlot);
-        console.log('✅ Plot created:', newPlot.id, newPlotName);
-        console.log('📐 Blueprint:', blueprint.id, blueprint.name);
 
-        // CRITICAL FIX: Initialize sampling units from blueprint layout
+        // Initialize sampling units from blueprint layout
         const layout = generateLayout(blueprint, undefined, newPlot.id);
-        console.log('🗺️ Generated layout, children count:', layout.children.length);
-
-        // Recursively collect all sampling units from layout tree
         const collectSamplingUnits = (node: PlotNodeInstance): string[] => {
             const units: string[] = [];
             if (node.type === 'SAMPLING_UNIT') {
@@ -108,9 +102,7 @@ export const VegetationModulePage: React.FC = () => {
         };
 
         const samplingUnitIds = collectSamplingUnits(layout);
-        console.log('📊 Found', samplingUnitIds.length, 'sampling units');
 
-        // Initialize progress tracking for each sampling unit
         for (const samplingUnitId of samplingUnitIds) {
             await db.samplingUnits.add({
                 id: uuidv4(),
@@ -123,13 +115,24 @@ export const VegetationModulePage: React.FC = () => {
                 lastUpdatedAt: now
             });
         }
-        console.log('✅ Initialized', samplingUnitIds.length, 'sampling units in DB');
 
         setIsNewPlotOpen(false);
         setNewPlotName('');
         setNewPlotCode('');
         setGpsCoords(null);
         navigate(`/project/${projectId}/module/${moduleId}/plot/${id}`);
+    };
+
+    const handleDeletePlot = async (e: React.MouseEvent, plotId: string) => {
+        e.stopPropagation();
+        if (confirm("Are you sure you want to delete this plot and all its trees?")) {
+            await db.transaction('rw', [db.plots, db.treeObservations, db.vegetationObservations, db.samplingUnits], async () => {
+                await db.plots.delete(plotId);
+                await db.treeObservations.where('plotId').equals(plotId).delete();
+                await db.vegetationObservations.where('plotId').equals(plotId).delete();
+                await db.samplingUnits.where('plotId').equals(plotId).delete();
+            });
+        }
     };
 
     if (!moduleData) return <div className="p-8 text-white">Loading Module...</div>;
@@ -185,7 +188,7 @@ export const VegetationModulePage: React.FC = () => {
                         <div
                             key={plot.id}
                             onClick={() => navigate(`/project/${projectId}/module/${moduleId}/plot/${plot.id}`)}
-                            className="bg-[#0b1020] border border-[#1d2440] rounded-xl p-4 hover:border-[#52d273]/50 transition cursor-pointer group"
+                            className="bg-[#0b1020] border border-[#1d2440] rounded-xl p-4 hover:border-[#52d273]/50 transition cursor-pointer group relative"
                         >
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
@@ -199,12 +202,21 @@ export const VegetationModulePage: React.FC = () => {
                                         <span className="text-xs text-[#9ba2c0]">{plot.code}</span>
                                     </div>
                                 </div>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] border ${plot.status === 'COMPLETED' ? 'bg-[#0b2214] text-[#52d273] border-[#21452b]' :
-                                    plot.status === 'IN_PROGRESS' ? 'bg-[#071824] text-[#56ccf2] border-[#15324b]' :
-                                        'bg-[#11182b] text-[#9ba2c0] border-[#1d2440]'
-                                    }`}>
-                                    {plot.status.replace('_', ' ')}
-                                </span>
+                                <div className="flex gap-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] border ${plot.status === 'COMPLETED' ? 'bg-[#0b2214] text-[#52d273] border-[#21452b]' :
+                                        plot.status === 'IN_PROGRESS' ? 'bg-[#071824] text-[#56ccf2] border-[#15324b]' :
+                                            'bg-[#11182b] text-[#9ba2c0] border-[#1d2440]'
+                                        }`}>
+                                        {plot.status.replace('_', ' ')}
+                                    </span>
+                                    <button
+                                        onClick={(e) => handleDeletePlot(e, plot.id)}
+                                        className="text-[#9ba2c0] hover:text-[#ff7e67] transition p-1"
+                                        title="Delete Plot"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-2 text-xs text-[#9ba2c0]">

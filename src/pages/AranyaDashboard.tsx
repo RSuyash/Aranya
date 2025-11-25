@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { TreePine, Plus, Map, ArrowRight, BarChart3 } from 'lucide-react';
+import { exportProject, downloadBlob } from '../utils/sync/export';
 
 const AranyaDashboard: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -13,8 +14,6 @@ const AranyaDashboard: React.FC = () => {
     const plots = usePlots(projectId);
     const trees = useTreeObservations(projectId);
 
-
-
     if (!project) {
         return (
             <div className="min-h-screen bg-[#050814] flex items-center justify-center">
@@ -23,7 +22,6 @@ const AranyaDashboard: React.FC = () => {
         );
     }
 
-    // Calculate stats
     // Calculate stats based on active modules to ensure consistency
     const activeModuleIds = new Set(modules.map(m => m.id));
     const activePlots = plots.filter(p => activeModuleIds.has(p.moduleId));
@@ -32,6 +30,25 @@ const AranyaDashboard: React.FC = () => {
     const completedPlots = activePlots.filter(p => p.status === 'COMPLETED').length;
     const totalTrees = trees.length;
     const speciesCount = new Set(trees.map(t => t.speciesName)).size;
+
+    const handleExport = async () => {
+        if (!project) return;
+        try {
+            // 1. Generate the Blob
+            const blob = await exportProject(project.id);
+
+            // 2. Create a clean filename (e.g., "western_ghats_survey_2023-10-27.json")
+            const dateStr = new Date().toISOString().split('T')[0];
+            const safeName = project.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            const filename = `${safeName}_export_${dateStr}.json`;
+
+            // 3. Trigger Download
+            downloadBlob(blob, filename);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Failed to generate export package. Check console for details.');
+        }
+    };
 
     return (
         <div className="min-h-full flex flex-col space-y-6">
@@ -144,13 +161,13 @@ const AranyaDashboard: React.FC = () => {
                             icon={<BarChart3 className="w-6 h-6" />}
                             title="Analysis"
                             description="Generate reports"
-                            onClick={() => { }}
+                            onClick={() => { alert('Analysis module coming soon!') }}
                         />
                         <ActionCard
                             icon={<TreePine className="w-6 h-6" />}
                             title="Export Data"
-                            description="Download CSV/JSON"
-                            onClick={() => { }}
+                            description="Download JSON Backup"
+                            onClick={handleExport}
                         />
                     </div>
                 </section>
@@ -182,7 +199,7 @@ const ActionCard: React.FC<{
             {icon}
         </div>
         <h3 className="font-semibold text-[#f5f7ff] mb-1">{title}</h3>
-        <p className="text-sm text-[#9ba2c0]">{description}</p>
+        <p className="text-sm text-text-muted">{description}</p>
     </button>
 );
 

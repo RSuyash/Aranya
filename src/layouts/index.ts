@@ -1,1 +1,1 @@
-// The Exporter (Makes imports clean)
+export { MainLayout as AppShell } from './MainLayout';

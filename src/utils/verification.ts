@@ -1,4 +1,4 @@
-import { db } from '../db/db';
+import { db } from '../core/data-model/dexie';
 import { v4 as uuidv4 } from 'uuid';
 
 export const verifyDatabaseIntegrity = async () => {
@@ -24,7 +24,7 @@ export const verifyDatabaseIntegrity = async () => {
             collaborators: [],
             createdAt: timestamp,
             updatedAt: timestamp,
-            sync: { syncStatus: 'LOCAL_ONLY', lastModifiedAt: timestamp, lastModifiedBy: 'test' }
+            syncStatus: 'LOCAL_ONLY'
         });
 
         // Add Plot
@@ -48,7 +48,8 @@ export const verifyDatabaseIntegrity = async () => {
             customAttributes: {},
             createdAt: timestamp,
             updatedAt: timestamp,
-            sync: { syncStatus: 'LOCAL_ONLY', lastModifiedAt: timestamp, lastModifiedBy: 'test' }
+            syncStatus: 'LOCAL_ONLY',
+            lastModifiedAt: timestamp
         });
 
         // Add Tree
@@ -70,7 +71,8 @@ export const verifyDatabaseIntegrity = async () => {
             validationStatus: 'PENDING',
             createdAt: timestamp,
             updatedAt: timestamp,
-            sync: { syncStatus: 'LOCAL_ONLY', lastModifiedAt: timestamp, lastModifiedBy: 'test' }
+            syncStatus: 'LOCAL_ONLY',
+            lastModifiedAt: timestamp
         });
 
         // 2. Verify Data Persistence
@@ -122,7 +124,7 @@ export const generateTestData = async () => {
             collaborators: [],
             createdAt: timestamp,
             updatedAt: timestamp,
-            sync: { syncStatus: 'LOCAL_ONLY', lastModifiedAt: timestamp, lastModifiedBy: 'test' }
+            syncStatus: 'LOCAL_ONLY'
         });
 
         // Add Plot
@@ -146,7 +148,8 @@ export const generateTestData = async () => {
             customAttributes: {},
             createdAt: timestamp,
             updatedAt: timestamp,
-            sync: { syncStatus: 'LOCAL_ONLY', lastModifiedAt: timestamp, lastModifiedBy: 'test' }
+            syncStatus: 'LOCAL_ONLY',
+            lastModifiedAt: timestamp
         });
 
         // Add Tree
@@ -168,7 +171,8 @@ export const generateTestData = async () => {
             validationStatus: 'VERIFIED',
             createdAt: timestamp,
             updatedAt: timestamp,
-            sync: { syncStatus: 'LOCAL_ONLY', lastModifiedAt: timestamp, lastModifiedBy: 'test' }
+            syncStatus: 'LOCAL_ONLY',
+            lastModifiedAt: timestamp
         });
     });
 
