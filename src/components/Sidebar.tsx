@@ -22,15 +22,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
     )}>
       {/* Logo Section */}
       <div className={clsx(
-        "h-16 flex items-center border-b border-border transition-all duration-300",
+        "h-16 flex items-center border-b border-border transition-all duration-300 bg-bg-app/50 backdrop-blur-sm",
         collapsed ? "justify-center px-0" : "px-6"
       )}>
         {collapsed ? (
-          <span className="text-xl font-bold text-primary">T</span>
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">T</span>
         ) : (
           <div>
-            <h1 className="text-xl font-bold tracking-wide text-primary">TERRA</h1>
-            <p className="text-xs text-text-muted mt-0.5">Eco-Science Platform</p>
+            <h1 className="text-xl font-bold tracking-wide bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">TERRA</h1>
+            <p className="text-[10px] uppercase tracking-wider text-text-muted mt-0.5">Eco-Science Platform</p>
           </div>
         )}
       </div>
@@ -67,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
       </nav>
 
       {/* User Profile */}
-      <div className="p-3 border-t border-border space-y-2">
+      <div className="p-3 border-t border-border space-y-2 mt-auto">
         <div className={clsx(
           "flex items-center gap-3 p-2 rounded-lg bg-panel-soft border border-border transition-all",
           collapsed ? "justify-center" : "px-3"

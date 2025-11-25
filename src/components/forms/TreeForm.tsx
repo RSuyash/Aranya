@@ -33,10 +33,17 @@ export const TreeForm: React.FC = () => {
                 projectId,
                 moduleId,
                 plotId,
+                samplingUnitId: 'q1', // TODO: Get from context/selection
                 tagNumber: formData.tag,
                 speciesName: formData.species,
+                isUnknown: false,
+                confidenceLevel: 'HIGH',
                 gbh: Number(formData.gbh),
                 height: Number(formData.height),
+                stemCount: 1,
+                condition: 'ALIVE',
+                phenology: 'VEGETATIVE',
+                validationStatus: 'PENDING',
             });
 
             alert('Tree Saved to Database!');

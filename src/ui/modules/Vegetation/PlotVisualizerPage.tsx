@@ -1,0 +1,228 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import { Map as MapIcon, Info } from 'lucide-react';
+import { UnitDetailPanel } from './UnitDetailPanel';
+import { PlotOverviewPanel } from './PlotOverviewPanel';
+import { TreeEntryForm } from './TreeEntryForm';
+import { normalizeProgress, summarizeObservations } from './plotVisualizerUtils';
+import { PlotCanvas } from './ui/PlotCanvas';
+import { usePlotData } from './data/usePlotData';
+import { usePlotObservations } from './data/usePlotObservations';
+import { generateLayout } from '../../../core/plot-engine/generateLayout';
+import { clsx } from 'clsx';
+
+export const PlotVisualizerPage: React.FC = () => {
+    const { projectId, moduleId, plotId } = useParams<{ projectId: string; moduleId: string; plotId: string }>();
+
+    if (!projectId || !moduleId || !plotId) return <div>Invalid URL Parameters</div>;
+
+    // Data
+    const { plot, blueprint, isLoading: plotLoading } = usePlotData(plotId);
+    const { trees, veg, progress } = usePlotObservations(plotId);
+
+    // Derived state
+    const progressByUnit = React.useMemo(() => normalizeProgress(progress), [progress]);
+    const obsSummaryByUnit = React.useMemo(() => summarizeObservations(trees, veg), [trees, veg]);
+
+    // Build unit label map from layout
+    const unitLabelMap = useMemo(() => {
+        if (!blueprint || !plot) return new Map<string, string>();
+
+        const layout = generateLayout(blueprint, undefined, plotId);
+        const map = new Map<string, string>();
+
+        const collectLabels = (node: any) => {
+            map.set(node.id, node.label);
+            node.children?.forEach(collectLabels);
+        };
+
+        collectLabels(layout);
+        return map;
+    }, [blueprint, plot, plotId]);
+
+    // UI State
+    const [containerWidth, setContainerWidth] = useState<number>(0);
+    const [containerHeight, setContainerHeight] = useState<number>(0);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'MAP' | 'LIST'>('MAP');
+    const [isAddingTree, setIsAddingTree] = useState(false);
+
+    // Panel interaction state
+    const [panelFocus, setPanelFocus] = useState<'map' | 'panel' | 'none'>('none');
+    const [panelHeight, setPanelHeight] = useState<number>(320); // 40vh on typical mobile
+
+    // Resize Observer
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        // Immediate measurement
+        const rect = containerRef.current.getBoundingClientRect();
+        console.log('PlotVisualizerPage: Initial container size', rect.width, rect.height);
+        setContainerWidth(rect.width);
+        setContainerHeight(rect.height);
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                console.log('PlotVisualizerPage: ResizeObserver', entry.contentRect.width, entry.contentRect.height);
+                setContainerWidth(entry.contentRect.width);
+                setContainerHeight(entry.contentRect.height);
+            }
+        });
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    // Adjust panel height based on focus
+    useEffect(() => {
+        if (panelFocus === 'map') {
+            // Lower panel to give more map space
+            setPanelHeight(200);
+        } else if (panelFocus === 'panel') {
+            // Raise panel for data entry
+            setPanelHeight(Math.min(window.innerHeight * 0.6, 480));
+        } else {
+            // Default height
+            setPanelHeight(Math.min(window.innerHeight * 0.4, 320));
+        }
+    }, [panelFocus]);
+
+    // Hide AppShell footer on this page
+    useEffect(() => {
+        document.body.classList.add('hide-footer');
+        return () => document.body.classList.remove('hide-footer');
+    }, []);
+
+    // Handlers
+    const handleSelectUnit = (unitId: string) => {
+        console.log('PlotVisualizerPage: Unit selected', unitId);
+        setSelectedUnitId(unitId);
+        setPanelFocus('none');
+    };
+
+    const handleStartSurvey = () => {
+        console.log('PlotVisualizerPage: Start survey clicked', { progressCount: progress.length });
+        // Auto-select first unit
+        if (progress.length > 0) {
+            const firstNotStarted = progress.find(p => p.status === 'NOT_STARTED');
+            const firstUnit = firstNotStarted || progress[0];
+            console.log('PlotVisualizerPage: Selecting first unit', firstUnit);
+            if (firstUnit) {
+                setSelectedUnitId(firstUnit.samplingUnitId);
+            }
+        }
+    };
+
+    // Get actual unit label from layout
+    const selectedUnitLabel = selectedUnitId ? (unitLabelMap.get(selectedUnitId) || selectedUnitId.slice(0, 8)) : "";
+
+    if (plotLoading || !plot) return <div className="p-8 text-white">Loading Plot...</div>;
+
+    return (
+        <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-10 bg-[#050814]">
+            <div className="h-full flex flex-col bg-[#050814] overflow-hidden relative">
+                {/* Main Content Area (Map/List) */}
+                <div className="flex-1 flex flex-col relative min-h-0">
+                    {/* Tabs / Toolbar */}
+                    <div className="h-12 border-b border-[#1d2440] flex items-center px-4 gap-4 bg-[#0b1020] z-10 flex-shrink-0">
+                        <button
+                            onClick={() => setActiveTab('MAP')}
+                            className={clsx(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
+                                activeTab === 'MAP' ? "bg-[#1d2440] text-[#56ccf2]" : "text-[#9ba2c0] hover:text-[#f5f7ff]"
+                            )}
+                        >
+                            <MapIcon className="w-4 h-4" /> Map
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('LIST')}
+                            className={clsx(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
+                                activeTab === 'LIST' ? "bg-[#1d2440] text-[#56ccf2]" : "text-[#9ba2c0] hover:text-[#f5f7ff]"
+                            )}
+                        >
+                            <Info className="w-4 h-4" /> List
+                        </button>
+                    </div>
+
+                    {/* Canvas Area */}
+                    <div
+                        className="flex-1 relative overflow-hidden bg-[#050814]"
+                        ref={containerRef}
+                        onClick={() => setPanelFocus('map')}
+                        style={{ minHeight: '200px' }}
+                    >
+                        {activeTab === 'MAP' && (
+                            <PlotCanvas
+                                plotId={plotId}
+                                viewportWidth={containerWidth || (containerRef.current?.getBoundingClientRect().width || 400)}
+                                viewportHeight={containerHeight || (containerRef.current?.getBoundingClientRect().height || 400)}
+                                selectedUnitId={selectedUnitId || undefined}
+                                onSelectUnit={handleSelectUnit}
+                            />
+                        )}
+                        {activeTab === 'LIST' && (
+                            <div className="p-8 text-[#9ba2c0] text-center">
+                                List View Coming Soon
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right Panel / Bottom Sheet Area - Overlay on Desktop, Bottom sheet on Mobile */}
+                <div
+                    className={clsx(
+                        "bg-[#0b1020] border-[#1d2440] shadow-2xl transition-all duration-300 overflow-y-auto",
+                        // Mobile: bottom sheet
+                        "fixed bottom-0 left-0 right-0 border-t md:border-t-0",
+                        // Desktop: right sidebar overlay - wider for better content display
+                        "md:fixed md:top-[64px] md:right-0 md:bottom-0 md:left-auto md:w-[480px] md:border-l md:p-6",
+                        isAddingTree && "h-full top-0 md:top-[64px] z-30",
+                        !isAddingTree && "z-20"
+                    )}
+                    style={{
+                        height: isAddingTree ? '100%' : (window.innerWidth >= 768 ? 'calc(100vh - 64px)' : `${panelHeight}px`),
+                    }}
+                    onClick={() => !isAddingTree && setPanelFocus('panel')}
+                >
+                    {isAddingTree && selectedUnitId ? (
+                        <TreeEntryForm
+                            projectId={projectId}
+                            moduleId={moduleId}
+                            plotId={plotId}
+                            unitId={selectedUnitId}
+                            unitLabel={selectedUnitLabel}
+                            onClose={() => setIsAddingTree(false)}
+                            onSaveSuccess={() => {
+                                // Refresh data handled by live query
+                            }}
+                        />
+                    ) : selectedUnitId ? (
+                        <UnitDetailPanel
+                            projectId={projectId}
+                            moduleId={moduleId}
+                            plotId={plotId}
+                            unitId={selectedUnitId}
+                            unitLabel={selectedUnitLabel}
+                            onClose={() => setSelectedUnitId(null)}
+                            progress={progressByUnit[selectedUnitId]}
+                            obsSummary={obsSummaryByUnit[selectedUnitId]}
+                            onAddTree={() => setIsAddingTree(true)}
+                            onAddVeg={() => alert("Veg entry coming soon")}
+                            onNextUnit={() => { }}
+                            onPrevUnit={() => { }}
+                        />
+                    ) : (
+                        <PlotOverviewPanel
+                            plot={plot}
+                            progressByUnit={progressByUnit}
+                            obsSummaryByUnit={obsSummaryByUnit}
+                            onStartSurvey={handleStartSurvey}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+

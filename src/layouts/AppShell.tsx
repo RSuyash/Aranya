@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
+import { Footer } from '../components/Footer';
 import clsx from 'clsx';
 
 export const AppShell: React.FC = () => {
@@ -39,17 +40,22 @@ export const AppShell: React.FC = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 min-w-0 h-full overflow-y-auto scroll-smooth relative">
+            <div className="flex-1 min-w-0 h-full overflow-y-auto scroll-smooth relative flex flex-col">
                 <Header
                     onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     onToggleSidebar={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
                     collapsed={isDesktopCollapsed}
                 />
 
-                <main className="p-4 md:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500 pb-20">
-                    <Outlet />
+                <main className="flex-1 p-4 md:p-8 w-full animate-in fade-in duration-500">
+                    <div className="max-w-7xl mx-auto w-full">
+                        <Outlet />
+                    </div>
                 </main>
+
+                <Footer />
             </div>
         </div>
     );
 };
+

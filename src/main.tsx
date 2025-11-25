@@ -2,6 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { seedDemoProjectIfEmpty } from './core/data-model/seed'
+
+// Seed the database
+seedDemoProjectIfEmpty().catch(console.error);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

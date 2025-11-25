@@ -1,5 +1,5 @@
-import React from 'react';
-import { IconProps } from 'phosphor-react';
+import type React from 'react';
+import { type IconProps } from 'phosphor-react';
 import clsx from 'clsx';
 
 interface ModuleCardProps {

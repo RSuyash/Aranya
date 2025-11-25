@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Project Terra – Environmental Science & EIA Universe Map</title>
+    <style>
+        :root {
+            --bg: #050814;
+            --panel: #0b1020;
+            --panel-soft: #11182b;
+            --text: #f5f7ff;
+            --muted: #9ba2c0;
+            --accent: #56ccf2;
+            --accent-soft: rgba(86, 204, 242, 0.12);
+            --done: #52d273;
+            --designed: #f2c94c;
+            --planned: #ff7e67;
+            --future: #8884ff;
+            --border: #1d2440;
+            --badge-bg: #141b33;
+            --scrollbar: #2c355b;
+            --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.5);
+            --radius-xl: 18px;
+            --radius-lg: 14px;
+            --radius-pill: 999px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            background: radial-gradient(circle at top, #11193b 0, #050814 50%, #02030a 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-root {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 16px 20px;
+            gap: 10px;
+            color-scheme: dark;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .title-block h1 {
+            font-size: 1.4rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #e6ecff;
+            margin-bottom: 2px;
+        }
+
+        .title-block p {
+            font-size: 0.86rem;
+            color: var(--muted);
+            max-width: 520px;
+        }
+
+        .status-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            background: rgba(12, 18, 40, 0.9);
+            border: 1px solid rgba(65, 81, 128, 0.6);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-done {
+            background: var(--done);
+        }
+
+        .dot-designed {
+            background: var(--designed);
+        }
+
+        .dot-planned {
+            background: var(--planned);
+        }
+
+        .dot-future {
+            background: var(--future);
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 0.77rem;
+            color: var(--muted);
+        }
+
+        .filter-label {
+            opacity: 0.8;
+        }
+
+        .chip-button {
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border);
+            background: rgba(9, 15, 35, 0.9);
+            color: var(--muted);
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
+        }
+
+        .chip-button span.dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .chip-button[data-status="DONE"] .dot {
+            background: var(--done);
+        }
+
+        .chip-button[data-status="DESIGNED"] .dot {
+            background: var(--designed);
+        }
+
+        .chip-button[data-status="PLANNED"] .dot {
+            background: var(--planned);
+        }
+
+        .chip-button[data-status="FUTURE"] .dot {
+            background: var(--future);
+        }
+
+        .chip-button.active {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .chip-button:active {
+            transform: translateY(0);
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: minmax(180px, 1.5fr) minmax(420px, 3fr) minmax(240px, 2.2fr);
+            gap: 14px;
+            min-height: 0;
+        }
+
+        .panel {
+            background: radial-gradient(circle at top left, #131a36 0, #070b17 45%, #050814 100%);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(50, 65, 120, 0.9);
+            box-shadow: var(--shadow-soft);
+            padding: 12px 12px 14px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            inset: -40px;
+            background: radial-gradient(circle at top, rgba(86, 204, 242, 0.18) 0, transparent 55%);
+            opacity: 0.28;
+            mix-blend-mode: screen;
+            pointer-events: none;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .panel-header h2 {
+            font-size: 0.9rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #a9b4ff;
+        }
+
+        .panel-header small {
+            font-size: 0.7rem;
+            color: var(--muted);
+        }
+
+        .panel-body {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            overflow: auto;
+            padding-right: 4px;
+        }
+
+        /* Custom scrollbar */
+        .panel-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .panel-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .panel-body::-webkit-scrollbar-thumb {
+            background: var(--scrollbar);
+            border-radius: 999px;
+        }
+
+        /* LEFT: Domain list */
+
+        .domain-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .domain {
+            background: rgba(10, 14, 30, 0.9);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            position: relative;
+        }
+
+        .domain-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .domain-title span {
+            opacity: 0.9;
+        }
+
+        .domain-tag {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: var(--radius-pill);
+            border: 1px solid rgba(86, 204, 242, 0.5);
+            color: var(--accent);
+        }
+
+        .domain-desc {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        /* CENTER: Universe map */
+
+        .universe-map {
+            position: relative;
+            padding: 10px 2px 4px;
+            min-height: 0;
+        }
+
+        .universe-core {
+            position: relative;
+            margin: 0 auto 10px;
+            width: 220px;
+            border-radius: 999px;
+            padding: 8px 14px;
+            background: radial-gradient(circle at top, #2835a8 0, #111632 55%, #050817 100%);
+            border: 1px solid rgba(125, 144, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .universe-core-title {
+            font-size: 0.82rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #f0f2ff;
+        }
+
+        .universe-core-sub {
+            font-size: 0.7rem;
+            color: var(--muted);
+        }
+
+        .ring-container {
+            margin-top: 6px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .ring-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .module-cluster {
+            background: rgba(8, 12, 28, 0.96);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 6px 8px 8px;
+            position: relative;
+        }
+
+        .module-cluster h3 {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #c5ceff;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .cluster-label {
+            font-size: 0.65rem;
+            color: var(--muted);
+        }
+
+        .module-items {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .module-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 6px;
+            border-radius: 10px;
+            background: rgba(5, 9, 22, 0.96);
+            border: 1px solid rgba(35, 47, 91, 0.9);
+            font-size: 0.72rem;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+        }
+
+        .module-item::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(86, 204, 242, 0.12), transparent 40%, transparent 60%, rgba(82, 210, 115, 0.08));
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .module-item:hover {
+            transform: translateY(-1px);
+            border-color: rgba(111, 207, 151, 0.9);
+        }
+
+        .module-item:hover::after {
+            opacity: 1;
+        }
+
+        .module-name {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .module-name-main {
+            font-weight: 500;
+        }
+
+        .module-name-sub {
+            font-size: 0.65rem;
+            color: var(--muted);
+        }
+
+        .status-pill {
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .status-pill span.dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .status-DONE {
+            background: rgba(82, 210, 115, 0.16);
+            border: 1px solid rgba(82, 210, 115, 0.9);
+            color: var(--done);
+        }
+
+        .status-DONE span.dot {
+            background: var(--done);
+        }
+
+        .status-DESIGNED {
+            background: rgba(242, 201, 76, 0.12);
+            border: 1px solid rgba(242, 201, 76, 0.9);
+            color: var(--designed);
+        }
+
+        .status-DESIGNED span.dot {
+            background: var(--designed);
+        }
+
+        .status-PLANNED {
+            background: rgba(255, 126, 103, 0.12);
+            border: 1px solid rgba(255, 126, 103, 0.9);
+            color: var(--planned);
+        }
+
+        .status-PLANNED span.dot {
+            background: var(--planned);
+        }
+
+        .status-FUTURE {
+            background: rgba(136, 132, 255, 0.12);
+            border: 1px solid rgba(136, 132, 255, 0.9);
+            color: var(--future);
+        }
+
+        .status-FUTURE span.dot {
+            background: var(--future);
+        }
+
+        .module-item.dimmed {
+            opacity: 0.25;
+            filter: grayscale(0.4);
+        }
+
+        /* RIGHT: Terra progress panel */
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.78rem;
+        }
+
+        .timeline-section-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #c0cafc;
+            margin-bottom: 2px;
+        }
+
+        .timeline-row {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .timeline-marker {
+            margin-top: 3px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 10px rgba(86, 204, 242, 0.8);
+            flex-shrink: 0;
+        }
+
+        .timeline-card {
+            flex: 1;
+            border-radius: var(--radius-lg);
+            background: rgba(6, 10, 24, 0.96);
+            border: 1px solid rgba(60, 73, 130, 0.9);
+            padding: 6px 8px;
+        }
+
+        .timeline-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .timeline-card-title {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .timeline-card-status {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            border: 1px solid rgba(82, 210, 115, 0.9);
+            color: var(--done);
+            background: rgba(82, 210, 115, 0.1);
+        }
+
+        .timeline-card-status.planned {
+            border-color: var(--planned);
+            color: var(--planned);
+            background: rgba(255, 126, 103, 0.1);
+        }
+
+        .timeline-card-status.designed {
+            border-color: var(--designed);
+            color: var(--designed);
+            background: rgba(242, 201, 76, 0.1);
+        }
+
+        .timeline-card-body {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        .timeline-card-body ul {
+            margin-left: 16px;
+            margin-top: 2px;
+        }
+
+        .timeline-card-body li {
+            margin-bottom: 2px;
+        }
+
+        @media (max-width: 1100px) {
+            main {
+                grid-template-columns: minmax(220px, 1.3fr) minmax(340px, 2.1fr);
+                grid-template-rows: minmax(260px, 1.5fr) minmax(220px, 1.2fr);
+            }
+
+            .panel:nth-child(3) {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 840px) {
+            body {
+                overflow: auto;
+            }
+
+            .app-root {
+                height: auto;
+            }
+
+            main {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                height: auto;
+            }
+
+            .panel {
+                max-height: 420px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-root">
+        <header>
+            <div class="title-block">
+                <h1>Project Terra — Environmental Science & EIA Universe</h1>
+                <p>
+                    A high-level map of ecological research, EIA & ESG tools — and where Terra currently stands
+                    in that universe.
+                </p>
+            </div>
+            <div>
+                <div class="status-legend">
+                    <div class="legend-item"><span class="legend-dot dot-done"></span> DONE (Terra)</div>
+                    <div class="legend-item"><span class="legend-dot dot-designed"></span> DESIGNED</div>
+                    <div class="legend-item"><span class="legend-dot dot-planned"></span> PLANNED</div>
+                    <div class="legend-item"><span class="legend-dot dot-future"></span> FUTURE / IDEA</div>
+                </div>
+                <div class="filter-bar" style="margin-top:6px;">
+                    <span class="filter-label">Highlight:</span>
+                    <button class="chip-button active" data-filter="ALL">
+                        <span class="dot"
+                            style="background: linear-gradient(135deg, var(--done), var(--accent));"></span>
+                        All
+                    </button>
+                    <button class="chip-button" data-filter="DONE" data-status="DONE">
+                        <span class="dot"></span> Done
+                    </button>
+                    <button class="chip-button" data-filter="DESIGNED" data-status="DESIGNED">
+                        <span class="dot"></span> Designed
+                    </button>
+                    <button class="chip-button" data-filter="PLANNED" data-status="PLANNED">
+                        <span class="dot"></span> Planned
+                    </button>
+                    <button class="chip-button" data-filter="FUTURE" data-status="FUTURE">
+                        <span class="dot"></span> Future
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- LEFT: Domains -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Domains</h2>
+                    <small>Ecology • EIA • ESG • Climate</small>
+                </div>
+                <div class="panel-body">
+                    <div class="domain-list">
+                        <div class="domain">
+                            <div class="domain-title">
+                                <span>Field Ecology & Biodiversity</span>
+                                <span class="domain-tag">Core Science</span>
+                            </div>
+                            <p class="domain-desc">
+                                Vegetation, wildlife, communities, diversity, species–area, habitats.
+                            </p>
+                        </div>
+                        <div class="domain">
+                            <div class="domain-title">
+                                <span>Environmental Impact Assessment (EIA)</span>
+                                <span class="domain-tag">Regulation</span>
+                            </div>
+                            <p class="domain-desc">
+                                Baseline studies, impact prediction, mitigation, monitoring & compliance.
+                            </p>
+                        </div>
+                        <div class="domain">
+                            <div class="domain-title">
+                                <span>ESG & Sustainability</span>
+                                <span class="domain-tag">Disclosure</span>
+                            </div>
+                            <p class="domain-desc">
+                                Biodiversity metrics, water & energy, carbon, nature-positive reporting.
+                            </p>
+                        </div>
+                        <div class="domain">
+                            <div class="domain-title">
+                                <span>Pollution & Health</span>
+                                <span class="domain-tag">Air • Noise • Soil</span>
+                            </div>
+                            <p class="domain-desc">
+                                Air quality, noise, soil contamination, exposure & risk assessments.
+                            </p>
+                        </div>
+                        <div class="domain">
+                            <div class="domain-title">
+                                <span>Water & Wetlands</span>
+                                <span class="domain-tag">Hydro • Quality</span>
+                            </div>
+                            <p class="domain-desc">
+                                Surface & groundwater quality, macroinvertebrates, hydrology, wetlands.
+                            </p>
+                        </div>
+                        <div class="domain">
+                            <div class="domain-title">
+                                <span>Climate, Carbon & Land Use</span>
+                                <span class="domain-tag">Carbon</span>
+                            </div>
+                            <p class="domain-desc">
+                                Carbon stocks, biomass, land-use change, remote sensing & restoration.
+                            </p>
+                        </div>
+                        <div class="domain">
+                            <div class="domain-title">
+                                <span>Data, GIS & Platforms</span>
+                                <span class="domain-tag">Infra</span>
+                            </div>
+                            <p class="domain-desc">
+                                Offline field apps, spatial engines, analysis pipelines, reporting.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CENTER: Universe map -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Ecological & EIA Tool Universe</h2>
+                    <small>Modules & workflows you can plug into Terra</small>
+                </div>
+                <div class="panel-body">
+                    <div class="universe-map">
+                        <div class="universe-core">
+                            <div class="universe-core-title">Project Terra</div>
+                            <div class="universe-core-sub">Project → Modules → Data → Analysis</div>
+                        </div>
+                        <div class="ring-container">
+                            <div class="ring-column">
+                                <div class="module-cluster">
+                                    <h3>
+                                        Vegetation & Habitat
+                                        <span class="cluster-label">Field ecology backbone</span>
+                                    </h3>
+                                    <div class="module-items">
+                                        <div class="module-item" data-status="DONE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Vegetation Plots Engine</span>
+                                                <span class="module-name-sub">Blueprints, plot layout, sampling
+                                                    units</span>
+                                            </div>
+                                            <div class="status-pill status-DONE">
+                                                <span class="dot"></span> DONE (Terra)
+                                            </div>
+                                        </div>
+
+                                        <div class="module-item" data-status="DONE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Vegetation Data Model</span>
+                                                <span class="module-name-sub">Project/Module/Plot/Tree/Understory
+                                                    schema</span>
+                                            </div>
+                                            <div class="status-pill status-DONE">
+                                                <span class="dot"></span> DONE (Terra)
+                                            </div>
+                                        </div>
+
+                                        <div class="module-item" data-status="DONE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">SAC & Diversity Analytics</span>
+                                                <span class="module-name-sub">Species–area, Shannon, Simpson, IVI</span>
+                                            </div>
+                                            <div class="status-pill status-DONE">
+                                                <span class="dot"></span> DONE (Terra)
+                                            </div>
+                                        </div>
+
+                                        <div class="module-item" data-status="DESIGNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Field App UX – Vegetation</span>
+                                                <span class="module-name-sub">Quadrant grid, tree & herb
+                                                    workflows</span>
+                                            </div>
+                                            <div class="status-pill status-DESIGNED">
+                                                <span class="dot"></span> DESIGNED
+                                            </div>
+                                        </div>
+
+                                        <div class="module-item" data-status="PLANNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Habitat Quality Scoring</span>
+                                                <span class="module-name-sub">Deadwood, canopy structure, disturbance
+                                                    index</span>
+                                            </div>
+                                            <div class="status-pill status-PLANNED">
+                                                <span class="dot"></span> PLANNED
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="module-cluster">
+                                    <h3>
+                                        Water & Wetlands
+                                        <span class="cluster-label">Hydrology & quality</span>
+                                    </h3>
+                                    <div class="module-items">
+                                        <div class="module-item" data-status="PLANNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Water Quality Module</span>
+                                                <span class="module-name-sub">DO, pH, nutrients, coliform, WQI</span>
+                                            </div>
+                                            <div class="status-pill status-PLANNED">
+                                                <span class="dot"></span> PLANNED
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="FUTURE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Macroinvertebrate Bioindicators</span>
+                                                <span class="module-name-sub">BMWP, ASPT, river health classes</span>
+                                            </div>
+                                            <div class="status-pill status-FUTURE">
+                                                <span class="dot"></span> FUTURE
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="FUTURE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Wetland Inventory</span>
+                                                <span class="module-name-sub">Ramsar criteria, HGM types, buffers</span>
+                                            </div>
+                                            <div class="status-pill status-FUTURE">
+                                                <span class="dot"></span> FUTURE
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="module-cluster">
+                                    <h3>
+                                        Wildlife & Biodiversity
+                                        <span class="cluster-label">Fauna, occupancy, richness</span>
+                                    </h3>
+                                    <div class="module-items">
+                                        <div class="module-item" data-status="PLANNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Bird Survey Module</span>
+                                                <span class="module-name-sub">Point counts, transects, species
+                                                    lists</span>
+                                            </div>
+                                            <div class="status-pill status-PLANNED">
+                                                <span class="dot"></span> PLANNED
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="FUTURE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Camera Trap Analytics</span>
+                                                <span class="module-name-sub">Events, activity peaks, occupancy</span>
+                                            </div>
+                                            <div class="status-pill status-FUTURE">
+                                                <span class="dot"></span> FUTURE
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="FUTURE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Herpetofauna & Invertebrate
+                                                    Surveys</span>
+                                                <span class="module-name-sub">VES, pitfall traps, indicator
+                                                    species</span>
+                                            </div>
+                                            <div class="status-pill status-FUTURE">
+                                                <span class="dot"></span> FUTURE
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ring-column">
+                                <div class="module-cluster">
+                                    <h3>
+                                        Pollution & EIA Baseline
+                                        <span class="cluster-label">Impact & compliance</span>
+                                    </h3>
+                                    <div class="module-items">
+                                        <div class="module-item" data-status="PLANNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Noise Monitoring</span>
+                                                <span class="module-name-sub">dB(A) profiles, day–night levels,
+                                                    compliance</span>
+                                            </div>
+                                            <div class="status-pill status-PLANNED">
+                                                <span class="dot"></span> PLANNED
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="PLANNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Air Quality Baseline</span>
+                                                <span class="module-name-sub">PM2.5, PM10, NOx, AQI dashboards</span>
+                                            </div>
+                                            <div class="status-pill status-PLANNED">
+                                                <span class="dot"></span> PLANNED
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="FUTURE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Soil Contamination</span>
+                                                <span class="module-name-sub">Heavy metals, risk classification</span>
+                                            </div>
+                                            <div class="status-pill status-FUTURE">
+                                                <span class="dot"></span> FUTURE
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="FUTURE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">BACI / Impact Comparisons</span>
+                                                <span class="module-name-sub">Before–After–Control–Impact
+                                                    analytics</span>
+                                            </div>
+                                            <div class="status-pill status-FUTURE">
+                                                <span class="dot"></span> FUTURE
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="module-cluster">
+                                    <h3>
+                                        Carbon, Land Use & ESG
+                                        <span class="cluster-label">Climate & reporting</span>
+                                    </h3>
+                                    <div class="module-items">
+                                        <div class="module-item" data-status="DESIGNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Carbon & Biomass Estimation</span>
+                                                <span class="module-name-sub">Allometry from tree data,
+                                                    C-stock/ha</span>
+                                            </div>
+                                            <div class="status-pill status-DESIGNED">
+                                                <span class="dot"></span> DESIGNED
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="FUTURE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">LULC & Remote Sensing</span>
+                                                <span class="module-name-sub">Change detection, NDVI, urban
+                                                    expansion</span>
+                                            </div>
+                                            <div class="status-pill status-FUTURE">
+                                                <span class="dot"></span> FUTURE
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="FUTURE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">ESG Biodiversity Metrics</span>
+                                                <span class="module-name-sub">Nature-positive KPIs, disclosure-ready
+                                                    exports</span>
+                                            </div>
+                                            <div class="status-pill status-FUTURE">
+                                                <span class="dot"></span> FUTURE
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="module-cluster">
+                                    <h3>
+                                        Platform & Infrastructure
+                                        <span class="cluster-label">Terra spine</span>
+                                    </h3>
+                                    <div class="module-items">
+                                        <div class="module-item" data-status="DONE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Project & Module Architecture</span>
+                                                <span class="module-name-sub">Projects → Modules → Data model</span>
+                                            </div>
+                                            <div class="status-pill status-DONE">
+                                                <span class="dot"></span> DONE (Terra)
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="DONE">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Offline-First Data Model</span>
+                                                <span class="module-name-sub">Dexie schema, sync meta, versioning
+                                                    hooks</span>
+                                            </div>
+                                            <div class="status-pill status-DONE">
+                                                <span class="dot"></span> DONE (Terra)
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="PLANNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Sync & Collaboration</span>
+                                                <span class="module-name-sub">Multi-device sync, conflict resolution,
+                                                    roles</span>
+                                            </div>
+                                            <div class="status-pill status-PLANNED">
+                                                <span class="dot"></span> PLANNED
+                                            </div>
+                                        </div>
+                                        <div class="module-item" data-status="PLANNED">
+                                            <div class="module-name">
+                                                <span class="module-name-main">Reporting & Export Suite</span>
+                                                <span class="module-name-sub">CSV, GIS, EIA-ready report blocks</span>
+                                            </div>
+                                            <div class="status-pill status-PLANNED">
+                                                <span class="dot"></span> PLANNED
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div> <!-- ring-container -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT: Your current Terra progress -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Terra — Current Status</h2>
+                    <small>What’s already solid vs what’s next</small>
+                </div>
+                <div class="panel-body">
+                    <div class="timeline">
+                        <div>
+                            <div class="timeline-section-title">Core Architecture</div>
+                            <div class="timeline-row">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-card">
+                                    <div class="timeline-card-header">
+                                        <div class="timeline-card-title">Project & Module System</div>
+                                        <div class="timeline-card-status">DONE</div>
+                                    </div>
+                                    <div class="timeline-card-body">
+                                        <ul>
+                                            <li>Project as container for many scientific modules.</li>
+                                            <li>Vegetation module fully modeled with plots & observations.</li>
+                                            <li>Ready for Bird, Water, Pollution, ESG modules to plug in.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-row">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-card">
+                                    <div class="timeline-card-header">
+                                        <div class="timeline-card-title">Offline Data Model & Sync Hooks</div>
+                                        <div class="timeline-card-status">DONE</div>
+                                    </div>
+                                    <div class="timeline-card-body">
+                                        <ul>
+                                            <li>Dexie schema for Projects, Modules, Plots, Trees, Vegetation.</li>
+                                            <li>SamplingUnitProgress for quadrant/subplot completion.</li>
+                                            <li>SyncMeta concept: <code>syncStatus</code>, <code>remoteId</code>, device
+                                                IDs.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="timeline-section-title">Vegetation Tooling</div>
+                            <div class="timeline-row">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-card">
+                                    <div class="timeline-card-header">
+                                        <div class="timeline-card-title">Plot Engine & Layout</div>
+                                        <div class="timeline-card-status">DONE</div>
+                                    </div>
+                                    <div class="timeline-card-body">
+                                        <ul>
+                                            <li>Blueprint → Instance engine with GRID / NESTED / FIXED layouts.</li>
+                                            <li>PlotNodeInstance with stable IDs and SW-origin coordinates.</li>
+                                            <li>Renderer logic for clickable sampling units (quadrants/subplots).</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-row">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-card">
+                                    <div class="timeline-card-header">
+                                        <div class="timeline-card-title">Tree & Understory Data Model</div>
+                                        <div class="timeline-card-status">DONE</div>
+                                    </div>
+                                    <div class="timeline-card-body">
+                                        <ul>
+                                            <li>Multi-stem trees with raw stems & equivalent GBH.</li>
+                                            <li>Tree vs vegetation observations linked to <code>samplingUnitId</code>.
+                                            </li>
+                                            <li>Species list control via module-level taxonomy.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-row">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-card">
+                                    <div class="timeline-card-header">
+                                        <div class="timeline-card-title">Analysis Logic – Vegetation</div>
+                                        <div class="timeline-card-status">DONE</div>
+                                    </div>
+                                    <div class="timeline-card-body">
+                                        <ul>
+                                            <li>Species–Area Curve (cumulative & random accumulation).</li>
+                                            <li>Diversity indices: Shannon, Simpson, IVI, RA, RF, RD.</li>
+                                            <li>Multi-stem basal area & equivalent GBH definitions.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-row">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-card">
+                                    <div class="timeline-card-header">
+                                        <div class="timeline-card-title">Field UX – Vegetation</div>
+                                        <div class="timeline-card-status designed">DESIGNED</div>
+                                    </div>
+                                    <div class="timeline-card-body">
+                                        <ul>
+                                            <li>“Day 1 setup” → Project + Species list + Blueprint selection.</li>
+                                            <li>Offline grid-based quadrat UI with SamplingUnitProgress.</li>
+                                            <li>Workflows for trees, herbs/shrubs, canopy photos & validation.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="timeline-section-title">Next Wave</div>
+                            <div class="timeline-row">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-card">
+                                    <div class="timeline-card-header">
+                                        <div class="timeline-card-title">Bird Survey & Water Quality Modules</div>
+                                        <div class="timeline-card-status planned">PLANNED</div>
+                                    </div>
+                                    <div class="timeline-card-body">
+                                        <ul>
+                                            <li>Define BirdSurveyModule schema (points, transects, detections).</li>
+                                            <li>Define WaterQualityModule (sampling sites, parameters, WQI logic).</li>
+                                            <li>Reuse Terra architecture: <code>projectId</code> + <code>moduleId</code>
+                                                everywhere.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-row">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-card">
+                                    <div class="timeline-card-header">
+                                        <div class="timeline-card-title">Sync, Collaboration & Reporting</div>
+                                        <div class="timeline-card-status planned">PLANNED</div>
+                                    </div>
+                                    <div class="timeline-card-body">
+                                        <ul>
+                                            <li>Background sync to backend; ZIP export for safety.</li>
+                                            <li>Role-based collaboration based on Project + Module membership.</li>
+                                            <li>EIA-ready exports: GIS layers, CSV, PDF report sections.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Simple status filter logic
+        (function () {
+            const buttons = Array.from(document.querySelectorAll('.chip-button'));
+            const modules = Array.from(document.querySelectorAll('.module-item'));
+
+            function applyFilter(filter) {
+                modules.forEach(mod => {
+                    const status = mod.getAttribute('data-status');
+                    if (filter === 'ALL') {
+                        mod.classList.remove('dimmed');
+                    } else {
+                        if (status === filter) {
+                            mod.classList.remove('dimmed');
+                        } else {
+                            mod.classList.add('dimmed');
+                        }
+                    }
+                });
+            }
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const filter = btn.getAttribute('data-filter');
+                    applyFilter(filter);
+                });
+            });
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,105 @@
+{
+    "version": 1,
+    "timestamp": 1716624000000,
+    "project": {
+        "id": "dummy-project-001",
+        "name": "Amazon Rainforest Survey (Dummy)",
+        "description": "A sample project to test import functionality. Contains dummy plots and trees.",
+        "ownerId": "user-123",
+        "ownerName": "Dr. Jane Doe",
+        "collaborators": [],
+        "createdAt": 1716624000000,
+        "updatedAt": 1716624000000,
+        "sync": {
+            "syncStatus": "LOCAL_ONLY",
+            "lastModifiedAt": 1716624000000,
+            "lastModifiedBy": "device-1"
+        }
+    },
+    "modules": [
+        {
+            "id": "module-veg-001",
+            "projectId": "dummy-project-001",
+            "type": "VEGETATION_PLOTS",
+            "name": "Vegetation Module",
+            "status": "ACTIVE",
+            "samplingMethod": "RANDOM",
+            "validationSettings": {
+                "maxGpsAccuracyM": 10,
+                "mandatoryPhotos": false
+            },
+            "customPlotAttributes": [],
+            "createdAt": 1716624000000,
+            "updatedAt": 1716624000000,
+            "sync": {
+                "syncStatus": "LOCAL_ONLY",
+                "lastModifiedAt": 1716624000000,
+                "lastModifiedBy": "device-1"
+            }
+        }
+    ],
+    "plots": [
+        {
+            "id": "plot-001",
+            "projectId": "dummy-project-001",
+            "moduleId": "module-veg-001",
+            "blueprintId": "std-10x10",
+            "blueprintVersion": 1,
+            "name": "Plot A-1",
+            "code": "P-A1",
+            "coordinates": {
+                "lat": -3.4653,
+                "lng": -62.2159,
+                "accuracyM": 5
+            },
+            "orientation": 0,
+            "slope": 5,
+            "aspect": "N",
+            "habitatType": "Terra Firme",
+            "images": [],
+            "status": "IN_PROGRESS",
+            "surveyors": [
+                "Jane Doe"
+            ],
+            "surveyDate": "2024-05-25",
+            "customAttributes": {},
+            "createdAt": 1716624000000,
+            "updatedAt": 1716624000000,
+            "sync": {
+                "syncStatus": "LOCAL_ONLY",
+                "lastModifiedAt": 1716624000000,
+                "lastModifiedBy": "device-1"
+            }
+        }
+    ],
+    "treeObservations": [
+        {
+            "id": "tree-001",
+            "projectId": "dummy-project-001",
+            "moduleId": "module-veg-001",
+            "plotId": "plot-001",
+            "samplingUnitId": "q1",
+            "tagNumber": "T-001",
+            "speciesName": "Bertholletia excelsa",
+            "commonName": "Brazil Nut",
+            "isUnknown": false,
+            "confidenceLevel": "HIGH",
+            "gbh": 150,
+            "height": 35,
+            "stemCount": 1,
+            "condition": "ALIVE",
+            "phenology": "FRUITING",
+            "images": [],
+            "validationStatus": "VERIFIED",
+            "createdAt": 1716624000000,
+            "updatedAt": 1716624000000,
+            "sync": {
+                "syncStatus": "LOCAL_ONLY",
+                "lastModifiedAt": 1716624000000,
+                "lastModifiedBy": "device-1"
+            }
+        }
+    ],
+    "vegetationObservations": [],
+    "samplingUnitProgress": []
+}

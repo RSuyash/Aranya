@@ -2,33 +2,33 @@
 
 :root {
   /* Backgrounds */
-  --bg-app: #0f172a;
-  /* Slate 900 - Richer Blue-Black */
-  --bg-panel: #1e293b;
-  /* Slate 800 */
-  --bg-panel-soft: #334155;
-  /* Slate 700 */
+  --bg-app: #050814;
+  /* Deep Space Blue/Black */
+  --bg-panel: #0b1020;
+  /* Dark Navy */
+  --bg-panel-soft: #11182b;
+  /* Hover states */
 
   /* Accents */
-  --primary: #38bdf8;
-  /* Sky 400 */
-  --primary-dim: #38bdf820;
-  --success: #4ade80;
-  /* Green 400 */
-  --warning: #fbbf24;
-  /* Amber 400 */
-  --danger: #f87171;
-  /* Red 400 */
+  --primary: #56ccf2;
+  /* Cyan */
+  --primary-dim: rgba(86, 204, 242, 0.12);
+  --success: #52d273;
+  /* Neon Green */
+  --warning: #f2c94c;
+  /* Amber */
+  --danger: #ff7e67;
+  /* Coral Red */
 
   /* Text */
-  --text-main: #f8fafc;
-  /* Slate 50 */
-  --text-muted: #94a3b8;
-  /* Slate 400 */
+  --text-main: #f5f7ff;
+  /* Off-white */
+  --text-muted: #9ba2c0;
+  /* Blue-grey */
 
   /* Borders */
-  --border: #334155;
-  /* Slate 700 - Higher contrast */
+  --border: #1d2440;
+  /* Subtle blue-grey */
 
   /* Font */
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -42,12 +42,10 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--bg-app);
-  background-image: radial-gradient(circle at top center, #1e293b 0%, #0f172a 60%);
+  background-image: radial-gradient(circle at top center, #11193b 0%, #050814 60%);
   background-attachment: fixed;
 }
 

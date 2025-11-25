@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { Button } from '../components/ui/Button';
-import { Plus, ArrowLeft, MapTrifold, Tree, DotsThreeVertical } from 'phosphor-react';
+import { Plus, ArrowLeft, MapTrifold, Tree, DotsThreeVertical, DownloadSimple } from 'phosphor-react';
 import { Input } from '../components/ui/Input';
+import { exportProject, downloadBlob } from '../utils/sync/export';
 
 export const ProjectDetailsPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -36,6 +37,18 @@ export const ProjectDetailsPage: React.FC = () => {
         setIsAddingPlot(false);
     };
 
+    const handleExport = async () => {
+        if (!project) return;
+        try {
+            const blob = await exportProject(project.id);
+            const filename = `${project.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+            downloadBlob(blob, filename);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Failed to export project');
+        }
+    };
+
     return (
         <div className="space-y-8 pb-20">
             {/* Header Section */}
@@ -56,9 +69,18 @@ export const ProjectDetailsPage: React.FC = () => {
                             {project.description || 'No description provided for this survey.'}
                         </p>
                     </div>
-                    <Button variant="secondary" leftIcon={<DotsThreeVertical size={20} />}>
-                        Options
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="secondary"
+                            leftIcon={<DownloadSimple size={20} />}
+                            onClick={handleExport}
+                        >
+                            Export
+                        </Button>
+                        <Button variant="secondary" leftIcon={<DotsThreeVertical size={20} />}>
+                            Options
+                        </Button>
+                    </div>
                 </div>
             </div>
 
