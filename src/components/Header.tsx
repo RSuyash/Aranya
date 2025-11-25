@@ -9,7 +9,7 @@ import {
     Question
 } from 'phosphor-react';
 import clsx from 'clsx';
-import { useLocation, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 interface HeaderProps {
     title?: string;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChartBar } from 'lucide-react';
+import { ChartBar } from 'lucide-react'; // Assuming lucide is available based on previous files
 
 export const EmptyState: React.FC<{ message?: string }> = ({
     message = "No data available for this selection"

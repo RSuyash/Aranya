@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { Button } from '../components/ui/Button';
-import { Plus, ArrowLeft, MapTrifold, Tree, DotsThreeVertical, DownloadSimple } from 'phosphor-react';
+import { Plus, ArrowLeft, MapTrifold, Tree, DotsThreeVertical, DownloadSimple, Table } from 'phosphor-react';
 import { Input } from '../components/ui/Input';
 import { exportProject, downloadBlob } from '../utils/sync/export';
+import { exportTidyCSV } from '../utils/export/tidyDataExport';
 
 export const ProjectDetailsPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -16,6 +17,7 @@ export const ProjectDetailsPage: React.FC = () => {
 
     const [isAddingPlot, setIsAddingPlot] = useState(false);
     const [newPlotName, setNewPlotName] = useState('');
+    const [showExportMenu, setShowExportMenu] = useState(false);
 
     if (!project) {
         return (
@@ -37,15 +39,29 @@ export const ProjectDetailsPage: React.FC = () => {
         setIsAddingPlot(false);
     };
 
-    const handleExport = async () => {
+    const handleExportJSON = async () => {
         if (!project) return;
         try {
             const blob = await exportProject(project.id);
             const filename = `${project.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
             downloadBlob(blob, filename);
+            setShowExportMenu(false);
         } catch (error) {
             console.error('Export failed:', error);
             alert('Failed to export project');
+        }
+    };
+
+    const handleExportTidyCSV = async () => {
+        if (!project) return;
+        try {
+            const blob = await exportTidyCSV(project.id, 'separate_rows');
+            const filename = `${project.name.replace(/\s+/g, '_')}_tidy_${new Date().toISOString().split('T')[0]}.csv`;
+            downloadBlob(blob, filename);
+            setShowExportMenu(false);
+        } catch (error) {
+            console.error('Tidy export failed:', error);
+            alert('Failed to export tidy CSV');
         }
     };
 
@@ -69,14 +85,41 @@ export const ProjectDetailsPage: React.FC = () => {
                             {project.description || 'No description provided for this survey.'}
                         </p>
                     </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="secondary"
-                            leftIcon={<DownloadSimple size={20} />}
-                            onClick={handleExport}
-                        >
-                            Export
-                        </Button>
+                    <div className="flex gap-2 relative">
+                        <div className="relative">
+                            <Button
+                                variant="secondary"
+                                leftIcon={<DownloadSimple size={20} />}
+                                onClick={() => setShowExportMenu(!showExportMenu)}
+                            >
+                                Export
+                            </Button>
+
+                            {showExportMenu && (
+                                <div className="absolute right-0 top-12 w-64 bg-[#0b1020] border border-[#1d2440] rounded-lg shadow-2xl z-50 overflow-hidden">
+                                    <button
+                                        onClick={handleExportTidyCSV}
+                                        className="w-full px-4 py-3 text-left hover:bg-[#1d2440] transition-colors flex items-center gap-3 border-b border-[#1d2440]"
+                                    >
+                                        <Table size={20} className="text-[#56ccf2]" />
+                                        <div>
+                                            <div className="text-sm font-medium text-[#f5f7ff]">Tidy CSV</div>
+                                            <div className="text-xs text-[#9ba2c0]">For R/Python analysis</div>
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={handleExportJSON}
+                                        className="w-full px-4 py-3 text-left hover:bg-[#1d2440] transition-colors flex items-center gap-3"
+                                    >
+                                        <DownloadSimple size={20} className="text-[#9ba2c0]" />
+                                        <div>
+                                            <div className="text-sm font-medium text-[#f5f7ff]">Project JSON</div>
+                                            <div className="text-xs text-[#9ba2c0]">Full project backup</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         <Button variant="secondary" leftIcon={<DotsThreeVertical size={20} />}>
                             Options
                         </Button>

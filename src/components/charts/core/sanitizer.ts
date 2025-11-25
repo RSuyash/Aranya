@@ -8,8 +8,9 @@ export function sanitizeDataSeries(series: ChartDataSeries[]): ChartDataSeries[]
 
             // Normalize Time to Timestamp
             if (s.xAxisType === 'time') {
-                if (pt.x instanceof Date) {
-                    cleanedX = pt.x.getTime();
+                const xValue = pt.x as unknown;
+                if (xValue instanceof Date) {
+                    cleanedX = xValue.getTime();
                 } else if (typeof pt.x === 'string') {
                     // Try parsing ISO string
                     const parsed = Date.parse(pt.x);

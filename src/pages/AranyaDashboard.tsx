@@ -1,8 +1,9 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
-import { TreePine, Plus, Map, ArrowRight, BarChart3 } from 'lucide-react';
+import { TreePine, Plus, Map, ArrowRight, BarChart3, Download } from 'lucide-react';
 import { exportProject, downloadBlob } from '../utils/sync/export';
+import { exportTidyCSV } from '../utils/export/tidyDataExport';
 
 const AranyaDashboard: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -47,6 +48,27 @@ const AranyaDashboard: React.FC = () => {
         } catch (error) {
             console.error('Export failed:', error);
             alert('Failed to generate export package. Check console for details.');
+        }
+    };
+
+    const handleExportTidyCSV = async () => {
+        if (!project) return;
+        try {
+            const blob = await exportTidyCSV(project.id, 'separate_rows');
+            const filename = `${project.name.replace(/\s+/g, '_')}_tidy_${new Date().toISOString().split('T')[0]}.csv`;
+
+            // Use a different download function or adapt the existing one
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Tidy CSV export failed:', error);
+            alert('Failed to generate tidy CSV export. Check console for details.');
         }
     };
 
@@ -150,7 +172,7 @@ const AranyaDashboard: React.FC = () => {
                 {/* Quick Actions */}
                 <section>
                     <h2 className="text-xl font-semibold text-[#f5f7ff] mb-4">Quick Actions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <ActionCard
                             icon={<Map className="w-6 h-6" />}
                             title="View Map"
@@ -168,6 +190,12 @@ const AranyaDashboard: React.FC = () => {
                             title="Export Data"
                             description="Download JSON Backup"
                             onClick={handleExport}
+                        />
+                        <ActionCard
+                            icon={<Download className="w-6 h-6" />}
+                            title="Export CSV"
+                            description="Tidy Format for R/Python"
+                            onClick={handleExportTidyCSV}
                         />
                     </div>
                 </section>
@@ -199,7 +227,7 @@ const ActionCard: React.FC<{
             {icon}
         </div>
         <h3 className="font-semibold text-[#f5f7ff] mb-1">{title}</h3>
-        <p className="text-sm text-text-muted">{description}</p>
+        <p className="text-sm text-[#9ba2c0]">{description}</p>
     </button>
 );
 
