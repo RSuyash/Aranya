@@ -15,47 +15,66 @@ export const AppShell: React.FC = () => {
         setIsMobileMenuOpen(false);
     }, [location.pathname]);
 
+    // Helper to determine title/breadcrumbs based on route
+    // In a real app, you might use a route config object or context
+    const getHeaderInfo = () => {
+        const path = location.pathname;
+        if (path === '/') return { title: 'Mission Control' };
+        if (path.startsWith('/projects')) return {
+            breadcrumbs: [{ label: 'Projects', path: '/projects' }, { label: 'Active Survey' }]
+        };
+        if (path.startsWith('/map')) return { title: 'Geospatial View' };
+        if (path.startsWith('/settings')) return { title: 'System Settings' };
+        return { title: 'Dashboard' };
+    };
+
+    const headerInfo = getHeaderInfo();
+
     return (
-        <div className="min-h-screen bg-bg-app text-text-main font-sans flex overflow-hidden">
+        // The background is handled by body in index.css, ensuring seamless gradient
+        <div className="flex h-screen w-full overflow-hidden text-[#f5f7ff]">
+
             {/* Mobile Sidebar Overlay */}
-            {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm animate-in fade-in"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                />
-            )}
+            <div
+                className={clsx(
+                    "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden",
+                    isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                )}
+                onClick={() => setIsMobileMenuOpen(false)}
+            />
 
             {/* Sidebar Container */}
             <div className={clsx(
-                "fixed md:static inset-y-0 left-0 z-50 h-full transform transition-all duration-300 ease-in-out",
-                isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+                "fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 h-full",
+                isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
                 isDesktopCollapsed ? "md:w-20" : "md:w-64",
-                "w-64" // Mobile width is always fixed
+                "w-72" // Mobile drawer width
             )}>
-
                 <Sidebar
                     collapsed={isDesktopCollapsed}
                     onToggleCollapse={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
+                    mobile={isMobileMenuOpen} // Only true on mobile drawer
                 />
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 min-w-0 h-full overflow-y-auto scroll-smooth relative flex flex-col">
+            <div className="flex-1 flex flex-col min-w-0 h-full relative">
                 <Header
-                    onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    title={headerInfo.title}
+                    breadcrumbs={headerInfo.breadcrumbs}
+                    onMenuClick={() => setIsMobileMenuOpen(true)}
                     onToggleSidebar={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
                     collapsed={isDesktopCollapsed}
                 />
 
-                <main className="flex-1 p-4 md:p-8 w-full animate-in fade-in duration-500">
-                    <div className="max-w-7xl mx-auto w-full">
+                {/* Scrollable Content */}
+                <main className="flex-1 overflow-y-auto scroll-smooth w-full">
+                    <div className="max-w-[1600px] mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <Outlet />
                     </div>
+                    <Footer />
                 </main>
-
-                <Footer />
             </div>
         </div>
     );
 };
-

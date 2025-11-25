@@ -98,16 +98,20 @@ export const UnitDetailPanel: React.FC<UnitDetailPanelProps> = ({
                     <button
                         onClick={onPrevUnit}
                         disabled={!onPrevUnit}
-                        className="flex items-center gap-1 hover:text-[#f5f7ff] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#1d2440] hover:text-[#f5f7ff] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        title="Previous Quadrant"
                     >
-                        <ChevronLeft className="w-3 h-3" /> Prev Unit
+                        <ChevronLeft className="w-4 h-4" />
+                        <span className="text-xs">Previous</span>
                     </button>
                     <button
                         onClick={onNextUnit}
                         disabled={!onNextUnit}
-                        className="flex items-center gap-1 hover:text-[#f5f7ff] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#1d2440] hover:text-[#f5f7ff] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        title="Next Quadrant"
                     >
-                        Next Unit <ChevronRight className="w-3 h-3" />
+                        <span className="text-xs">Next</span>
+                        <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
             </div>

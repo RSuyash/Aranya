@@ -1,0 +1,145 @@
+Plot_ID,Location_Name,Subplot_ID,Layer_Type,Species_or_Category,Count_or_Cover%,Avg_Height_cm,Notes
+P01,MIT WPU Medicine Garden,SP1,Herb,Mixed Herbs,28,20,"Mixed herb layer, variable"
+P01,MIT WPU Medicine Garden,SP1,Grass,Mixed Grasses,28,6,Live
+P01,MIT WPU Medicine Garden,SP1,Litter,Decomposing Matter,21,3,Seasonal leaf litter
+P01,MIT WPU Medicine Garden,SP1,Bare Soil,Bare Ground,35,0,Exposed surface
+P01,MIT WPU Medicine Garden,SP2,Herb,Mixed Herbs,25,6,"Mixed herb layer, variable"
+P01,MIT WPU Medicine Garden,SP2,Grass,Mixed Grasses,18,6,Live
+P01,MIT WPU Medicine Garden,SP2,Litter,Decomposing Matter,18,0,Seasonal leaf litter
+P01,MIT WPU Medicine Garden,SP2,Bare Soil,Bare Ground,45,0,Exposed surface
+P01,MIT WPU Medicine Garden,SP3,Herb,Mixed Herbs,15,19,"Mixed herb layer, variable"
+P01,MIT WPU Medicine Garden,SP3,Grass,Mixed Grasses,21,11,Live
+P01,MIT WPU Medicine Garden,SP3,Litter,Decomposing Matter,14,1,Seasonal leaf litter
+P01,MIT WPU Medicine Garden,SP3,Bare Soil,Bare Ground,55,0,Exposed surface
+P01,MIT WPU Medicine Garden,SP4,Herb,Mixed Herbs,41,15,"Mixed herb layer, variable"
+P01,MIT WPU Medicine Garden,SP4,Grass,Mixed Grasses,15,12,Live
+P01,MIT WPU Medicine Garden,SP4,Litter,Decomposing Matter,46,4,Seasonal leaf litter
+P01,MIT WPU Medicine Garden,SP4,Bare Soil,Bare Ground,-4,0,Exposed surface
+P02,Eco-Park,SP1,Herb,Mixed Herbs,13,14,"Mixed herb layer, variable"
+P02,Eco-Park,SP1,Grass,Mixed Grasses,32,24,Live
+P02,Eco-Park,SP1,Litter,Decomposing Matter,17,0,Seasonal leaf litter
+P02,Eco-Park,SP1,Bare Soil,Bare Ground,46,0,Exposed surface
+P02,Eco-Park,SP2,Herb,Mixed Herbs,19,20,"Mixed herb layer, variable"
+P02,Eco-Park,SP2,Grass,Mixed Grasses,26,14,Live
+P02,Eco-Park,SP2,Litter,Decomposing Matter,40,5,Seasonal leaf litter
+P02,Eco-Park,SP2,Bare Soil,Bare Ground,14,0,Exposed surface
+P02,Eco-Park,SP3,Herb,Mixed Herbs,22,7,"Mixed herb layer, variable"
+P02,Eco-Park,SP3,Grass,Mixed Grasses,14,23,Live
+P02,Eco-Park,SP3,Litter,Decomposing Matter,44,1,Seasonal leaf litter
+P02,Eco-Park,SP3,Bare Soil,Bare Ground,35,0,Exposed surface
+P02,Eco-Park,SP4,Herb,Mixed Herbs,27,11,"Mixed herb layer, variable"
+P02,Eco-Park,SP4,Grass,Mixed Grasses,22,22,Live
+P02,Eco-Park,SP4,Litter,Decomposing Matter,40,3,Seasonal leaf litter
+P02,Eco-Park,SP4,Bare Soil,Bare Ground,21,0,Exposed surface
+P03,ARAI Hills I,SP1,Herb,Mixed Herbs,24,6,"Mixed herb layer, variable"
+P03,ARAI Hills I,SP1,Grass,Mixed Grasses,14,23,Seeding/Drying
+P03,ARAI Hills I,SP1,Litter,Decomposing Matter,50,3,Seasonal leaf litter
+P03,ARAI Hills I,SP1,Bare Soil,Bare Ground,10,0,Exposed surface
+P03,ARAI Hills I,SP2,Herb,Mixed Herbs,12,10,"Mixed herb layer, variable"
+P03,ARAI Hills I,SP2,Grass,Mixed Grasses,19,25,Seeding/Drying
+P03,ARAI Hills I,SP2,Litter,Decomposing Matter,23,5,Seasonal leaf litter
+P03,ARAI Hills I,SP2,Bare Soil,Bare Ground,45,0,Exposed surface
+P03,ARAI Hills I,SP3,Herb,Mixed Herbs,12,8,"Mixed herb layer, variable"
+P03,ARAI Hills I,SP3,Grass,Mixed Grasses,13,17,Seeding/Drying
+P03,ARAI Hills I,SP3,Litter,Decomposing Matter,19,5,Seasonal leaf litter
+P03,ARAI Hills I,SP3,Bare Soil,Bare Ground,51,0,Exposed surface
+P03,ARAI Hills I,SP4,Herb,Mixed Herbs,36,10,"Mixed herb layer, variable"
+P03,ARAI Hills I,SP4,Grass,Mixed Grasses,23,20,Seeding/Drying
+P03,ARAI Hills I,SP4,Litter,Decomposing Matter,42,4,Seasonal leaf litter
+P03,ARAI Hills I,SP4,Bare Soil,Bare Ground,11,0,Exposed surface
+P04,ARAI Hills II,SP1,Herb,Mixed Herbs,14,14,"Mixed herb layer, variable"
+P04,ARAI Hills II,SP1,Grass,Mixed Grasses,27,19,Seeding/Drying
+P04,ARAI Hills II,SP1,Litter,Decomposing Matter,43,4,Seasonal leaf litter
+P04,ARAI Hills II,SP1,Bare Soil,Bare Ground,22,0,Exposed surface
+P04,ARAI Hills II,SP2,Herb,Mixed Herbs,12,20,"Mixed herb layer, variable"
+P04,ARAI Hills II,SP2,Grass,Mixed Grasses,13,14,Seeding/Drying
+P04,ARAI Hills II,SP2,Litter,Decomposing Matter,46,4,Seasonal leaf litter
+P04,ARAI Hills II,SP2,Bare Soil,Bare Ground,40,0,Exposed surface
+P04,ARAI Hills II,SP3,Herb,Mixed Herbs,45,5,"Mixed herb layer, variable"
+P04,ARAI Hills II,SP3,Grass,Mixed Grasses,18,16,Seeding/Drying
+P04,ARAI Hills II,SP3,Litter,Decomposing Matter,22,0,Seasonal leaf litter
+P04,ARAI Hills II,SP3,Bare Soil,Bare Ground,13,0,Exposed surface
+P04,ARAI Hills II,SP4,Herb,Mixed Herbs,23,20,"Mixed herb layer, variable"
+P04,ARAI Hills II,SP4,Grass,Mixed Grasses,24,5,Seeding/Drying
+P04,ARAI Hills II,SP4,Litter,Decomposing Matter,20,0,Seasonal leaf litter
+P04,ARAI Hills II,SP4,Bare Soil,Bare Ground,44,0,Exposed surface
+P05,Panshet Backwaters,SP1,Herb,Mixed Herbs,31,8,"Mixed herb layer, variable"
+P05,Panshet Backwaters,SP1,Grass,Mixed Grasses,21,14,Live
+P05,Panshet Backwaters,SP1,Litter,Decomposing Matter,14,0,Seasonal leaf litter
+P05,Panshet Backwaters,SP1,Bare Soil,Bare Ground,30,0,Exposed surface
+P05,Panshet Backwaters,SP2,Herb,Mixed Herbs,32,14,"Mixed herb layer, variable"
+P05,Panshet Backwaters,SP2,Grass,Mixed Grasses,12,10,Live
+P05,Panshet Backwaters,SP2,Litter,Decomposing Matter,20,5,Seasonal leaf litter
+P05,Panshet Backwaters,SP2,Bare Soil,Bare Ground,45,0,Exposed surface
+P05,Panshet Backwaters,SP3,Herb,Mixed Herbs,32,20,"Mixed herb layer, variable"
+P05,Panshet Backwaters,SP3,Grass,Mixed Grasses,23,22,Live
+P05,Panshet Backwaters,SP3,Litter,Decomposing Matter,39,1,Seasonal leaf litter
+P05,Panshet Backwaters,SP3,Bare Soil,Bare Ground,5,0,Exposed surface
+P05,Panshet Backwaters,SP4,Herb,Mixed Herbs,35,16,"Mixed herb layer, variable"
+P05,Panshet Backwaters,SP4,Grass,Mixed Grasses,17,24,Live
+P05,Panshet Backwaters,SP4,Litter,Decomposing Matter,46,3,Seasonal leaf litter
+P05,Panshet Backwaters,SP4,Bare Soil,Bare Ground,17,0,Exposed surface
+P06,Chande Village,SP1,Herb,Mixed Herbs,44,6,"Mixed herb layer, variable"
+P06,Chande Village,SP1,Grass,Mixed Grasses,40,24,Live
+P06,Chande Village,SP1,Litter,Decomposing Matter,35,5,Seasonal leaf litter
+P06,Chande Village,SP1,Bare Soil,Bare Ground,4,0,Exposed surface
+P06,Chande Village,SP2,Herb,Mixed Herbs,11,5,"Mixed herb layer, variable"
+P06,Chande Village,SP2,Grass,Mixed Grasses,13,12,Live
+P06,Chande Village,SP2,Litter,Decomposing Matter,30,4,Seasonal leaf litter
+P06,Chande Village,SP2,Bare Soil,Bare Ground,46,0,Exposed surface
+P06,Chande Village,SP3,Herb,Mixed Herbs,32,12,"Mixed herb layer, variable"
+P06,Chande Village,SP3,Grass,Mixed Grasses,25,12,Live
+P06,Chande Village,SP3,Litter,Decomposing Matter,25,2,Seasonal leaf litter
+P06,Chande Village,SP3,Bare Soil,Bare Ground,23,0,Exposed surface
+P06,Chande Village,SP4,Herb,Mixed Herbs,13,5,"Mixed herb layer, variable"
+P06,Chande Village,SP4,Grass,Mixed Grasses,20,16,Live
+P06,Chande Village,SP4,Litter,Decomposing Matter,21,1,Seasonal leaf litter
+P06,Chande Village,SP4,Bare Soil,Bare Ground,49,0,Exposed surface
+P07,Warje Hills I,SP1,Herb,Mixed Herbs,16,8,"Mixed herb layer, variable"
+P07,Warje Hills I,SP1,Grass,Mixed Grasses,39,17,Seeding/Drying
+P07,Warje Hills I,SP1,Litter,Decomposing Matter,32,0,Seasonal leaf litter
+P07,Warje Hills I,SP1,Bare Soil,Bare Ground,20,0,Exposed surface
+P07,Warje Hills I,SP2,Herb,Mixed Herbs,24,20,"Mixed herb layer, variable"
+P07,Warje Hills I,SP2,Grass,Mixed Grasses,38,21,Seeding/Drying
+P07,Warje Hills I,SP2,Litter,Decomposing Matter,26,5,Seasonal leaf litter
+P07,Warje Hills I,SP2,Bare Soil,Bare Ground,16,0,Exposed surface
+P07,Warje Hills I,SP3,Herb,Mixed Herbs,24,9,"Mixed herb layer, variable"
+P07,Warje Hills I,SP3,Grass,Mixed Grasses,27,24,Seeding/Drying
+P07,Warje Hills I,SP3,Litter,Decomposing Matter,42,5,Seasonal leaf litter
+P07,Warje Hills I,SP3,Bare Soil,Bare Ground,5,0,Exposed surface
+P07,Warje Hills I,SP4,Herb,Mixed Herbs,21,14,"Mixed herb layer, variable"
+P07,Warje Hills I,SP4,Grass,Mixed Grasses,11,14,Seeding/Drying
+P07,Warje Hills I,SP4,Litter,Decomposing Matter,58,2,Seasonal leaf litter
+P07,Warje Hills I,SP4,Bare Soil,Bare Ground,10,0,Exposed surface
+P08,Warje Hills II,SP1,Herb,Mixed Herbs,19,13,"Mixed herb layer, variable"
+P08,Warje Hills II,SP1,Grass,Mixed Grasses,33,12,Seeding/Drying
+P08,Warje Hills II,SP1,Litter,Decomposing Matter,27,3,Seasonal leaf litter
+P08,Warje Hills II,SP1,Bare Soil,Bare Ground,21,0,Exposed surface
+P08,Warje Hills II,SP2,Herb,Mixed Herbs,21,18,"Mixed herb layer, variable"
+P08,Warje Hills II,SP2,Grass,Mixed Grasses,29,9,Seeding/Drying
+P08,Warje Hills II,SP2,Litter,Decomposing Matter,29,0,Seasonal leaf litter
+P08,Warje Hills II,SP2,Bare Soil,Bare Ground,31,0,Exposed surface
+P08,Warje Hills II,SP3,Herb,Mixed Herbs,28,5,"Mixed herb layer, variable"
+P08,Warje Hills II,SP3,Grass,Mixed Grasses,20,17,Seeding/Drying
+P08,Warje Hills II,SP3,Litter,Decomposing Matter,52,2,Seasonal leaf litter
+P08,Warje Hills II,SP3,Bare Soil,Bare Ground,2,0,Exposed surface
+P08,Warje Hills II,SP4,Herb,Mixed Herbs,18,16,"Mixed herb layer, variable"
+P08,Warje Hills II,SP4,Grass,Mixed Grasses,12,13,Seeding/Drying
+P08,Warje Hills II,SP4,Litter,Decomposing Matter,38,1,Seasonal leaf litter
+P08,Warje Hills II,SP4,Bare Soil,Bare Ground,32,0,Exposed surface
+P09,Warje Urban Garden,SP1,Herb,Mixed Herbs,40,8,"Mixed herb layer, variable"
+P09,Warje Urban Garden,SP1,Grass,Mixed Grasses,25,5,Seeding/Drying
+P09,Warje Urban Garden,SP1,Litter,Decomposing Matter,18,4,Seasonal leaf litter
+P09,Warje Urban Garden,SP1,Bare Soil,Bare Ground,17,0,Exposed surface
+P09,Warje Urban Garden,SP2,Herb,Mixed Herbs,45,10,"Mixed herb layer, variable"
+P09,Warje Urban Garden,SP2,Grass,Mixed Grasses,30,14,Seeding/Drying
+P09,Warje Urban Garden,SP2,Litter,Decomposing Matter,55,5,Seasonal leaf litter
+P09,Warje Urban Garden,SP2,Bare Soil,Bare Ground,10,0,Exposed surface
+P09,Warje Urban Garden,SP3,Herb,Mixed Herbs,15,14,"Mixed herb layer, variable"
+P09,Warje Urban Garden,SP3,Grass,Mixed Grasses,10,21,Seeding/Drying
+P09,Warje Urban Garden,SP3,Litter,Decomposing Matter,36,4,Seasonal leaf litter
+P09,Warje Urban Garden,SP3,Bare Soil,Bare Ground,47,0,Exposed surface
+P09,Warje Urban Garden,SP4,Herb,Mixed Herbs,20,15,"Mixed herb layer, variable"
+P09,Warje Urban Garden,SP4,Grass,Mixed Grasses,19,18,Seeding/Drying
+P09,Warje Urban Garden,SP4,Litter,Decomposing Matter,54,2,Seasonal leaf litter
+P09,Warje Urban Garden,SP4,Bare Soil,Bare Ground,18,0,Exposed surface

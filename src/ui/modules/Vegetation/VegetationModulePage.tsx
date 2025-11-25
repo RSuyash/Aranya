@@ -6,6 +6,8 @@ import type { Plot, VegetationModule } from '../../../core/data-model/types';
 import { Plus, Map, ArrowRight, Calendar, User, X, ArrowLeft, MapPin } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { BlueprintRegistry, STD_10x10_QUADRANTS } from '../../../core/plot-engine/blueprints';
+import { generateLayout } from '../../../core/plot-engine/generateLayout';
+import type { PlotNodeInstance } from '../../../core/plot-engine/types';
 import { clsx } from 'clsx';
 
 export const VegetationModulePage: React.FC = () => {
@@ -53,7 +55,7 @@ export const VegetationModulePage: React.FC = () => {
 
         const id = uuidv4();
         const now = Date.now();
-        
+
         // Use module default or fallback to standard
         const vegModule = moduleData as VegetationModule;
         const blueprintId = vegModule.defaultBlueprintId || STD_10x10_QUADRANTS.id;
@@ -86,6 +88,43 @@ export const VegetationModulePage: React.FC = () => {
         };
 
         await db.plots.add(newPlot);
+        console.log('✅ Plot created:', newPlot.id, newPlotName);
+        console.log('📐 Blueprint:', blueprint.id, blueprint.name);
+
+        // CRITICAL FIX: Initialize sampling units from blueprint layout
+        const layout = generateLayout(blueprint, undefined, newPlot.id);
+        console.log('🗺️ Generated layout, children count:', layout.children.length);
+
+        // Recursively collect all sampling units from layout tree
+        const collectSamplingUnits = (node: PlotNodeInstance): string[] => {
+            const units: string[] = [];
+            if (node.type === 'SAMPLING_UNIT') {
+                units.push(node.id);
+            }
+            node.children.forEach(child => {
+                units.push(...collectSamplingUnits(child));
+            });
+            return units;
+        };
+
+        const samplingUnitIds = collectSamplingUnits(layout);
+        console.log('📊 Found', samplingUnitIds.length, 'sampling units');
+
+        // Initialize progress tracking for each sampling unit
+        for (const samplingUnitId of samplingUnitIds) {
+            await db.samplingUnits.add({
+                id: uuidv4(),
+                projectId,
+                moduleId,
+                plotId: newPlot.id,
+                samplingUnitId,
+                status: 'NOT_STARTED',
+                createdAt: now,
+                lastUpdatedAt: now
+            });
+        }
+        console.log('✅ Initialized', samplingUnitIds.length, 'sampling units in DB');
+
         setIsNewPlotOpen(false);
         setNewPlotName('');
         setNewPlotCode('');
@@ -239,8 +278,8 @@ export const VegetationModulePage: React.FC = () => {
                                     disabled={isGettingGps}
                                     className={clsx(
                                         "w-full border rounded-lg px-4 py-2.5 flex items-center justify-center gap-2 transition",
-                                        gpsCoords 
-                                            ? "bg-[#0b2214] border-[#21452b] text-[#52d273]" 
+                                        gpsCoords
+                                            ? "bg-[#0b2214] border-[#21452b] text-[#52d273]"
                                             : "bg-[#11182b] border-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff]"
                                     )}
                                 >

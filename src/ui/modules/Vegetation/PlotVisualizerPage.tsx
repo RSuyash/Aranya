@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { Map as MapIcon, Info } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Map as MapIcon, Info, ArrowLeft } from 'lucide-react';
 import { UnitDetailPanel } from './UnitDetailPanel';
 import { PlotOverviewPanel } from './PlotOverviewPanel';
 import { TreeEntryForm } from './TreeEntryForm';
+import { VegetationEntryForm } from './VegetationEntryForm';
 import { normalizeProgress, summarizeObservations } from './plotVisualizerUtils';
 import { PlotCanvas } from './ui/PlotCanvas';
 import { usePlotData } from './data/usePlotData';
@@ -13,6 +14,7 @@ import { clsx } from 'clsx';
 
 export const PlotVisualizerPage: React.FC = () => {
     const { projectId, moduleId, plotId } = useParams<{ projectId: string; moduleId: string; plotId: string }>();
+    const navigate = useNavigate();
 
     if (!projectId || !moduleId || !plotId) return <div>Invalid URL Parameters</div>;
 
@@ -22,7 +24,7 @@ export const PlotVisualizerPage: React.FC = () => {
 
     // Derived state
     const progressByUnit = React.useMemo(() => normalizeProgress(progress), [progress]);
-    const obsSummaryByUnit = React.useMemo(() => summarizeObservations(trees, veg), [trees, veg]);
+    const obsSummaryByUnit = React.useMemo(() => summarizeObservations(trees), [trees]);
 
     // Build unit label map from layout
     const unitLabelMap = useMemo(() => {
@@ -40,6 +42,11 @@ export const PlotVisualizerPage: React.FC = () => {
         return map;
     }, [blueprint, plot, plotId]);
 
+    // Create sorted list of unit IDs for navigation
+    const sortedUnitIds = useMemo(() => {
+        return Array.from(unitLabelMap.keys()).sort();
+    }, [unitLabelMap]);
+
     // UI State
     const [containerWidth, setContainerWidth] = useState<number>(0);
     const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -47,6 +54,7 @@ export const PlotVisualizerPage: React.FC = () => {
     const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'MAP' | 'LIST'>('MAP');
     const [isAddingTree, setIsAddingTree] = useState(false);
+    const [isAddingVeg, setIsAddingVeg] = useState(false);
 
     // Panel interaction state
     const [panelFocus, setPanelFocus] = useState<'map' | 'panel' | 'none'>('none');
@@ -125,6 +133,19 @@ export const PlotVisualizerPage: React.FC = () => {
                 <div className="flex-1 flex flex-col relative min-h-0">
                     {/* Tabs / Toolbar */}
                     <div className="h-12 border-b border-[#1d2440] flex items-center px-4 gap-4 bg-[#0b1020] z-10 flex-shrink-0">
+                        {/* Back Button */}
+                        <button
+                            onClick={() => navigate(`/project/${projectId}/module/${moduleId}`)}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440] transition"
+                            title="Back to Project"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            <span className="hidden sm:inline">Back</span>
+                        </button>
+
+                        {/* Vertical Divider */}
+                        <div className="h-6 w-px bg-[#1d2440]" />
+
                         <button
                             onClick={() => setActiveTab('MAP')}
                             className={clsx(
@@ -177,13 +198,13 @@ export const PlotVisualizerPage: React.FC = () => {
                         "fixed bottom-0 left-0 right-0 border-t md:border-t-0",
                         // Desktop: right sidebar overlay - wider for better content display
                         "md:fixed md:top-[64px] md:right-0 md:bottom-0 md:left-auto md:w-[480px] md:border-l md:p-6",
-                        isAddingTree && "h-full top-0 md:top-[64px] z-30",
-                        !isAddingTree && "z-20"
+                        (isAddingTree || isAddingVeg) && "h-full top-0 md:top-[64px] z-30",
+                        !isAddingTree && !isAddingVeg && "z-20"
                     )}
                     style={{
-                        height: isAddingTree ? '100%' : (window.innerWidth >= 768 ? 'calc(100vh - 64px)' : `${panelHeight}px`),
+                        height: (isAddingTree || isAddingVeg) ? '100%' : (window.innerWidth >= 768 ? 'calc(100vh - 64px)' : `${panelHeight}px`),
                     }}
-                    onClick={() => !isAddingTree && setPanelFocus('panel')}
+                    onClick={() => !(isAddingTree || isAddingVeg) && setPanelFocus('panel')}
                 >
                     {isAddingTree && selectedUnitId ? (
                         <TreeEntryForm
@@ -193,6 +214,18 @@ export const PlotVisualizerPage: React.FC = () => {
                             unitId={selectedUnitId}
                             unitLabel={selectedUnitLabel}
                             onClose={() => setIsAddingTree(false)}
+                            onSaveSuccess={() => {
+                                // Refresh data handled by live query
+                            }}
+                        />
+                    ) : isAddingVeg && selectedUnitId ? (
+                        <VegetationEntryForm
+                            projectId={projectId}
+                            moduleId={moduleId}
+                            plotId={plotId}
+                            unitId={selectedUnitId}
+                            unitLabel={selectedUnitLabel}
+                            onClose={() => setIsAddingVeg(false)}
                             onSaveSuccess={() => {
                                 // Refresh data handled by live query
                             }}
@@ -208,9 +241,23 @@ export const PlotVisualizerPage: React.FC = () => {
                             progress={progressByUnit[selectedUnitId]}
                             obsSummary={obsSummaryByUnit[selectedUnitId]}
                             onAddTree={() => setIsAddingTree(true)}
-                            onAddVeg={() => alert("Veg entry coming soon")}
-                            onNextUnit={() => { }}
-                            onPrevUnit={() => { }}
+                            onAddVeg={() => setIsAddingVeg(true)}
+                            onNextUnit={(() => {
+                                const currentIndex = sortedUnitIds.indexOf(selectedUnitId);
+                                const nextIndex = currentIndex + 1;
+                                if (nextIndex < sortedUnitIds.length) {
+                                    return () => setSelectedUnitId(sortedUnitIds[nextIndex]);
+                                }
+                                return undefined;
+                            })()}
+                            onPrevUnit={(() => {
+                                const currentIndex = sortedUnitIds.indexOf(selectedUnitId);
+                                const prevIndex = currentIndex - 1;
+                                if (prevIndex >= 0) {
+                                    return () => setSelectedUnitId(sortedUnitIds[prevIndex]);
+                                }
+                                return undefined;
+                            })()}
                         />
                     ) : (
                         <PlotOverviewPanel

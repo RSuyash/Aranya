@@ -1,0 +1,72 @@
+Plot_ID,Location_Name,Quad_ID,Species_Scientific,Growth_Form,Tree_ID,Height_m,Condition,GBH_Stem1_cm,GBH_Stem2_cm,GBH_Stem3_cm,GBH_Stem4_cm,GBH_Stem5_cm,GBH_Stem6_cm,Remarks,Total_GBH_cm
+P01,MIT WPU Medicine Garden,Q1,Pongamia pinnata (Karanj),Tree,T1,4.1,Live,15,0,0,0,0,0,Live,15.2
+P01,MIT WPU Medicine Garden,Q2,Ficus racemosa,Tree,T2,13.9,Live,99,0,0,0,0,0,Live,99.1
+P01,MIT WPU Medicine Garden,Q2,Pongamia pinnata (Karanj),Tree,T3,8.3,Live,40.8,0,0,0,0,0,Live,41
+P01,MIT WPU Medicine Garden,Q2,Ficus racemosa,Tree,T4,11.5,Live,103.5,0,0,0,0,0,Live,103.6
+P01,MIT WPU Medicine Garden,Q2,Pongamia pinnata (Karanj),Tree,T5,7,Live,48.5,28,35,0,0,0,Live,68
+P01,MIT WPU Medicine Garden,Q3,Moringa oleifera (Indian drumstick),Tree,T6,9.5,Live,90,0,0,0,0,0,Live,90
+P01,MIT WPU Medicine Garden,Q4,Pongamia pinnata (Karanj),Tree,T7,7.5,Live,85.5,39,47,0,0,0,Live,105.2
+P02,Eco-Park,Q1,Azadirachta indica (Neem),Tree,T8,11,Live,84,0,0,0,0,0,Live,84.3
+P02,Eco-Park,Q1,Caesalpinia pulcherrima,Tree,T9,4,Live,48.5,0,0,0,0,0,Live,48.6
+P02,Eco-Park,Q2,Hibiscus rosa-sinensis,Tree,T10,1.8,Live,40,0,0,0,0,0,Live,40.2
+P02,Eco-Park,Q2,Hibiscus rosa-sinensis,Tree,T11,1.5,Live,30.5,0,0,0,0,0,Live,30.6
+P02,Eco-Park,Q2,Hibiscus rosa-sinensis,Tree,T12,3,Dead,59.5,23.5,16.5,20,0,0,Live,69.9
+P02,Eco-Park,Q2,Hibiscus rosa-sinensis,Tree,T13,2.5,Live,28.5,0,0,0,0,0,Live,28.7
+P02,Eco-Park,Q3,Hibiscus rosa-sinensis,Tree,T14,2,Live,18.5,0,0,0,0,0,Live,18.8
+P02,Eco-Park,Q3,Hibiscus rosa-sinensis,Tree,T15,1,Live,21,0,0,0,0,0,Live,21.3
+P02,Eco-Park,Q3,Hibiscus rosa-sinensis,Tree,T16,2,Live,18.5,0,0,0,0,0,Live,18.8
+P02,Eco-Park,Q3,Azadirachta indica (Neem),Tree,T17,12.5,Live,60,0,0,0,0,0,Live,60.3
+P02,Eco-Park,Q3,Hibiscus rosa-sinensis,Tree,T18,2,Live,20.5,0,0,0,0,0,Live,20.8
+P02,Eco-Park,Q3,Hibiscus rosa-sinensis,Tree,T19,2.5,Live,52.5,17.5,22,14.5,0,0,Live,59.3
+P02,Eco-Park,Q3,Hibiscus rosa-sinensis,Tree,T20,1.5,Live,19,0,0,0,0,0,Live,19.2
+P02,Eco-Park,Q3,Hibiscus rosa-sinensis,Tree,T21,2.5,Live,51.5,21.5,14.5,16.5,0,0,Live,57.1
+P02,Eco-Park,Q3,Hibiscus rosa-sinensis,Tree,T22,2.5,Live,51.5,22,16.5,15,0,0,Live,62.6
+P02,Eco-Park,Q4,Caesalpinia pulcherrima,Tree,T23,4,Live,19,18.5,24,0,0,0,Live,34.6
+P02,Eco-Park,Q4,Caesalpinia pulcherrima,Tree,T24,4.5,Live,41,0,0,0,0,0,Live,41.2
+P02,Eco-Park,Q4,Caesalpinia pulcherrima,Tree,T25,2.5,Live,26,10,15.5,0,0,0,Live,31.9
+P03,ARAI Hills I,Q1,Gliricidia sepium,Tree,T26,8.5,Live,56.5,33,42,0,0,0,Live,76.7
+P03,ARAI Hills I,Q2,Gliricidia sepium,Tree,T27,7,Live,45.5,0,0,0,0,0,Live,45.6
+P03,ARAI Hills I,Q2,Boswellia serrata,Tree,T28,10,Live,79,0,0,0,0,0,"Leaf fall initiating, canopy thinning",79.2
+P03,ARAI Hills I,Q3,Terminalia elliptica (Ain),Tree,T29,16.5,Live,135,46,0,0,0,0,Live,142.3
+P03,ARAI Hills I,Q4,Anogeissus latifolia,Tree,T30,8,Live,50,53,68.5,60,0,0,Live,119
+P04,ARAI Hills II,Q1,Gliricidia sepium,Tree,T31,12,Live,171,52,71.5,49,0,0,Live,204.5
+P04,ARAI Hills II,Q2,Gliricidia sepium,Tree,T32,6.5,Live,41,0,0,0,0,0,Live,41
+P04,ARAI Hills II,Q3,Boswellia serrata,Tree,T33,13.5,Live,89,0,0,0,0,0,"Leaf fall initiating, canopy thinning",89.3
+P04,ARAI Hills II,Q4,Ficus racemosa,Tree,T34,19,Live,219,65,82,75.5,0,0,Live,258.5
+P05,Panshet Backwaters,Q1,Syzygium cumini (Jambul),Tree,T35,15.5,Live,125.5,0,0,0,0,0,Live,125.8
+P05,Panshet Backwaters,Q1,Terminalia elliptica (Ain),Tree,T36,17.5,Live,143,0,0,0,0,0,Live,143.1
+P05,Panshet Backwaters,Q1,Ficus racemosa,Tree,T37,12,Live,99,0,0,0,0,0,Live,99
+P05,Panshet Backwaters,Q2,Garcinia indica (Kokum),Tree,T38,11,Live,68.5,0,0,0,0,0,Live,68.8
+P05,Panshet Backwaters,Q2,Phyllanthus emblica (Amla),Tree,T39,10,Live,53,0,0,0,0,0,Live,53.1
+P05,Panshet Backwaters,Q2,Mangifera indica,Tree,T40,18.5,Live,166,0,0,0,0,0,Live,166.3
+P05,Panshet Backwaters,Q3,Ficus benghalensis,Tree,T41,20,Live,187.5,0,0,0,0,0,Live,187.7
+P05,Panshet Backwaters,Q3,Alstonia scholaris,Tree,T42,14.5,Live,76,0,0,0,0,0,Live,76.2
+P05,Panshet Backwaters,Q4,Mallotus philippensis,Tree,T43,10,Live,43,0,0,0,0,0,Live,43.3
+P05,Panshet Backwaters,Q4,Syzygium caryophyllatum,Tree,T44,13,Live,89,0,0,0,0,0,Live,89.1
+P06,Chande Village,Q1,Pongamia pinnata (Karanj),Tree,T45,11,Live,65.5,0,0,0,0,0,Live,65.8
+P06,Chande Village,Q1,Tectona grandis (teak),Tree,T46,11.5,Live,88.5,0,0,0,0,0,Live,88.8
+P06,Chande Village,Q1,Gliricidia sepium,Tree,T47,7.5,Live,38,0,0,0,0,0,Live,38.1
+P06,Chande Village,Q1,Tectona grandis (teak),Tree,T48,14,Live,95,0,0,0,0,0,Live,95.1
+P06,Chande Village,Q2,Acacia nilotica,Tree,T49,8,Live,31,0,0,0,0,0,Live,31.2
+P06,Chande Village,Q3,Pongamia pinnata (Karanj),Tree,T50,13.5,Live,77.5,0,0,0,0,0,Live,77.5
+P06,Chande Village,Q3,Gliricidia sepium,Tree,T51,10.5,Live,37,0,0,0,0,0,Live,37.1
+P06,Chande Village,Q4,Tectona grandis (teak),Tree,T52,14,Live,96,0,0,0,0,0,Live,96.3
+P06,Chande Village,Q4,Ficus religiosa,Tree,T53,16.5,Live,126,0,0,0,0,0,Live,126.2
+P07,Warje Hills I,Q1,Gliricidia sepium,Tree,T54,7,Live,43,0,0,0,0,0,Live,43.2
+P07,Warje Hills I,Q2,Pongamia pinnata (Karanj),Tree,T55,11.5,Live,95.5,0,0,0,0,0,Live,95.8
+P07,Warje Hills I,Q3,Anogeissus latifolia,Tree,T56,14,Live,111,0,0,0,0,0,Live,111.3
+P07,Warje Hills I,Q4,Dalbergia latifolia,Tree,T57,10,Live,80.5,0,0,0,0,0,Live,81
+P08,Warje Hills II,Q1,Boswellia serrata,Tree,T58,16,Live,131,0,0,0,0,0,"Leaf fall initiating, canopy thinning",131.1
+P08,Warje Hills II,Q2,Tectona grandis,Tree,T59,15.5,Live,126,0,0,0,0,0,Live,126.2
+P08,Warje Hills II,Q2,Gliricidia sepium,Tree,T60,9,Live,58.5,0,0,0,0,0,Live,58.5
+P08,Warje Hills II,Q3,Lagerstroemia microcarpa,Tree,T61,13,Live,105.5,0,0,0,0,0,Live,105.6
+P08,Warje Hills II,Q4,Albizia lebbeck,Tree,T62,11,Live,90.5,0,0,0,0,0,Live,90.7
+P08,Warje Hills II,Q4,Ficus racemosa,Tree,T63,17,Live,146,0,0,0,0,0,Live,146.2
+P09,Warje Urban Garden,Q1,Pongamia pinnata (Karanj),Tree,T61,8.5,Live,65,0,0,0,0,0,Live,65
+P09,Warje Urban Garden,Q1,Gliricidia sepium,Tree,T62,4.5,Live,22,18,0,0,0,0,Pruned,40
+P09,Warje Urban Garden,Q2,Bauhinia variegata (Kachnar),Tree,T63,6.2,Live,48,0,0,0,0,0,Flowering,48
+P09,Warje Urban Garden,Q2,Pongamia pinnata (Karanj),Tree,T64,7,Live,55.5,0,0,0,0,0,Live,55.5
+P09,Warje Urban Garden,Q3,Azadirachta indica (Neem),Tree,T65,9.8,Live,88,0,0,0,0,0,Old growth,88
+P09,Warje Urban Garden,Q3,Polyalthia longifolia (Ashoka),Tree,T66,11,Live,42,0,0,0,0,0,Boundary,42
+P09,Warje Urban Garden,Q4,Delonix regia (Gulmohar),Tree,T67,10.5,Live,110,0,0,0,0,0,Canopy wide,110
+P09,Warje Urban Garden,Q4,Cassia fistula (Amaltas),Tree,T68,5.5,Live,35,0,0,0,0,0,Live,35

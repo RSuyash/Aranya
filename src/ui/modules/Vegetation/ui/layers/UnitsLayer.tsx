@@ -11,6 +11,12 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
     // Sort by z-index
     const sortedUnits = [...units].sort((a, b) => a.zIndex - b.zIndex);
 
+    // Debug logging
+    console.log('UnitsLayer: Rendering', units.length, 'units');
+    const subplots = units.filter(u => u.role === 'SUBPLOT');
+    console.log('UnitsLayer: Found', subplots.length, 'subplots:', subplots.map(s => s.label));
+    console.log('UnitsLayer: All units:', units.map(u => ({ id: u.id, label: u.label, role: u.role, type: u.type })));
+
     return (
         <svg
             className="absolute inset-0 pointer-events-none"
@@ -31,6 +37,12 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                     <stop offset="100%" style={{ stopColor: '#0d2419', stopOpacity: 0.95 }} />
                 </linearGradient>
 
+                {/* Subplot-specific gradient - GREEN for visibility */}
+                <linearGradient id="subplot-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: '#1a3d2e', stopOpacity: 0.9 }} />
+                    <stop offset="100%" style={{ stopColor: '#0d2419', stopOpacity: 0.95 }} />
+                </linearGradient>
+
                 {/* Glow filter for selection */}
                 <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation="4" result="coloredBlur" />
@@ -44,29 +56,33 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
             {sortedUnits.map(unit => {
                 const isSelected = selectedUnitId === unit.id;
                 const isInteractive = unit.type === 'SAMPLING_UNIT' && unit.role !== 'MAIN_PLOT';
+                const isSubplot = unit.role === 'SUBPLOT';
 
-                // Choose gradient based on status
+                // Choose gradient based on status and type
                 let gradientId = 'quadrant-gradient-not-started';
-                if (unit.status === 'IN_PROGRESS') gradientId = 'quadrant-gradient-in-progress';
-                if (unit.status === 'DONE') gradientId = 'quadrant-gradient-done';
+                if (unit.status === 'IN_PROGRESS') {
+                    gradientId = 'quadrant-gradient-in-progress';
+                } else if (unit.status === 'DONE') {
+                    gradientId = 'quadrant-gradient-done';
+                }
 
                 return (
                     <g key={unit.id}>
-                        {/* Main unit rectangle with glassmorphism effect */}
+                        {/* Main unit rectangle - subplots have green dashed borders */}
                         <rect
                             x={unit.screenX}
                             y={unit.screenY}
                             width={unit.screenWidth}
                             height={unit.screenHeight}
                             fill={unit.role === 'MAIN_PLOT' ? unit.fillColor : `url(#${gradientId})`}
-                            stroke={unit.strokeColor}
-                            strokeWidth={unit.role === 'SUBPLOT' ? 2.5 : isSelected ? 3 : 1.5}
-                            strokeDasharray={unit.role === 'SUBPLOT' ? '6 4' : undefined}
-                            opacity={unit.role === 'MAIN_PLOT' ? 0.3 : 0.95}
+                            stroke={isSubplot ? '#52d273' : unit.strokeColor}
+                            strokeWidth={isSubplot ? 3 : (isSelected ? 3 : 1.5)}
+                            strokeDasharray={isSubplot ? '6 3' : undefined}
+                            opacity={unit.role === 'MAIN_PLOT' ? 0.3 : (isSubplot ? 1.0 : 0.95)}
                             className={isInteractive ? 'pointer-events-auto cursor-pointer transition-all duration-300' : ''}
                             onClick={isInteractive && onSelectUnit ? () => onSelectUnit(unit.id) : undefined}
-                            filter={isSelected ? 'url(#glow)' : undefined}
-                            rx={unit.role === 'SUBPLOT' ? 4 : 2}
+                            filter={isSelected ? '(#glow)' : undefined}
+                            rx={isSubplot ? 4 : 2}
                         />
 
                         {/* Subtle inner border for depth */}
@@ -77,9 +93,9 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                                 width={unit.screenWidth - 4}
                                 height={unit.screenHeight - 4}
                                 fill="none"
-                                stroke="rgba(255, 255, 255, 0.1)"
+                                stroke={isSubplot ? "rgba(82, 210, 115, 0.3)" : "rgba(255, 255, 255, 0.1)"}
                                 strokeWidth={1}
-                                rx={unit.role === 'SUBPLOT' ? 3 : 1}
+                                rx={isSubplot ? 3 : 1}
                                 className="pointer-events-none"
                             />
                         )}

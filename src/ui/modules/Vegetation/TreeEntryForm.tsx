@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, Save, Camera, Leaf, Ruler, Info } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, ChevronRight, Save, Camera, Leaf, Plus, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { db } from '../../../core/data-model/dexie';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,10 +32,23 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const [tagNumber, setTagNumber] = useState('');
     const [speciesName, setSpeciesName] = useState('');
     const [isUnknown, setIsUnknown] = useState(false);
-    const [gbh, setGbh] = useState('');
+    const [stems, setStems] = useState<Array<{ id: string; gbh: string }>>([
+        { id: uuidv4(), gbh: '' }
+    ]);
     const [height, setHeight] = useState('');
     const [hasBarkPhoto, setHasBarkPhoto] = useState(false);
     const [hasLeafPhoto, setHasLeafPhoto] = useState(false);
+
+    // Calculate equivalent GBH using formula: GBH_eq = sqrt(sum(GBH_i^2))
+    const equivalentGBH = useMemo(() => {
+        const validStems = stems.filter(s => s.gbh && !isNaN(parseFloat(s.gbh)));
+        if (validStems.length === 0) return 0;
+        const sumOfSquares = validStems.reduce((sum, stem) => {
+            const gbhValue = parseFloat(stem.gbh);
+            return sum + (gbhValue * gbhValue);
+        }, 0);
+        return Math.sqrt(sumOfSquares);
+    }, [stems]);
 
     // Auto-suggest next tag number
     useEffect(() => {
@@ -58,6 +71,15 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
 
     const handleSave = async (addAnother: boolean) => {
         const now = Date.now();
+
+        // Build stems array with valid GBH values
+        const validStems = stems
+            .filter(s => s.gbh && !isNaN(parseFloat(s.gbh)))
+            .map(s => ({
+                id: s.id,
+                gbh: parseFloat(s.gbh)
+            }));
+
         const newTree: TreeObservation = {
             id: uuidv4(),
             projectId,
@@ -68,9 +90,10 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             speciesName: isUnknown ? 'Unknown' : speciesName,
             isUnknown,
             confidenceLevel: isUnknown ? 'LOW' : 'HIGH',
-            gbh: parseFloat(gbh),
+            gbh: equivalentGBH,
             height: height ? parseFloat(height) : undefined,
-            stemCount: 1,
+            stems: validStems.length > 1 ? validStems : undefined,
+            stemCount: validStems.length,
             condition: 'ALIVE',
             phenology: 'VEGETATIVE',
             images: [], // Placeholder for now
@@ -108,7 +131,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             // Reset for next tree
             setTagNumber((prev) => (parseInt(prev) + 1).toString());
             setSpeciesName('');
-            setGbh('');
+            setStems([{ id: uuidv4(), gbh: '' }]);
             setHeight('');
             setHasBarkPhoto(false);
             setHasLeafPhoto(false);
@@ -198,19 +221,72 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                     {currentStep === 'METRICS' && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div>
-                                <label className="block text-xs font-medium text-[#9ba2c0] uppercase mb-2">GBH (cm)</label>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        value={gbh}
-                                        onChange={e => setGbh(e.target.value)}
-                                        className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-2xl font-mono text-[#f5f7ff] focus:border-[#56ccf2] outline-none pl-12"
-                                        placeholder="0"
-                                        autoFocus
-                                    />
-                                    <Ruler className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#56ccf2]" />
+                                <div className="flex items-center justify-between mb-3">
+                                    <label className="text-xs font-medium text-[#9ba2c0] uppercase">Stem Measurements</label>
+                                    <span className="text-xs font-mono text-[#56ccf2] bg-[#071824] px-2 py-1 rounded border border-[#15324b]">
+                                        {stems.length} {stems.length === 1 ? 'stem' : 'stems'}
+                                    </span>
                                 </div>
+
+                                <div className="space-y-3">
+                                    {stems.map((stem, index) => (
+                                        <div key={stem.id} className="flex gap-2 items-center">
+                                            <div className="flex-1 relative">
+                                                <label className="block text-xs text-[#9ba2c0] mb-1">
+                                                    Stem {index + 1} GBH (cm)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={stem.gbh}
+                                                    onChange={e => {
+                                                        const newStems = [...stems];
+                                                        newStems[index].gbh = e.target.value;
+                                                        setStems(newStems);
+                                                    }}
+                                                    className="w-full bg-[#11182b] border border-[#1d2440] rounded-xl px-4 py-3 text-lg font-mono text-[#f5f7ff] focus:border-[#56ccf2] outline-none"
+                                                    placeholder="0"
+                                                    autoFocus={index === 0}
+                                                />
+                                            </div>
+                                            {stems.length > 1 && (
+                                                <button
+                                                    onClick={() => setStems(stems.filter(s => s.id !== stem.id))}
+                                                    className="mt-5 p-2 text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440] rounded-lg transition"
+                                                    title="Remove stem"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button
+                                    onClick={() => setStems([...stems, { id: uuidv4(), gbh: '' }])}
+                                    className="w-full mt-3 py-2.5 rounded-xl border-2 border-dashed border-[#1d2440] text-[#56ccf2] font-medium hover:border-[#56ccf2] hover:bg-[#071824] transition flex items-center justify-center gap-2"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add Stem
+                                </button>
+
+                                {/* Equivalent GBH Display */}
+                                {equivalentGBH > 0 && (
+                                    <div className="mt-4 p-4 bg-[#071824] border border-[#15324b] rounded-xl">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-[#9ba2c0] uppercase">Equivalent GBH</span>
+                                            <span className="text-2xl font-mono font-bold text-[#56ccf2]">
+                                                {equivalentGBH.toFixed(2)} cm
+                                            </span>
+                                        </div>
+                                        {stems.filter(s => s.gbh).length > 1 && (
+                                            <div className="mt-2 text-xs text-[#555b75] font-mono">
+                                                √({stems.filter(s => s.gbh).map(s => `${s.gbh}²`).join(' + ')})
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
+
                             <div>
                                 <label className="block text-xs font-medium text-[#9ba2c0] uppercase mb-2">Height (m) <span className="text-[#555b75] lowercase">(optional)</span></label>
                                 <input
@@ -265,10 +341,33 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                                     <span className="text-[#9ba2c0]">Species</span>
                                     <span className="font-medium text-[#f5f7ff]">{isUnknown ? 'Unknown' : speciesName}</span>
                                 </div>
-                                <div className="flex justify-between border-b border-[#1d2440] pb-2">
-                                    <span className="text-[#9ba2c0]">GBH</span>
-                                    <span className="font-mono text-[#f5f7ff]">{gbh} cm</span>
-                                </div>
+
+                                {/* Stem Details */}
+                                {stems.filter(s => s.gbh).length > 1 ? (
+                                    <>
+                                        <div className="border-b border-[#1d2440] pb-2">
+                                            <span className="text-[#9ba2c0] block mb-2">Stems ({stems.filter(s => s.gbh).length})</span>
+                                            <div className="space-y-1">
+                                                {stems.filter(s => s.gbh).map((stem, idx) => (
+                                                    <div key={stem.id} className="text-sm font-mono text-[#f5f7ff] flex justify-between">
+                                                        <span className="text-[#9ba2c0]">Stem {idx + 1}</span>
+                                                        <span>{stem.gbh} cm</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between border-b border-[#1d2440] pb-2">
+                                            <span className="text-[#9ba2c0]">Equivalent GBH</span>
+                                            <span className="font-mono font-bold text-[#56ccf2]">{equivalentGBH.toFixed(2)} cm</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex justify-between border-b border-[#1d2440] pb-2">
+                                        <span className="text-[#9ba2c0]">GBH</span>
+                                        <span className="font-mono text-[#f5f7ff]">{equivalentGBH.toFixed(2)} cm</span>
+                                    </div>
+                                )}
+
                                 <div className="flex justify-between">
                                     <span className="text-[#9ba2c0]">Photos</span>
                                     <span className="text-[#f5f7ff]">{[hasBarkPhoto, hasLeafPhoto].filter(Boolean).length} added</span>
@@ -281,52 +380,76 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
 
             {/* Footer Actions */}
             <div className="p-4 border-t border-[#1d2440] bg-[#0b1020] flex gap-3">
-                {currentStep !== 'ID' && (
-                    <button
-                        onClick={() => {
-                            if (currentStep === 'METRICS') setCurrentStep('ID');
-                            if (currentStep === 'PHOTOS') setCurrentStep('METRICS');
-                            if (currentStep === 'REVIEW') setCurrentStep('PHOTOS');
-                        }}
-                        className="px-4 py-3 rounded-xl border border-[#1d2440] text-[#9ba2c0] font-medium hover:bg-[#11182b] transition"
-                    >
-                        Back
-                    </button>
-                )}
-
-                {currentStep !== 'REVIEW' ? (
-                    <button
-                        onClick={() => {
-                            if (currentStep === 'ID') {
+                {currentStep === 'ID' ? (
+                    <>
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-3 rounded-xl border border-[#1d2440] text-[#9ba2c0] font-medium hover:bg-[#11182b] transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => {
                                 if (!tagNumber || (!speciesName && !isUnknown)) return;
                                 setCurrentStep('METRICS');
-                            } else if (currentStep === 'METRICS') {
-                                if (!gbh) return;
-                                setCurrentStep('PHOTOS');
-                            } else if (currentStep === 'PHOTOS') {
-                                setCurrentStep('REVIEW');
-                            }
-                        }}
-                        className="flex-1 bg-[#56ccf2] text-[#050814] font-bold py-3 rounded-xl hover:bg-[#4ab8de] transition flex items-center justify-center gap-2"
-                    >
-                        Next Step <ChevronRight className="w-5 h-5" />
-                    </button>
+                            }}
+                            disabled={!tagNumber || (!speciesName && !isUnknown)}
+                            className="flex-1 bg-[#56ccf2] text-[#050814] font-bold py-3 rounded-xl hover:bg-[#4ab8de] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next Step <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </>
+                ) : currentStep !== 'REVIEW' ? (
+                    <>
+                        <button
+                            onClick={() => {
+                                if (currentStep === 'METRICS') setCurrentStep('ID');
+                                if (currentStep === 'PHOTOS') setCurrentStep('METRICS');
+                            }}
+                            className="px-4 py-3 rounded-xl border border-[#1d2440] text-[#9ba2c0] font-medium hover:bg-[#11182b] transition"
+                        >
+                            Back
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (currentStep === 'METRICS') {
+                                    // Validate at least one stem has a valid GBH value
+                                    const hasValidStem = stems.some(s => s.gbh && !isNaN(parseFloat(s.gbh)));
+                                    if (!hasValidStem) return;
+                                    setCurrentStep('PHOTOS');
+                                } else if (currentStep === 'PHOTOS') {
+                                    setCurrentStep('REVIEW');
+                                }
+                            }}
+                            className="flex-1 bg-[#56ccf2] text-[#050814] font-bold py-3 rounded-xl hover:bg-[#4ab8de] transition flex items-center justify-center gap-2"
+                        >
+                            Next Step <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </>
                 ) : (
-                    <div className="flex-1 flex gap-3">
+                    <>
                         <button
-                            onClick={() => handleSave(true)}
-                            className="flex-1 bg-[#11182b] border border-[#56ccf2] text-[#56ccf2] font-bold py-3 rounded-xl hover:bg-[#1d2440] transition"
+                            onClick={() => setCurrentStep('PHOTOS')}
+                            className="px-4 py-3 rounded-xl border border-[#1d2440] text-[#9ba2c0] font-medium hover:bg-[#11182b] transition"
                         >
-                            Save & Add Another
+                            Back
                         </button>
-                        <button
-                            onClick={() => handleSave(false)}
-                            className="flex-1 bg-[#52d273] text-[#050814] font-bold py-3 rounded-xl hover:bg-[#45c165] transition flex items-center justify-center gap-2"
-                        >
-                            <Save className="w-5 h-5" />
-                            Finish
-                        </button>
-                    </div>
+                        <div className="flex-1 flex gap-3">
+                            <button
+                                onClick={() => handleSave(true)}
+                                className="flex-1 bg-[#11182b] border border-[#56ccf2] text-[#56ccf2] font-bold py-3 rounded-xl hover:bg-[#1d2440] transition"
+                            >
+                                Save & Add Another
+                            </button>
+                            <button
+                                onClick={() => handleSave(false)}
+                                className="flex-1 bg-[#52d273] text-[#050814] font-bold py-3 rounded-xl hover:bg-[#45c165] transition flex items-center justify-center gap-2"
+                            >
+                                <Save className="w-5 h-5" />
+                                Finish
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
         </div>
