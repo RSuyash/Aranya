@@ -24,6 +24,7 @@ export interface UnitVizNode {
     status: 'NOT_STARTED' | 'IN_PROGRESS' | 'DONE';
     treeCount: number;
     vegCount: number;
+    excludesCanopy?: boolean;
 }
 
 export interface TreeVizNode {
@@ -186,6 +187,7 @@ export function buildPlotVizModel({
             status,
             treeCount: treeCountMap.get(node.id) || 0,
             vegCount: vegCountMap.get(node.id) || 0,
+            excludesCanopy: node.tags?.includes('excludes-canopy'),
         };
     });
 
@@ -196,6 +198,7 @@ export function buildPlotVizModel({
         scale,
         bounds,
         padding,
+        config: visualizationSettings?.plotConfiguration,
     });
 
     return {

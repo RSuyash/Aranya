@@ -27,7 +27,7 @@ export function usePlotData(plotId: string) {
         module,
         project,
         blueprint,
-        isLoading: !plot || !blueprint,
+        isLoading: !plot || (!blueprint && plot.blueprintId !== 'dynamic'),
         updateVisualizationSettings,
     };
 }

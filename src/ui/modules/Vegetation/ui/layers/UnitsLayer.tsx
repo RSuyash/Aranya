@@ -118,8 +118,8 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                             height={unit.screenHeight}
                             fill={unit.role === 'MAIN_PLOT' ? unit.fillColor : `url(#${gradientId})`}
                             stroke={isSubplot ? '#52d273' : unit.strokeColor}
-                            strokeWidth={isSubplot ? 3 : (isSelected ? 3 : 1.5)}
-                            strokeDasharray={isSubplot ? '6 3' : undefined}
+                            strokeWidth={isSubplot ? 2 : (isSelected ? 3 : 1.5)}
+                            strokeDasharray={undefined}
                             opacity={unit.role === 'MAIN_PLOT' ? 0.3 : (isSubplot ? 1.0 : 0.95)}
                             className={isInteractive ? 'pointer-events-auto cursor-pointer transition-all duration-300' : ''}
                             onClick={isInteractive && onSelectUnit ? () => onSelectUnit(unit.id) : undefined}

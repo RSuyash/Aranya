@@ -12,6 +12,7 @@ interface TreeEntryFormProps {
     plotId: string;
     unitId: string;
     unitLabel: string;
+    initialPosition?: { x: number, y: number };
     onClose: () => void;
     onSaveSuccess: () => void;
 }
@@ -24,6 +25,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     plotId,
     unitId,
     unitLabel,
+    initialPosition,
     onClose,
     onSaveSuccess
 }) => {
@@ -184,8 +186,11 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             phenology: 'VEGETATIVE',
             validationStatus: status, // Auto-flag if warnings exist
             remarks, // Store warnings for reviewer
+            localX: initialPosition?.x,
+            localY: initialPosition?.y,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            images: [] // Initialize empty images array
         };
 
         await db.treeObservations.add(newTree);
@@ -257,7 +262,17 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                     </button>
                     <div>
                         <h2 className="text-lg font-bold text-[#f5f7ff]">New Tree</h2>
-                        <p className="text-xs text-[#9ba2c0]">{unitLabel} • Plot {plotId.slice(0, 4)}...</p>
+                        <div className="flex items-center gap-2 text-xs text-[#9ba2c0]">
+                            <span className="bg-[#1d2440] px-1.5 py-0.5 rounded text-[#56ccf2] font-medium">{unitLabel}</span>
+                            <span>•</span>
+                            {initialPosition ? (
+                                <span className="font-mono text-[#52d273]">
+                                    X:{initialPosition.x.toFixed(1)} Y:{initialPosition.y.toFixed(1)}
+                                </span>
+                            ) : (
+                                <span>Manual Entry</span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="text-xs font-mono text-[#56ccf2] bg-[#071824] px-2 py-1 rounded border border-[#15324b]">

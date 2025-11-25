@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Map as MapIcon, Info, ArrowLeft } from 'lucide-react';
+import { Map as MapIcon, Info, ArrowLeft, Plus } from 'lucide-react';
 import { UnitDetailPanel } from './UnitDetailPanel';
 import { PlotOverviewPanel } from './PlotOverviewPanel';
 import { TreeEntryForm } from './TreeEntryForm';
@@ -57,6 +57,9 @@ export const PlotVisualizerPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'MAP' | 'LIST'>('MAP');
     const [isAddingTree, setIsAddingTree] = useState(false);
     const [isAddingVeg, setIsAddingVeg] = useState(false);
+
+    const [digitizeMode, setDigitizeMode] = useState<'NONE' | 'TREE' | 'VEG'>('NONE');
+    const [initialPosition, setInitialPosition] = useState<{ x: number, y: number } | undefined>(undefined);
 
     // Panel interaction state
     const [panelFocus, setPanelFocus] = useState<'map' | 'panel' | 'none'>('none');
@@ -140,6 +143,26 @@ export const PlotVisualizerPage: React.FC = () => {
         }
     };
 
+    const handleDigitizeClick = (unitId: string, x: number, y: number) => {
+        console.log(`📍 Digitizing in Unit ${unitId} at (${x}, ${y})`);
+
+        // 1. Select the Unit (Context Switching)
+        setSelectedUnitId(unitId);
+
+        // 2. Set Coordinates for Form
+        setInitialPosition({ x, y });
+
+        // 3. Open Correct Form
+        if (digitizeMode === 'TREE') {
+            setIsAddingTree(true);
+        } else if (digitizeMode === 'VEG') {
+            setIsAddingVeg(true);
+        }
+
+        // 4. Reset Mode (Optional: keep on for rapid entry?)
+        setDigitizeMode('NONE');
+    };
+
     // Get actual unit label from layout
     const selectedUnitLabel = selectedUnitId ? (unitLabelMap.get(selectedUnitId) || selectedUnitId.slice(0, 8)) : "";
 
@@ -188,6 +211,28 @@ export const PlotVisualizerPage: React.FC = () => {
                                     <Info className="w-4 h-4" /> List
                                 </button>
 
+                                {/* Digitize Toggle Group */}
+                                <div className="flex bg-[#1d2440] rounded-lg p-1 gap-1">
+                                    <button
+                                        onClick={() => setDigitizeMode(digitizeMode === 'TREE' ? 'NONE' : 'TREE')}
+                                        className={clsx(
+                                            "px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-2",
+                                            digitizeMode === 'TREE' ? "bg-[#52d273] text-[#050814]" : "text-[#9ba2c0] hover:text-white"
+                                        )}
+                                    >
+                                        <Plus className="w-3 h-3" /> Tree
+                                    </button>
+                                    <button
+                                        onClick={() => setDigitizeMode(digitizeMode === 'VEG' ? 'NONE' : 'VEG')}
+                                        className={clsx(
+                                            "px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-2",
+                                            digitizeMode === 'VEG' ? "bg-[#56ccf2] text-[#050814]" : "text-[#9ba2c0] hover:text-white"
+                                        )}
+                                    >
+                                        <Plus className="w-3 h-3" /> Herb
+                                    </button>
+                                </div>
+
                                 {/* Spacer */}
                                 <div className="flex-1" />
 
@@ -216,6 +261,8 @@ export const PlotVisualizerPage: React.FC = () => {
                                         selectedUnitId={selectedUnitId || undefined}
                                         onSelectUnit={handleSelectUnit}
                                         visualizationSettings={vizSettings}
+                                        digitizationMode={digitizeMode !== 'NONE'}
+                                        onDigitizeTree={handleDigitizeClick}
                                     />
                                 )}
                                 {activeTab === 'LIST' && (
@@ -252,7 +299,10 @@ export const PlotVisualizerPage: React.FC = () => {
                                     onClose={() => setSelectedUnitId(null)}
                                     progress={progressByUnit[selectedUnitId]}
                                     obsSummary={obsSummaryByUnit[selectedUnitId]}
-                                    onAddTree={() => setIsAddingTree(true)}
+                                    onAddTree={() => {
+                                        setInitialPosition(undefined); // Reset position for manual add
+                                        setIsAddingTree(true);
+                                    }}
                                     onAddVeg={() => setIsAddingVeg(true)}
                                     onNextUnit={(() => {
                                         const currentIndex = sortedUnitIds.indexOf(selectedUnitId);
@@ -288,11 +338,13 @@ export const PlotVisualizerPage: React.FC = () => {
             {plot && !plotLoading && isAddingTree && selectedUnitId && (
                 <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-[#050814]">
                     <TreeEntryForm
+                        key={`${selectedUnitId}-${initialPosition?.x ?? 'manual'}-${initialPosition?.y ?? 'manual'}`}
                         projectId={projectId}
                         moduleId={moduleId}
                         plotId={plotId}
                         unitId={selectedUnitId}
                         unitLabel={selectedUnitLabel}
+                        initialPosition={initialPosition}
                         onClose={() => setIsAddingTree(false)}
                         onSaveSuccess={() => {
                             // Refresh data handled by live query
@@ -304,6 +356,7 @@ export const PlotVisualizerPage: React.FC = () => {
             {plot && !plotLoading && isAddingVeg && selectedUnitId && (
                 <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-[#050814]">
                     <VegetationEntryForm
+                        key={`${selectedUnitId}-${initialPosition?.x ?? 'manual'}-${initialPosition?.y ?? 'manual'}`}
                         projectId={projectId}
                         moduleId={moduleId}
                         plotId={plotId}

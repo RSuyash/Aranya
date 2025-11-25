@@ -11,6 +11,7 @@ export interface PlotVisualizationSettings {
     showTreeVisualization: boolean;
     showLabels: boolean;
     subplotOpacity: number; // 0-1
+    plotConfiguration?: import('../plot-engine/types').PlotConfiguration;
 }
 
 export interface Project {
@@ -93,6 +94,7 @@ export interface Plot {
     // --- Configuration ---
     blueprintId: string;
     blueprintVersion: number;
+    configuration?: import('../plot-engine/types').PlotConfiguration; // [NEW] Dynamic Configuration
     protocolVersion?: number; // [Optional] Snapshot of module protocol version at creation
 
     // --- Identification ---

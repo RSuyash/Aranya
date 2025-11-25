@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../core/data-model/dexie';
-import type { Plot, VegetationModule } from '../../../core/data-model/types';
-import { Plus, Map, ArrowRight, Calendar, User, X, ArrowLeft, MapPin, Trash2 } from 'lucide-react';
+import type { Plot } from '../../../core/data-model/types';
+import { Plus, Map as MapIcon, ArrowRight, Calendar, User, X, ArrowLeft, MapPin, Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { BlueprintRegistry, STD_10x10_QUADRANTS } from '../../../core/plot-engine/blueprints';
-import { generateLayout } from '../../../core/plot-engine/generateLayout';
-import type { PlotNodeInstance } from '../../../core/plot-engine/types';
+import { generateDynamicLayout } from '../../../core/plot-engine/dynamicGenerator';
+import type { PlotNodeInstance, PlotConfiguration } from '../../../core/plot-engine/types';
 import { clsx } from 'clsx';
+import { PlotConfigurator } from './ui/PlotConfigurator';
 
 export const VegetationModulePage: React.FC = () => {
     const { projectId, moduleId } = useParams<{ projectId: string; moduleId: string }>();
@@ -16,6 +16,7 @@ export const VegetationModulePage: React.FC = () => {
     const [isNewPlotOpen, setIsNewPlotOpen] = useState(false);
     const [newPlotName, setNewPlotName] = useState('');
     const [newPlotCode, setNewPlotCode] = useState('');
+    const [plotConfig, setPlotConfig] = useState<PlotConfiguration | null>(null);
 
     const moduleData = useLiveQuery(
         () => moduleId ? db.modules.get(moduleId) : undefined,
@@ -51,21 +52,18 @@ export const VegetationModulePage: React.FC = () => {
     };
 
     const handleCreatePlot = async () => {
-        if (!projectId || !moduleId || !newPlotName || !newPlotCode || !moduleData) return;
+        if (!projectId || !moduleId || !newPlotName || !newPlotCode || !moduleData || !plotConfig) return;
 
         const id = uuidv4();
         const now = Date.now();
-
-        const vegModule = moduleData as VegetationModule;
-        const blueprintId = vegModule.defaultBlueprintId || STD_10x10_QUADRANTS.id;
-        const blueprint = BlueprintRegistry.get(blueprintId) || STD_10x10_QUADRANTS;
 
         const newPlot: Plot = {
             id,
             projectId,
             moduleId,
-            blueprintId: blueprint.id,
-            blueprintVersion: blueprint.version,
+            blueprintId: 'dynamic',
+            blueprintVersion: 1,
+            configuration: plotConfig,
             name: newPlotName,
             code: newPlotCode,
             coordinates: {
@@ -88,8 +86,8 @@ export const VegetationModulePage: React.FC = () => {
 
         await db.plots.add(newPlot);
 
-        // Initialize sampling units from blueprint layout
-        const layout = generateLayout(blueprint, undefined, newPlot.id);
+        // Initialize sampling units from dynamic layout
+        const layout = generateDynamicLayout(plotConfig, newPlot.id);
         const collectSamplingUnits = (node: PlotNodeInstance): string[] => {
             const units: string[] = [];
             if (node.type === 'SAMPLING_UNIT') {
@@ -168,7 +166,7 @@ export const VegetationModulePage: React.FC = () => {
             {plots.length === 0 ? (
                 <div className="bg-[#0b1020] border border-[#1d2440] rounded-xl p-12 text-center">
                     <div className="w-16 h-16 bg-[#11182b] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Map className="w-8 h-8 text-[#9ba2c0]" />
+                        <MapIcon className="w-8 h-8 text-[#9ba2c0]" />
                     </div>
                     <h3 className="text-lg font-medium text-[#f5f7ff] mb-2">No plots yet</h3>
                     <p className="text-[#9ba2c0] mb-6 max-w-md mx-auto">
@@ -193,7 +191,7 @@ export const VegetationModulePage: React.FC = () => {
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
                                     <div className="w-8 h-8 rounded-lg bg-[#11182b] flex items-center justify-center text-[#56ccf2]">
-                                        <Map className="w-4 h-4" />
+                                        <MapIcon className="w-4 h-4" />
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-[#f5f7ff] group-hover:text-[#52d273] transition">
@@ -232,7 +230,7 @@ export const VegetationModulePage: React.FC = () => {
 
                             <div className="mt-4 pt-3 border-t border-[#1d2440] flex justify-between items-center">
                                 <span className="text-[10px] text-[#555b75]">
-                                    {plot.blueprintId} v{plot.blueprintVersion}
+                                    {plot.configuration ? `${plot.configuration.dimensions.width}x${plot.configuration.dimensions.length}m` : 'Legacy Plot'}
                                 </span>
                                 <ArrowRight className="w-4 h-4 text-[#52d273] opacity-0 group-hover:opacity-100 transform translate-x-[-4px] group-hover:translate-x-0 transition" />
                             </div>
@@ -244,41 +242,43 @@ export const VegetationModulePage: React.FC = () => {
             {/* New Plot Dialog */}
             {isNewPlotOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#0b1020] border border-[#1d2440] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                        <div className="px-6 py-4 border-b border-[#1d2440] flex items-center justify-between bg-[#050814]">
+                    <div className="bg-[#0b1020] border border-[#1d2440] rounded-2xl w-full max-w-lg shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto">
+                        <div className="px-6 py-4 border-b border-[#1d2440] flex items-center justify-center bg-[#050814] z-10 rounded-t-2xl relative">
                             <h3 className="text-lg font-semibold text-[#f5f7ff]">New Plot</h3>
                             <button
                                 onClick={() => setIsNewPlotOpen(false)}
-                                className="text-[#9ba2c0] hover:text-[#f5f7ff] transition"
+                                className="absolute right-6 text-[#9ba2c0] hover:text-[#f5f7ff] transition"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-xs font-medium text-[#9ba2c0] mb-1.5 uppercase tracking-wide">
-                                    Plot Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newPlotName}
-                                    onChange={(e) => setNewPlotName(e.target.value)}
-                                    placeholder="e.g. North Slope Plot 1"
-                                    className="w-full bg-[#050814] border border-[#1d2440] rounded-lg px-4 py-2.5 text-[#f5f7ff] placeholder-[#555b75] focus:outline-none focus:border-[#56ccf2] transition"
-                                    autoFocus
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-[#9ba2c0] mb-1.5 uppercase tracking-wide">
-                                    Plot Code
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newPlotCode}
-                                    onChange={(e) => setNewPlotCode(e.target.value)}
-                                    placeholder="e.g. P-101"
-                                    className="w-full bg-[#050814] border border-[#1d2440] rounded-lg px-4 py-2.5 text-[#f5f7ff] placeholder-[#555b75] focus:outline-none focus:border-[#56ccf2] transition"
-                                />
+                        <div className="p-6 space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-[#9ba2c0] mb-1.5 uppercase tracking-wide">
+                                        Plot Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newPlotName}
+                                        onChange={(e) => setNewPlotName(e.target.value)}
+                                        placeholder="e.g. North Slope Plot 1"
+                                        className="w-full bg-[#050814] border border-[#1d2440] rounded-lg px-4 py-2.5 text-[#f5f7ff] placeholder-[#555b75] focus:outline-none focus:border-[#56ccf2] transition"
+                                        autoFocus
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-[#9ba2c0] mb-1.5 uppercase tracking-wide">
+                                        Plot Code
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newPlotCode}
+                                        onChange={(e) => setNewPlotCode(e.target.value)}
+                                        placeholder="e.g. P-101"
+                                        className="w-full bg-[#050814] border border-[#1d2440] rounded-lg px-4 py-2.5 text-[#f5f7ff] placeholder-[#555b75] focus:outline-none focus:border-[#56ccf2] transition"
+                                    />
+                                </div>
                             </div>
 
                             <div>
@@ -300,10 +300,13 @@ export const VegetationModulePage: React.FC = () => {
                                 </button>
                             </div>
 
+                            {/* Dynamic Plot Configurator */}
+                            <PlotConfigurator onChange={setPlotConfig} />
+
                             <div className="pt-2">
                                 <button
                                     onClick={handleCreatePlot}
-                                    disabled={!newPlotName || !newPlotCode}
+                                    disabled={!newPlotName || !newPlotCode || !plotConfig}
                                     className="w-full bg-[#56ccf2] text-[#050814] font-semibold py-3 rounded-xl hover:bg-[#4ab8de] disabled:opacity-50 disabled:cursor-not-allowed transition"
                                 >
                                     Create & Start Survey
