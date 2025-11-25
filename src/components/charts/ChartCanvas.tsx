@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { ChartDataSeries, MultiAxisScales, ChartConfig, ChartDataPoint } from './core/types';
 import { Axis } from './Axis';
 
@@ -23,6 +23,9 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
 
     const innerWidth = width - m.left - m.right;
     const innerHeight = height - m.top - m.bottom;
+
+    // Crosshair state
+    const [hoveredPoint, setHoveredPoint] = useState<{x: number; y: number; seriesId: string; pointIndex: number} | null>(null);
 
     // --- Helpers to map data to pixels ---
     const getX = (val: number | string) => {
@@ -63,8 +66,72 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
         return path;
     };
 
+
+    // Find the closest point for crosshair
+    const findClosestPoint = (seriesData: ChartDataPoint[], mouseX: number) => {
+        let closestPoint: ChartDataPoint | null = null;
+        let closestDistance = Infinity;
+        let closestIndex = -1;
+
+        seriesData.forEach((pt, i) => {
+            if (pt.y === null) return;
+            const x = getX(pt.x);
+            const distance = Math.abs(x - mouseX);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestPoint = pt;
+                closestIndex = i;
+            }
+        });
+
+        return { point: closestPoint, index: closestIndex };
+    };
+
+    // Handle mouse move for crosshair
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        const svg = e.currentTarget;
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const cursor = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+
+        // Adjust for margins
+        const adjustedX = cursor.x - m.left;
+
+        // Find the closest point across all series
+        for (const s of series) {
+            if (s.type === 'line' || s.type === 'scatter') {
+                const { point, index } = findClosestPoint(s.data, adjustedX);
+                if (point) {
+                    // Only show crosshair if mouse is close enough to a data point
+                    if (Math.abs(getX(point.x) - adjustedX) < 20) {
+                        setHoveredPoint({
+                            x: getX(point.x),
+                            y: getY(point.y, s.yAxisId || 'left')!,
+                            seriesId: s.id,
+                            pointIndex: index
+                        });
+                        return;
+                    }
+                }
+            }
+        }
+        setHoveredPoint(null);
+    };
+
+    // Handle mouse leave
+    const handleMouseLeave = () => {
+        setHoveredPoint(null);
+    };
+
     return (
-        <svg width={width} height={height} className="overflow-visible">
+        <svg
+            width={width}
+            height={height}
+            className="overflow-visible"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+        >
             <g transform={`translate(${m.left}, ${m.top})`}>
 
                 {/* 1. Axes */}
@@ -134,15 +201,34 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
 
                     if (s.type === 'line') {
                         return (
-                            <path
-                                key={s.id}
-                                d={generatePath(s.data, axisId)}
-                                fill="none"
-                                stroke={color}
-                                strokeWidth={2}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
+                            <g key={s.id}>
+                                <path
+                                    d={generatePath(s.data, axisId)}
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth={2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                                {/* Add markers for hover interaction */}
+                                {s.data.map((pt, i) => {
+                                    if (pt.y === null) return null;
+                                    return (
+                                        <circle
+                                            key={i}
+                                            cx={getX(pt.x)}
+                                            cy={getY(pt.y, axisId)!}
+                                            r={4}
+                                            fill={color}
+                                            stroke="#050814"
+                                            strokeWidth={1}
+                                            opacity={0.7} // More visible to enhance interaction
+                                        >
+                                            <title>{`${s.name}: ${pt.y}`}</title>
+                                        </circle>
+                                    );
+                                })}
+                            </g>
                         );
                     }
 
@@ -171,6 +257,44 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
 
                     return null;
                 })}
+
+                {/* Crosshair lines */}
+                {hoveredPoint && (
+                    <g>
+                        {/* Vertical line */}
+                        <line
+                            x1={hoveredPoint.x}
+                            y1={0}
+                            x2={hoveredPoint.x}
+                            y2={innerHeight}
+                            stroke="#ffffff"
+                            strokeWidth={1}
+                            strokeDasharray="4,4"
+                            opacity={0.7}
+                        />
+                        {/* Horizontal line */}
+                        <line
+                            x1={0}
+                            y1={hoveredPoint.y}
+                            x2={innerWidth}
+                            y2={hoveredPoint.y}
+                            stroke="#ffffff"
+                            strokeWidth={1}
+                            strokeDasharray="4,4"
+                            opacity={0.7}
+                        />
+                        {/* Highlight circle on the point */}
+                        <circle
+                            cx={hoveredPoint.x}
+                            cy={hoveredPoint.y}
+                            r={6}
+                            fill="none"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                            opacity={0.9}
+                        />
+                    </g>
+                )}
             </g>
         </svg>
     );

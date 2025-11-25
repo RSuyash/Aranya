@@ -19,7 +19,7 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
     mode = 'random',
     height = 280,
     className,
-    defaultChartType = 'bar'
+    defaultChartType = 'line'
 }) => {
     const [chartType, setChartType] = useState<ChartType>(defaultChartType);
 
@@ -29,13 +29,16 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
             id: 'richness',
             name: 'Species Richness',
             type: chartType,
-            xAxisType: 'category',
+            xAxisType: 'linear',
             yAxisType: 'linear',
             color: '#56ccf2',
             data: data.map(pt => ({
-                x: pt.plotsSampled.toString(),
+                x: pt.plotsSampled,
                 y: pt.richness,
-                meta: { sd: pt.sd }
+                meta: {
+                    sd: pt.sd,
+                    effort: pt.plotsSampled
+                }
             }))
         }
     ];
@@ -75,8 +78,8 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
             <SmartChart
                 series={series}
                 config={{
-                    xAxisLabel: mode === 'cumulative' ? 'Cumulative Area (Plots)' : 'Plots Sampled',
-                    yAxisLabel: 'Species Richness',
+                    xAxisLabel: mode === 'cumulative' ? 'Cumulative Area (Plots)' : 'Sampling Effort (Plots)',
+                    yAxisLabel: 'Species Richness (S)',
                     showGrid: true,
                     height: height,
                     forceZeroBaseline: chartType === 'bar'
