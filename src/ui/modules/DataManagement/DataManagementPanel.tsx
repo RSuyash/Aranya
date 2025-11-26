@@ -45,7 +45,7 @@ export const DataManagementPanel: React.FC<{ projectId: string }> = ({ projectId
                     <div>
                         <h3 className="text-lg font-bold text-[#f5f7ff] flex items-center gap-2">
                             <Archive className="w-5 h-5 text-[#56ccf2]" />
-                            Terra Archive (.terx)
+                            Terra Archive (.fldx)
                         </h3>
                         <p className="text-sm text-[#9ba2c0] mt-1 max-w-lg">
                             The complete project package. Contains your raw database, photos, and analysis-ready CSVs.

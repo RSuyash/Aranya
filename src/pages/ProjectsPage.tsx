@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRepositories } from '../hooks/useRepositories';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { CreateProjectForm } from '../components/projects/CreateProjectForm';
@@ -22,8 +22,15 @@ export const ProjectsPage: React.FC = () => {
     const { setHeader } = useHeader();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Import State
+    const [importData, setImportData] = useState<ProjectExportData | null>(null);
+    const [importConflict, setImportConflict] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const [showImportWizard, setShowImportWizard] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
+
     // Set Header Context
-    React.useEffect(() => {
+    useEffect(() => {
         setHeader({
             title: 'Projects',
             breadcrumbs: [
@@ -37,12 +44,19 @@ export const ProjectsPage: React.FC = () => {
         });
     }, [setHeader]);
 
-    // Import State
-    const [importData, setImportData] = useState<ProjectExportData | null>(null);
-    const [importConflict, setImportConflict] = useState(false);
-    const [isImporting, setIsImporting] = useState(false);
-    const [showImportWizard, setShowImportWizard] = useState(false);
-    const [isDragOver, setIsDragOver] = useState(false);
+    // Handle PWA File Launch (Double Click)
+    useEffect(() => {
+        if ('launchQueue' in window) {
+            // @ts-ignore - Types might not be available
+            window.launchQueue.setConsumer(async (launchParams: any) => {
+                if (launchParams.files && launchParams.files.length > 0) {
+                    const fileHandle = launchParams.files[0];
+                    const file = await fileHandle.getFile();
+                    await processFile(file);
+                }
+            });
+        }
+    }, []);
 
     // File Handler
     const processFile = async (file: File) => {
