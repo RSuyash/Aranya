@@ -101,6 +101,7 @@ export async function seedAnalysisTestProject() {
                 lat: 18.5204 + (Math.random() * 0.02),
                 lng: 73.8567 + (Math.random() * 0.02),
                 accuracyM: 5,
+                fixType: 'SINGLE'
             },
             orientation: 0,
             slope: Math.round(Math.random() * 15),
@@ -173,24 +174,22 @@ export async function seedAnalysisTestProject() {
  * - Plot 4: Adds 1 more species
  * - Plot 5: Adds final 2 rare species (maximum diversity)
  */
-function generateTreesForPlot(plotNum: number, speciesPool: any[], samplingUnits: string[]) {
+function generateTreesForPlot(plotNum: number, _speciesPool: any[], samplingUnits: string[]) {
     const trees: Array<{ tag: string; species: string; gbh: number; suId: string; phenology: string }> = [];
     let tagCounter = 1;
 
     const phenologies = ['FLOWERING', 'VEGETATIVE', 'FRUITING', 'VEGETATIVE'];
 
-    // Define which species appear in which plots (cumulative)
-    const plotSpeciesMap: { [key: number]: string[] } = {
-        1: ['Tectona grandis', 'Terminalia arjuna'],
-        2: ['Tectona grandis', 'Terminalia arjuna', 'Azadirachta indica'],
-        3: ['Tectona grandis', 'Terminalia arjuna', 'Azadirachta indica', 'Ficus benghalensis', 'Dalbergia sissoo'],
-        4: ['Tectona grandis', 'Terminalia arjuna', 'Azadirachta indica', 'Ficus benghalensis', 'Dalbergia sissoo', 'Shorea robusta'],
-        5: ['Tectona grandis', 'Terminalia arjuna', 'Azadirachta indica', 'Ficus benghalensis', 'Dalbergia sissoo', 'Shorea robusta', 'Mangifera indica', 'Butea monosperma'],
-    };
+    /*
+     * Expected species by plot (for documentation):
+     * 1: ['Tectona grandis', 'Terminalia arjuna'],
+     * 2: ['Tectona grandis', 'Terminalia arjuna', 'Azadirachta indica'],
+     * 3: ['Tectona grandis', 'Terminalia arjuna', 'Azadirachta indica', 'Ficus benghalensis', 'Dalbergia sissoo'],
+     * 4: ['Tectona grandis', 'Terminalia arjuna', 'Azadirachta indica', 'Ficus benghalensis', 'Dalbergia sissoo', 'Shorea robusta'],
+     * 5: ['Tectona grandis', 'Terminalia arjuna', 'Azadirachta indica', 'Ficus benghalensis', 'Dalbergia sissoo', 'Shorea robusta', 'Mangifera indica', 'Butea monosperma'],
+     */
 
-    const availableSpecies = plotSpeciesMap[plotNum];
-
-    // Distribution patterns by plot
+    // Distribution patterns by plot (manually defined for now)
     const distributions: { [key: number]: { [species: string]: number } } = {
         1: { 'Tectona grandis': 8, 'Terminalia arjuna': 7 }, // High abundance, low diversity
         2: { 'Tectona grandis': 6, 'Terminalia arjuna': 5, 'Azadirachta indica': 4 },

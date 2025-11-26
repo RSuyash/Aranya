@@ -42,7 +42,7 @@ export const useRepositories = () => {
             code: name.substring(0, 6).toUpperCase(), // Auto-generate code
             blueprintId: 'std-10x10-4q', // Default to 4-quadrant standard
             blueprintVersion: 1,
-            coordinates: { lat: 0, lng: 0, accuracyM: 0 },
+            coordinates: { lat: 0, lng: 0, accuracyM: 0, fixType: 'SINGLE' },
             orientation: 0,
             slope: 0,
             aspect: 'N',

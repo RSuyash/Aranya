@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { ArrowLeft, Check, Plus, Trash2 } from 'lucide-react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../core/data-model/dexie';
 import { VegetationSettingsForm } from '../ui/modules/Vegetation/VegetationSettingsForm';
 import { useHeader } from '../context/HeaderContext';

@@ -79,6 +79,7 @@ export async function seedDemoProjectIfEmpty() {
                 lat: 18.5204 + (Math.random() * 0.01),
                 lng: 73.8567 + (Math.random() * 0.01),
                 accuracyM: 5,
+                fixType: 'SINGLE'
             },
             orientation: 0,
             slope: Math.round(Math.random() * 10),

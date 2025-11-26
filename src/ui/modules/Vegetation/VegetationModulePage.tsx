@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../core/data-model/dexie';
 import type { Plot } from '../../../core/data-model/types';
-import { Plus, Map as MapIcon, ArrowRight, Calendar, User, X, ArrowLeft, MapPin, Settings, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Map as MapIcon, ArrowLeft, MapPin, CheckCircle, Loader2, Calendar, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { generateDynamicLayout } from '../../../core/plot-engine/dynamicGenerator';
 import type { PlotNodeInstance, PlotConfiguration } from '../../../core/plot-engine/types';
@@ -201,8 +201,8 @@ export const VegetationModulePage: React.FC = () => {
                                     </span>
                                 </div>
                                 <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${plot.status === 'COMPLETED' ? 'bg-[#0b2214] text-[#52d273] border-[#21452b]' :
-                                        plot.status === 'IN_PROGRESS' ? 'bg-[#071824] text-[#56ccf2] border-[#15324b]' :
-                                            'bg-[#1d2440] text-[#9ba2c0] border-[#2d3855]'
+                                    plot.status === 'IN_PROGRESS' ? 'bg-[#071824] text-[#56ccf2] border-[#15324b]' :
+                                        'bg-[#1d2440] text-[#9ba2c0] border-[#2d3855]'
                                     }`}>
                                     {plot.status.replace('_', ' ')}
                                 </span>

@@ -20,8 +20,8 @@ export function positionTrees({
     trees,
     units,
     scale,
-    bounds,
-    padding,
+    bounds: _bounds,
+    padding: _padding,
     config,
 }: PositionTreesArgs): TreeVizNode[] {
     if (trees.length === 0) return [];

@@ -15,21 +15,6 @@ export const AppShell: React.FC = () => {
         setIsMobileMenuOpen(false);
     }, [location.pathname]);
 
-    // Helper to determine title/breadcrumbs based on route
-    // In a real app, you might use a route config object or context
-    const getHeaderInfo = () => {
-        const path = location.pathname;
-        if (path === '/') return { title: 'Mission Control' };
-        if (path.startsWith('/projects')) return {
-            breadcrumbs: [{ label: 'Projects', path: '/projects' }, { label: 'Active Survey' }]
-        };
-        if (path.startsWith('/map')) return { title: 'Geospatial View' };
-        if (path.startsWith('/settings')) return { title: 'System Settings' };
-        return { title: 'Dashboard' };
-    };
-
-    const headerInfo = getHeaderInfo();
-
     return (
         // The background is handled by body in index.css, ensuring seamless gradient
         <div className="flex h-screen w-full overflow-hidden text-[#f5f7ff]">
@@ -60,9 +45,7 @@ export const AppShell: React.FC = () => {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 h-full relative">
                 <Header
-                    title={headerInfo.title}
-                    breadcrumbs={headerInfo.breadcrumbs}
-                    onMenuClick={() => setIsMobileMenuOpen(true)}
+                    onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     onToggleSidebar={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
                     collapsed={isDesktopCollapsed}
                 />

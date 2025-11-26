@@ -27,7 +27,7 @@ export const FieldDataContainer: React.FC<FieldDataContainerProps> = ({ projectI
             code: newPlotName.substring(0, 6).toUpperCase(),
             blueprintId: 'std-10x10-4q',
             blueprintVersion: 1,
-            coordinates: { lat: 0, lng: 0, accuracyM: 0 },
+            coordinates: { lat: 0, lng: 0, accuracyM: 0, fixType: 'SINGLE' },
             orientation: 0,
             slope: 0,
             aspect: 'N',

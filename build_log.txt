@@ -1,0 +1,23 @@
+
+> project-terra@0.0.0 build
+> tsc -b && vite build
+
+src/components/charts/core/formatter.ts(2,5): error TS6133: 'maxValue' is declared but its value is never read.
+src/components/ui/LiveTrackOverlay.tsx(3,24): error TS6133: 'Navigation' is declared but its value is never read.
+src/core/data-model/seed.ts(78,13): error TS2741: Property 'fixType' is missing in type '{ lat: number; lng: number; accuracyM: number; }' but required in type '{ lat: number; lng: number; accuracyM: number; altitude?: number | undefined; fixType: "SINGLE" | "AVERAGED"; sampleCount?: number | undefined; durationSec?: number | undefined; timestamp?: number | undefined; }'.
+src/core/data-model/seedAnalysisTest.ts(100,13): error TS2741: Property 'fixType' is missing in type '{ lat: number; lng: number; accuracyM: number; }' but required in type '{ lat: number; lng: number; accuracyM: number; altitude?: number | undefined; fixType: "SINGLE" | "AVERAGED"; sampleCount?: number | undefined; durationSec?: number | undefined; timestamp?: number | undefined; }'.
+src/core/data-model/seedAnalysisTest.ts(176,48): error TS6133: 'speciesPool' is declared but its value is never read.
+src/core/data-model/seedAnalysisTest.ts(191,11): error TS6133: 'availableSpecies' is declared but its value is never read.
+src/layouts/AppShell.tsx(63,21): error TS2322: Type '{ title: string | undefined; breadcrumbs: ({ label: string; path: string; } | { label: string; path?: undefined; })[] | undefined; onMenuClick: () => void; onToggleSidebar: () => void; collapsed: boolean; }' is not assignable to type 'IntrinsicAttributes & HeaderProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & HeaderProps'.
+src/pages/ProjectSettingsPage.tsx(5,1): error TS6133: 'useLiveQuery' is declared but its value is never read.
+src/ui/modules/DataManagement/FieldDataContainer.tsx(30,13): error TS2741: Property 'fixType' is missing in type '{ lat: number; lng: number; accuracyM: number; }' but required in type '{ lat: number; lng: number; accuracyM: number; altitude?: number | undefined; fixType: "SINGLE" | "AVERAGED"; sampleCount?: number | undefined; durationSec?: number | undefined; timestamp?: number | undefined; }'.
+src/ui/modules/Vegetation/VegetationModulePage.tsx(6,32): error TS6133: 'ArrowRight' is declared but its value is never read.
+src/ui/modules/Vegetation/VegetationModulePage.tsx(6,54): error TS6133: 'User' is declared but its value is never read.
+src/ui/modules/Vegetation/VegetationModulePage.tsx(6,82): error TS6133: 'Settings' is declared but its value is never read.
+src/ui/modules/Vegetation/VegetationModulePage.tsx(6,114): error TS6133: 'AlertTriangle' is declared but its value is never read.
+src/ui/modules/Vegetation/viz/physics.ts(23,5): error TS6133: 'bounds' is declared but its value is never read.
+src/ui/modules/Vegetation/viz/physics.ts(24,5): error TS6133: 'padding' is declared but its value is never read.
+src/utils/sync/csvParser.ts(45,11): error TS6133: 'target' is declared but its value is never read.
+src/utils/verification.ts(39,13): error TS2741: Property 'fixType' is missing in type '{ lat: number; lng: number; accuracyM: number; }' but required in type '{ lat: number; lng: number; accuracyM: number; altitude?: number | undefined; fixType: "SINGLE" | "AVERAGED"; sampleCount?: number | undefined; durationSec?: number | undefined; timestamp?: number | undefined; }'.
+src/utils/verification.ts(139,13): error TS2741: Property 'fixType' is missing in type '{ lat: number; lng: number; accuracyM: number; }' but required in type '{ lat: number; lng: number; accuracyM: number; altitude?: number | undefined; fixType: "SINGLE" | "AVERAGED"; sampleCount?: number | undefined; durationSec?: number | undefined; timestamp?: number | undefined; }'.

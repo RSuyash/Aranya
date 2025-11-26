@@ -42,7 +42,6 @@ export const parseCSV = async (file: File): Promise<{ headers: string[], rows: C
  */
 export const guessMapping = (headers: string[], targetField: string): string | null => {
     const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const target = normalize(targetField);
 
     // Common synonyms in ecological datasets
     const synonyms: Record<string, string[]> = {

@@ -1,5 +1,5 @@
 export const autoFormatter = (
-    maxValue: number,
+    _maxValue: number,
     type: 'linear' | 'log' | 'time' | 'category' = 'linear'
 ): (v: number | string) => string => {
 

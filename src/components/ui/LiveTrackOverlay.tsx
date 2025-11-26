@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { gpsManager } from '../../utils/gps/GPSManager';
-import { Play, Square, Navigation, Footprints } from 'lucide-react';
+import { Play, Square, Footprints } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export const LiveTrackOverlay: React.FC<{ projectId: string; surveyorId: string; moduleId: string }> = ({

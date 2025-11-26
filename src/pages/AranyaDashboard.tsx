@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
-import { TreePine, Map, ArrowRight, BarChart3, Database, Upload } from 'lucide-react';
+import { TreePine, Map, ArrowRight, BarChart3, Database, Upload, Download } from 'lucide-react';
 import { ImportWizardModal } from '../components/import-wizard/ImportWizardModal';
 import { DataManagementModal } from '../ui/modules/DataManagement/DataManagementModal';
 
@@ -11,6 +11,25 @@ const AranyaDashboard: React.FC = () => {
     const { projects, useModules, usePlots, useTreeObservations } = useRepositories();
     const [showImport, setShowImport] = useState(false);
     const [showDataManagement, setShowDataManagement] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    React.useEffect(() => {
+        const handler = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            setDeferredPrompt(null);
+        }
+    };
 
     const project = projects?.find(p => p.id === projectId);
     const modules = useModules(projectId);
@@ -50,6 +69,15 @@ const AranyaDashboard: React.FC = () => {
                         <Upload className="w-4 h-4" />
                         Import CSV
                     </button>
+                    {deferredPrompt && (
+                        <button
+                            onClick={handleInstallClick}
+                            className="flex items-center gap-2 bg-[#56ccf2] text-[#050814] px-4 py-2 rounded-lg font-medium hover:bg-[#4ab8de] transition shadow-lg shadow-[#56ccf2]/20"
+                        >
+                            <Download className="w-4 h-4" />
+                            Install App
+                        </button>
+                    )}
                     <button
                         onClick={() => navigate(`/projects/${projectId}/settings`)}
                         className="px-4 py-2 bg-[#56ccf2] text-[#050814] rounded-lg font-medium hover:bg-[#4ab8de] transition shadow-lg shadow-[#56ccf2]/20"
