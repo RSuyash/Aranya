@@ -1,8 +1,22 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GridContainer } from '../components/plot/GridContainer';
 import { Quadrant } from '../components/plot/Quadrant';
+import { useHeader } from '../context/HeaderContext';
 
 export const MapPage: React.FC = () => {
+    const { setHeader } = useHeader();
+
+    useEffect(() => {
+        setHeader({
+            title: 'Global Map',
+            breadcrumbs: [
+                { label: 'Terra', path: '/' },
+                { label: 'Global Map', path: '/map' }
+            ],
+            moduleColor: 'cyan',
+            isLoading: false
+        });
+    }, [setHeader]);
     // Mock Plot Data: 20x20m Plot with 4 Quadrants (10x10m each)
     const quadrants = [
         { id: 'q1', label: 'Q1 (NW)', x: 0, y: 0, status: 'completed' as const },

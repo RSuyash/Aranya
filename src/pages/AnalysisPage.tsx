@@ -1,19 +1,35 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { calculateShannonIndex, calculateSimpsonIndex, calculateCommunityMetrics, type SpeciesStats } from '../analysis/indices';
 import { calculateSAC } from '../analysis/sac';
 import { TreeStructure, ChartLineUp, Table, Leaf } from 'phosphor-react';
 import { SpeciesAreaCurveChart } from '../components/charts/SpeciesAreaCurveChart';
+import { useHeader } from '../context/HeaderContext';
 
 export const AnalysisPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const { projects, usePlots, useTreeObservations } = useRepositories();
+    const { setHeader } = useHeader();
 
     const project = projects?.find(p => p.id === projectId);
     const plots = usePlots(projectId);
     const trees = useTreeObservations(projectId);
+
+    useEffect(() => {
+        setHeader({
+            title: 'Analysis',
+            breadcrumbs: [
+                { label: 'Terra', path: '/' },
+                { label: 'Projects', path: '/projects' },
+                { label: project?.name || '...', path: `/projects/${projectId}` },
+                { label: 'Analysis', path: `/projects/${projectId}/analysis` }
+            ],
+            moduleColor: 'amber',
+            isLoading: !project
+        });
+    }, [project, projectId, setHeader]);
 
     const metrics = useMemo(() => {
         console.log('🔬 [AnalysisPage] Calculating metrics...');

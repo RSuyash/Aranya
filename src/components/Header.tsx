@@ -1,120 +1,95 @@
 import React from 'react';
-import {
-    List,
-    Bell,
-    SidebarSimple,
-    MagnifyingGlass,
-    CaretRight,
-    Command,
-    Question
-} from 'phosphor-react';
+import { List, SidebarSimple, MagnifyingGlass, Bell } from 'phosphor-react';
 import clsx from 'clsx';
-import { Link } from 'react-router-dom';
+import { useHeader } from '../context/HeaderContext';
+import { Breadcrumbs } from './ui/Breadcrumbs';
 
 interface HeaderProps {
-    title?: string;
-    breadcrumbs?: { label: string; path?: string }[];
-    onMenuClick?: () => void;
+    onMobileMenuToggle?: () => void;
     onToggleSidebar?: () => void;
     collapsed?: boolean;
 }
 
+const MODULE_COLORS = {
+    default: { border: 'border-white/5', text: 'text-[#56ccf2]' },
+    emerald: { border: 'border-[#52d273]/30', text: 'text-[#52d273]' }, // Vegetation
+    cyan: { border: 'border-[#56ccf2]/30', text: 'text-[#56ccf2]' },    // Water/General
+    amber: { border: 'border-[#f2c94c]/30', text: 'text-[#f2c94c]' },    // Analysis
+    rose: { border: 'border-[#ff7e67]/30', text: 'text-[#ff7e67]' },     // Alerts
+    blue: { border: 'border-[#3b82f6]/30', text: 'text-[#3b82f6]' },     // Water Quality
+    indigo: { border: 'border-[#6366f1]/30', text: 'text-[#6366f1]' },   // Research
+    violet: { border: 'border-[#8b5cf6]/30', text: 'text-[#8b5cf6]' },   // System
+};
+
 export const Header: React.FC<HeaderProps> = ({
-    title,
-    breadcrumbs = [],
-    onMenuClick,
+    onMobileMenuToggle,
     onToggleSidebar,
     collapsed
 }) => {
-    // If no breadcrumbs provided, try to auto-generate or use title
-    const displayTitle = title || 'Dashboard';
+    const { breadcrumbs, title, actions, status, moduleColor, isLoading } = useHeader();
+
+    const theme = MODULE_COLORS[moduleColor] || MODULE_COLORS.default;
 
     return (
-        <header className="h-16 bg-[#050814]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 transition-all duration-300 shadow-2xl shadow-black/20">
-            {/* Left Section: Navigation Controls & Context */}
+        <header className={clsx(
+            "h-16 bg-[#050814]/90 backdrop-blur-xl sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 shadow-2xl transition-colors duration-500 ease-in-out",
+            "border-b", theme.border // Dynamic Border Color
+        )}>
+            {/* Left: Navigation & Breadcrumbs */}
             <div className="flex items-center gap-4 flex-1 overflow-hidden">
-                {/* Mobile Menu Toggle */}
-                <button
-                    onClick={onMenuClick}
-                    className="p-2 -ml-2 text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-white/5 rounded-lg md:hidden transition-all active:scale-95"
-                >
-                    <List size={20} weight="bold" />
+                <button onClick={onMobileMenuToggle} className="md:hidden p-2 -ml-2 text-[#9ba2c0]">
+                    <List size={20} />
                 </button>
-
-                {/* Desktop Sidebar Toggle */}
-                <button
-                    onClick={onToggleSidebar}
-                    className="hidden md:flex p-2 -ml-2 text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-white/5 rounded-lg transition-all active:scale-95"
-                    title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-                >
+                <button onClick={onToggleSidebar} className="hidden md:flex p-2 -ml-2 text-[#9ba2c0] hover:text-white">
                     <SidebarSimple size={20} weight={collapsed ? "fill" : "regular"} />
                 </button>
 
-                {/* Vertical Divider */}
                 <div className="h-6 w-px bg-white/10 hidden md:block" />
 
-                {/* Breadcrumbs / Title Area */}
-                <nav className="flex items-center gap-2 text-sm font-medium whitespace-nowrap overflow-hidden mask-linear-fade">
-                    {breadcrumbs.length > 0 ? (
-                        breadcrumbs.map((crumb, index) => (
-                            <React.Fragment key={index}>
-                                {index > 0 && (
-                                    <CaretRight size={12} className="text-[#555b75] flex-shrink-0" />
-                                )}
-                                {crumb.path ? (
-                                    <Link
-                                        to={crumb.path}
-                                        className="text-[#9ba2c0] hover:text-[#56ccf2] transition-colors"
-                                    >
-                                        {crumb.label}
-                                    </Link>
-                                ) : (
-                                    <span className={clsx(
-                                        index === breadcrumbs.length - 1 ? "text-[#f5f7ff]" : "text-[#9ba2c0]"
-                                    )}>
-                                        {crumb.label}
-                                    </span>
-                                )}
-                            </React.Fragment>
-                        ))
-                    ) : (
-                        <h2 className="text-base font-semibold text-[#f5f7ff] tracking-tight">{displayTitle}</h2>
-                    )}
-                </nav>
+                {/* Context-Aware Title/Breadcrumbs */}
+                {breadcrumbs.length > 0 || isLoading ? (
+                    <Breadcrumbs items={breadcrumbs} isLoading={isLoading} accentColor={theme.text} />
+                ) : (
+                    <h2 className="text-base font-semibold text-[#f5f7ff] animate-in fade-in slide-in-from-left-2">{title}</h2>
+                )}
             </div>
 
-            {/* Center Section: Global Search (Optional but high-value UX) */}
-            <div className="hidden md:flex items-center justify-center flex-1 max-w-md mx-4">
-                <button className="w-full flex items-center gap-3 bg-[#0b1020]/50 border border-white/5 hover:border-white/10 hover:bg-[#0b1020] text-[#9ba2c0] px-4 py-2 rounded-lg transition-all group group-hover:shadow-lg group-hover:shadow-[#56ccf2]/5">
-                    <MagnifyingGlass size={16} className="group-hover:text-[#56ccf2] transition-colors" />
-                    <span className="text-xs">Search projects, plots, species...</span>
-                    <div className="ml-auto flex items-center gap-1 text-[10px] font-mono bg-white/5 px-1.5 py-0.5 rounded border border-white/5 text-[#555b75]">
-                        <Command size={10} /> K
+            {/* Center: Status Indicators (Scientific Priority) */}
+            {status && (
+                <div className="hidden md:flex items-center justify-center px-4 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-[#11182b] border border-white/10 rounded-full px-3 py-1 text-xs font-mono text-[#9ba2c0] flex items-center gap-2">
+                        {status}
                     </div>
-                </button>
-            </div>
+                </div>
+            )}
 
-            {/* Right Section: Actions & Profile */}
+            {/* Right: Page Actions & Global Tools */}
             <div className="flex items-center gap-2 md:gap-4 justify-end flex-1">
-                {/* Help Trigger */}
-                <button className="hidden md:flex p-2 text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-white/5 rounded-full transition-colors">
-                    <Question size={20} />
+                {/* Injected Page Actions */}
+                <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-4 duration-300">
+                    {actions}
+                </div>
+
+                {/* Global Search */}
+                <button className="p-2 text-[#9ba2c0] hover:text-white transition-colors">
+                    <MagnifyingGlass size={20} />
                 </button>
 
-                {/* Notifications */}
-                <button className="p-2 text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-white/5 rounded-full transition-colors relative group">
-                    <Bell size={20} weight={true ? "regular" : "fill"} /> {/* Conditional weight example */}
+                <div className="h-6 w-px bg-white/10 hidden md:block" />
 
-                    {/* Pulsing Badge */}
-                    <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff7e67] opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff7e67] border-2 border-[#050814]"></span>
-                    </span>
+                <button className="p-2 text-[#9ba2c0] hover:text-white relative">
+                    <Bell size={20} />
+                    {/* Notification Dot */}
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-[#ff7e67] rounded-full" />
                 </button>
 
-                {/* Mobile Profile Avatar (If Sidebar is hidden/overlay) */}
-                <div className="md:hidden w-8 h-8 rounded-full bg-gradient-to-tr from-[#56ccf2] to-[#52d273] p-[1px]">
-                    <div className="w-full h-full rounded-full bg-[#0b1020] flex items-center justify-center text-xs font-bold text-[#f5f7ff]">
+                {/* User Profile */}
+                <div className={clsx("w-8 h-8 rounded-full p-[1px] bg-gradient-to-tr transition-all duration-500",
+                    moduleColor === 'emerald' ? "from-[#52d273] to-[#21452b]" :
+                        moduleColor === 'blue' ? "from-[#3b82f6] to-[#1e3a8a]" :
+                            "from-[#56ccf2] to-[#52d273]"
+                )}>
+                    <div className="w-full h-full rounded-full bg-[#0b1020] flex items-center justify-center text-xs font-bold text-white">
                         JD
                     </div>
                 </div>

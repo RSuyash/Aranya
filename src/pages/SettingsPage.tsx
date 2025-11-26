@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/Button';
 import { verifyDatabaseIntegrity, generateTestData } from '../utils/verification';
 import { CheckCircle, WarningCircle } from 'phosphor-react';
 import { useNavigate } from 'react-router-dom';
+import { useHeader } from '../context/HeaderContext';
 
 export const SettingsPage: React.FC = () => {
     const [logs, setLogs] = useState<string[]>([]);
     const navigate = useNavigate();
+    const { setHeader } = useHeader();
+
+    useEffect(() => {
+        setHeader({
+            title: 'System Settings',
+            breadcrumbs: [
+                { label: 'Terra', path: '/' },
+                { label: 'Settings', path: '/settings' }
+            ],
+            moduleColor: 'violet',
+            isLoading: false
+        });
+    }, [setHeader]);
 
     const handleVerify = async () => {
         setLogs(['Running verification...']);

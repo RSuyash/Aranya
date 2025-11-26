@@ -3,18 +3,35 @@ import { useRepositories } from '../hooks/useRepositories';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { CreateProjectForm } from '../components/projects/CreateProjectForm';
 import { Button } from '../components/ui/Button';
-import { Plus, MagnifyingGlass, UploadSimple, X, Warning, FileArrowUp, Copy } from 'phosphor-react';
+import { Plus, MagnifyingGlass, UploadSimple, Warning, FileArrowUp, Copy } from 'phosphor-react';
 import { Input } from '../components/ui/Input';
 import { useNavigate } from 'react-router-dom';
 import { parseImportFile, checkProjectExists, commitImport } from '../utils/sync/import';
 import type { ProjectExportData } from '../utils/sync/export';
 import { db } from '../core/data-model/dexie';
+import { useHeader } from '../context/HeaderContext';
 
 export const ProjectsPage: React.FC = () => {
     const { projects } = useRepositories();
     const navigate = useNavigate();
     const [isCreating, setIsCreating] = useState(false);
     const [search, setSearch] = useState('');
+    const { setHeader } = useHeader();
+
+    // Set Header Context
+    React.useEffect(() => {
+        setHeader({
+            title: 'Projects',
+            breadcrumbs: [
+                { label: 'Terra', path: '/' },
+                { label: 'Projects', path: '/projects' }
+            ],
+            actions: null,
+            status: null,
+            moduleColor: 'default',
+            isLoading: false
+        });
+    }, [setHeader]);
 
     // Import State
     const [importData, setImportData] = useState<ProjectExportData | null>(null);

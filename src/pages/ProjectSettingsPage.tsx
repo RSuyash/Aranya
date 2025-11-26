@@ -1,18 +1,34 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { ArrowLeft, Check, Plus, Trash2 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../core/data-model/dexie';
 import { VegetationSettingsForm } from '../ui/modules/Vegetation/VegetationSettingsForm';
+import { useHeader } from '../context/HeaderContext';
 
 export const ProjectSettingsPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const { projects, useModules, addVegetationModule } = useRepositories();
+    const { setHeader } = useHeader();
 
     const project = projects?.find(p => p.id === projectId);
     const modules = useModules(projectId);
+
+    useEffect(() => {
+        setHeader({
+            title: 'Project Settings',
+            breadcrumbs: [
+                { label: 'Terra', path: '/' },
+                { label: 'Projects', path: '/projects' },
+                { label: project?.name || '...', path: `/projects/${projectId}` },
+                { label: 'Settings', path: `/projects/${projectId}/settings` }
+            ],
+            moduleColor: 'violet',
+            isLoading: !project
+        });
+    }, [project, projectId, setHeader]);
 
     if (!project) return <div className="p-8 text-white">Loading...</div>;
 
@@ -101,7 +117,7 @@ export const ProjectSettingsPage: React.FC = () => {
                                 </button>
                             )}
                         </div>
-                        
+
                         {/* Settings Area */}
                         {modules.find(m => m.name === 'Vegetation Survey') && (
                             <div className="border-t border-[#1d2440] bg-[#0b1020]/50 p-6">

@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { Button } from '../components/ui/Button';
-import { ArrowLeft, MapTrifold, Tree, DotsThreeVertical, DownloadSimple, Table, ChartBar, Gear } from 'phosphor-react';
+import { MapTrifold, DotsThreeVertical, Table, ChartBar, Gear } from 'phosphor-react';
 import { clsx } from 'clsx';
 import { FieldDataContainer } from '../ui/modules/DataManagement/FieldDataContainer';
 import { ProjectOverview } from '../ui/modules/Project/ProjectOverview';
 import { DataManagementPanel } from '../ui/modules/DataManagement/DataManagementPanel';
+import { useHeader } from '../context/HeaderContext';
 
 type Tab = 'OVERVIEW' | 'DATA' | 'ANALYSIS' | 'MANAGE' | 'SETTINGS';
 
@@ -14,9 +15,33 @@ export const ProjectDetailsPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const { projects } = useRepositories();
+    const { setHeader } = useHeader();
 
     const project = projects?.find(p => p.id === projectId);
     const [activeTab, setActiveTab] = useState<Tab>('DATA'); // Default to DATA for now as requested
+
+    useEffect(() => {
+        setHeader({
+            title: project ? project.name : 'Loading Project...',
+            breadcrumbs: [
+                { label: 'Terra', path: '/' },
+                { label: 'Projects', path: '/projects' },
+                { label: project?.name || 'Loading...', path: `/projects/${projectId}` }
+            ],
+            isLoading: !project,
+            moduleColor: 'emerald',
+            status: (
+                <span className="flex items-center gap-2 text-[#56ccf2]">
+                    <span className="w-2 h-2 rounded-full bg-[#56ccf2] animate-pulse" />
+                    <span className="font-mono">Active</span>
+                </span>
+            ),
+            actions: (
+                <Button variant="ghost" leftIcon={<DotsThreeVertical size={20} />}>
+                </Button>
+            )
+        });
+    }, [project, projectId, setHeader]);
 
     if (!project) {
         return (
@@ -31,22 +56,8 @@ export const ProjectDetailsPage: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col bg-[#050814]">
-            {/* Header */}
-            <div className="h-16 border-b border-[#1d2440] bg-[#0b1020] flex items-center justify-between px-6 flex-shrink-0 z-10">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate('/projects')}
-                        className="text-[#9ba2c0] hover:text-white transition"
-                    >
-                        <ArrowLeft size={20} />
-                    </button>
-                    <div className="h-6 w-px bg-[#1d2440]" />
-                    <h1 className="text-lg font-bold text-[#f5f7ff]">{project.name}</h1>
-                    <span className="px-2 py-0.5 rounded-full bg-[#56ccf2]/10 text-[#56ccf2] text-xs border border-[#56ccf2]/20">
-                        Active
-                    </span>
-                </div>
-
+            {/* Page Toolbar / Tabs */}
+            <div className="h-14 border-b border-[#1d2440] bg-[#0b1020]/50 flex items-center justify-between px-6 flex-shrink-0 z-10">
                 <div className="flex items-center gap-1 bg-[#11182b] p-1 rounded-lg border border-[#1d2440]">
                     <button
                         onClick={() => setActiveTab('OVERVIEW')}
@@ -88,11 +99,6 @@ export const ProjectDetailsPage: React.FC = () => {
                         <Gear size={16} />
                         <span className="hidden sm:inline">Manage</span>
                     </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" leftIcon={<DotsThreeVertical size={20} />}>
-                    </Button>
                 </div>
             </div>
 
