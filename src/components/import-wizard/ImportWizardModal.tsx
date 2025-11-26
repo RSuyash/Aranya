@@ -153,7 +153,7 @@ export const ImportWizardModal: React.FC<Props> = ({ onClose, currentUserId }) =
                             <Upload className="w-12 h-12 text-[#f2c94c] mb-4" />
                             <p className="text-gray-300 mb-2 font-medium">Upload your Vegetation CSV</p>
                             <p className="text-gray-500 text-sm mb-6">Supports .csv (Max 5MB)</p>
-                            <input type="file" accept=".csv" onChange={handleFileUpload} className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#1d2440] file:text-[#f2c94c] hover:file:bg-[#2a3454]" />
+                            <input type="file" accept=".csv,.terx,.zip" onChange={handleFileUpload} className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#1d2440] file:text-[#f2c94c] hover:file:bg-[#2a3454]" />
                         </div>
                     )}
 

@@ -1,107 +1,120 @@
-import React from 'react';
-import { FileJson, FileSpreadsheet, Archive, UploadCloud, HardDriveDownload, RefreshCw } from 'lucide-react';
-import { generateAnalystBundle } from '../../../utils/export/bundler';
-import { exportProject, downloadBlob } from '../../../utils/sync/export';
+import React, { useState } from 'react';
+import {
+    Archive, FileSpreadsheet, Download,
+    HardDrive, RefreshCw, ShieldCheck, FileCode
+} from 'lucide-react';
+import { exportTerraFile } from '../../../utils/export/bundler';
+import { exportTidyCSV } from '../../../utils/export/tidyDataExport';
+import { downloadBlob } from '../../../utils/sync/export';
 
 export const DataManagementPanel: React.FC<{ projectId: string }> = ({ projectId }) => {
+    const [isExporting, setIsExporting] = useState(false);
 
-    const handleExportJSON = async () => {
+    const handleNativeExport = async () => {
+        setIsExporting(true);
         try {
-            const blob = await exportProject(projectId);
-            const dateStr = new Date().toISOString().split('T')[0];
-            const filename = `project_${projectId}_backup_${dateStr}.json`;
-            downloadBlob(blob, filename);
+            await exportTerraFile(projectId);
         } catch (e) {
             console.error(e);
             alert("Export failed");
+        } finally {
+            setIsExporting(false);
         }
     };
 
-    const handleAnalystBundle = async () => {
-        await generateAnalystBundle(projectId);
+    const handleAnalystExport = async () => {
+        setIsExporting(true);
+        try {
+            // Generate just the CSVs for quick analysis
+            const csvBlob = await exportTidyCSV(projectId, 'separate_rows');
+            const date = new Date().toISOString().split('T')[0];
+            downloadBlob(csvBlob, `Project_${projectId}_Analyst_${date}.csv`);
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Section 1: Export & Publication */}
-            <section>
-                <div className="mb-4">
-                    <h2 className="text-lg font-bold text-[#f5f7ff] flex items-center gap-2">
-                        <HardDriveDownload className="w-5 h-5 text-[#56ccf2]" />
-                        Export & Publication
-                    </h2>
-                    <p className="text-sm text-[#9ba2c0]">Download project data for analysis, backup, or reporting.</p>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Analyst Bundle */}
+            {/* 1. PRIMARY: Native Interchange */}
+            <section className="bg-[#11182b] border border-[#56ccf2]/30 rounded-2xl p-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-32 bg-[#56ccf2]/5 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-[#56ccf2]/10" />
+
+                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div>
+                        <h3 className="text-lg font-bold text-[#f5f7ff] flex items-center gap-2">
+                            <Archive className="w-5 h-5 text-[#56ccf2]" />
+                            Terra Archive (.terx)
+                        </h3>
+                        <p className="text-sm text-[#9ba2c0] mt-1 max-w-lg">
+                            The complete project package. Contains your raw database, photos, and analysis-ready CSVs.
+                            Use this for backups or transferring to another device.
+                        </p>
+                    </div>
                     <button
-                        onClick={handleAnalystBundle}
-                        className="group flex flex-col items-start p-5 bg-[#11182b] border border-[#1d2440] hover:border-[#56ccf2] rounded-xl transition-all text-left"
+                        onClick={handleNativeExport}
+                        disabled={isExporting}
+                        className="flex items-center gap-3 bg-[#56ccf2] hover:bg-[#4ab8de] text-[#050814] px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-[#56ccf2]/20 disabled:opacity-50"
                     >
-                        <div className="p-3 bg-[#56ccf2]/10 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-                            <Archive className="w-6 h-6 text-[#56ccf2]" />
-                        </div>
-                        <h3 className="font-bold text-[#f5f7ff] mb-1">Analyst Bundle (ZIP)</h3>
-                        <p className="text-xs text-[#9ba2c0] leading-relaxed">
-                            Complete scientific package. Includes relational CSVs, GeoJSON maps, and metadata. Recommended for R/Python analysis.
-                        </p>
-                    </button>
-
-                    {/* Raw JSON */}
-                    <button
-                        onClick={handleExportJSON}
-                        className="group flex flex-col items-start p-5 bg-[#11182b] border border-[#1d2440] hover:border-[#f2c94c] rounded-xl transition-all text-left"
-                    >
-                        <div className="p-3 bg-[#f2c94c]/10 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-                            <FileJson className="w-6 h-6 text-[#f2c94c]" />
-                        </div>
-                        <h3 className="font-bold text-[#f5f7ff] mb-1">Full Backup (JSON)</h3>
-                        <p className="text-xs text-[#9ba2c0] leading-relaxed">
-                            Raw database dump. Use this for system restoration or migrating data to another device.
-                        </p>
-                    </button>
-
-                    {/* Simple CSV */}
-                    <button className="group flex flex-col items-start p-5 bg-[#11182b] border border-[#1d2440] hover:border-[#52d273] rounded-xl transition-all text-left">
-                        <div className="p-3 bg-[#52d273]/10 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-                            <FileSpreadsheet className="w-6 h-6 text-[#52d273]" />
-                        </div>
-                        <h3 className="font-bold text-[#f5f7ff] mb-1">Summary Reports</h3>
-                        <p className="text-xs text-[#9ba2c0] leading-relaxed">
-                            Simplified Excel tables for quick viewing. Not recommended for complex analysis.
-                        </p>
+                        {isExporting ? <RefreshCw className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />}
+                        Download Archive
                     </button>
                 </div>
             </section>
 
-            {/* Section 2: Import & Migration */}
-            <section>
-                <div className="mb-4 pt-6 border-t border-[#1d2440]">
-                    <h2 className="text-lg font-bold text-[#f5f7ff] flex items-center gap-2">
-                        <UploadCloud className="w-5 h-5 text-[#a855f7]" />
-                        Import Data
-                    </h2>
-                    <p className="text-sm text-[#9ba2c0]">Ingest legacy data or restore from backups.</p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <div className="bg-[#11182b] border border-[#1d2440] rounded-xl p-6 flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex-1">
-                        <h3 className="font-bold text-[#f5f7ff] mb-2">Legacy CSV Import Wizard</h3>
-                        <p className="text-sm text-[#9ba2c0] mb-4">
-                            Have old data in Excel? Our intelligent wizard can map your columns to the Aranya schema and reconstruct your plots automatically.
+                {/* 2. SECONDARY: Analyst Data */}
+                <section className="bg-[#0b1020] border border-[#1d2440] rounded-2xl p-6 flex flex-col h-full">
+                    <div className="mb-auto">
+                        <h3 className="text-base font-bold text-[#f5f7ff] flex items-center gap-2 mb-2">
+                            <FileCode className="w-5 h-5 text-[#52d273]" />
+                            Analyst Exports
+                        </h3>
+                        <p className="text-xs text-[#9ba2c0] mb-4">
+                            Lightweight files optimized for R, Python, or Excel. Does not include full system restore data.
                         </p>
-                        <button className="px-4 py-2 bg-[#a855f7] hover:bg-[#9333ea] text-white rounded-lg font-medium text-sm transition flex items-center gap-2">
-                            <RefreshCw className="w-4 h-4" /> Launch Wizard
+                    </div>
+
+                    <div className="space-y-3">
+                        <button
+                            onClick={handleAnalystExport}
+                            className="w-full flex items-center justify-between p-3 rounded-lg bg-[#161b22] border border-[#1d2440] hover:border-[#52d273] transition-all group"
+                        >
+                            <span className="text-sm text-[#f5f7ff] group-hover:text-[#52d273]">Tidy Data CSV (Long Format)</span>
+                            <FileSpreadsheet className="w-4 h-4 text-[#555b75] group-hover:text-[#52d273]" />
+                        </button>
+                        <button className="w-full flex items-center justify-between p-3 rounded-lg bg-[#161b22] border border-[#1d2440] hover:border-[#52d273] transition-all group">
+                            <span className="text-sm text-[#f5f7ff] group-hover:text-[#52d273]">Summary Matrix (Excel)</span>
+                            <FileSpreadsheet className="w-4 h-4 text-[#555b75] group-hover:text-[#52d273]" />
                         </button>
                     </div>
+                </section>
 
-                    <div className="w-full md:w-1/3 border-2 border-dashed border-[#2d3748] hover:border-[#a855f7] rounded-xl h-32 flex flex-col items-center justify-center text-[#555b75] transition cursor-pointer">
-                        <UploadCloud className="w-8 h-8 mb-2" />
-                        <span className="text-xs font-medium">Drag & Drop files here</span>
+                {/* 3. TERTIARY: System Health */}
+                <section className="bg-[#0b1020] border border-[#1d2440] rounded-2xl p-6 flex flex-col h-full">
+                    <div className="mb-4">
+                        <h3 className="text-base font-bold text-[#f5f7ff] flex items-center gap-2 mb-2">
+                            <ShieldCheck className="w-5 h-5 text-[#a855f7]" />
+                            Data Integrity
+                        </h3>
+                        <p className="text-xs text-[#9ba2c0]">
+                            Verify database health before exporting.
+                        </p>
                     </div>
-                </div>
-            </section>
+
+                    <div className="mt-auto p-4 bg-[#a855f7]/10 border border-[#a855f7]/20 rounded-xl">
+                        <div className="flex items-center gap-3 text-[#a855f7]">
+                            <HardDrive className="w-5 h-5" />
+                            <div className="flex-1">
+                                <div className="text-xs font-bold uppercase tracking-wider">Local Storage</div>
+                                <div className="text-sm font-mono">Sync Status: <span className="text-[#f5f7ff]">Local Only</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
     );
 };

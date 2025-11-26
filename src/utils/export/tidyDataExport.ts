@@ -1,5 +1,5 @@
 import { db } from '../../core/data-model/dexie';
-import type { Plot, TreeObservation, SamplingUnitProgress } from '../../core/data-model/types';
+import type { Plot, TreeObservation, SamplingUnitProgress, VegetationObservation, Project } from '../../core/data-model/types';
 
 export type MultiStemHandling = 'separate_rows' | 'aggregate';
 
@@ -67,6 +67,87 @@ interface TidyTreeRow {
     remarks: string;
 }
 
+// Helper: Clean CSV String
+function toCSV(data: any[]): string {
+    if (!data.length) return '';
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+        headers.join(','),
+        ...data.map(row => headers.map(fieldName => {
+            const val = row[fieldName];
+            if (val === null || val === undefined) return '';
+            const str = String(val);
+            // Excel-compatible quoting
+            return str.includes(',') || str.includes('\n') || str.includes('"')
+                ? `"${str.replace(/"/g, '""')}"`
+                : str;
+        }).join(','))
+    ];
+    return csvRows.join('\n');
+}
+
+export function generateTidyData(data: {
+    project: Project;
+    plots: Plot[];
+    trees: TreeObservation[];
+    vegetation: VegetationObservation[];
+}) {
+    const { plots, trees, vegetation } = data;
+
+    // 1. Plots CSV
+    const plotsData = plots.map(p => ({
+        plot_id: p.id,
+        code: p.code,
+        name: p.name,
+        latitude: p.coordinates.lat,
+        longitude: p.coordinates.lng,
+        accuracy_m: p.coordinates.accuracyM,
+        elevation_m: p.coordinates.altitude,
+        slope_deg: p.slope,
+        aspect: p.aspect,
+        habitat: p.habitatType,
+        survey_date: p.surveyDate,
+        surveyors: p.surveyors.join('; ')
+    }));
+    const plotsCSV = toCSV(plotsData);
+
+    // 2. Trees CSV
+    const plotMap = new Map(plots.map(p => [p.id, p]));
+    const treeRows: TidyTreeRow[] = [];
+
+    for (const tree of trees) {
+        const plot = plotMap.get(tree.plotId);
+        if (!plot) continue;
+
+        // We don't have unit progress in this context, so pass undefined
+        if (tree.stems && tree.stems.length > 0) {
+            for (const stem of tree.stems) {
+                treeRows.push(buildTidyRow(tree, plot, undefined, stem));
+            }
+        } else {
+            treeRows.push(buildTidyRow(tree, plot, undefined));
+        }
+    }
+    const treesCSV = rowsToCSVString(treeRows);
+
+    // 3. Vegetation CSV
+    const vegData = vegetation.map(v => ({
+        record_id: v.id,
+        plot_id: v.plotId,
+        sampling_unit_id: v.samplingUnitId,
+        growth_form: v.growthForm,
+        scientific_name: v.speciesName,
+        abundance: v.abundanceCount,
+        cover_percent: v.coverPercentage,
+        avg_height_cm: v.avgHeightCm,
+        relative_x_m: v.localX,
+        relative_y_m: v.localY
+    }));
+    const vegetationCSV = toCSV(vegData);
+
+    return { plotsCSV, treesCSV, vegetationCSV };
+}
+
 export async function exportTidyCSV(
     projectId: string,
     multiStemHandling: MultiStemHandling = 'separate_rows'
@@ -130,7 +211,7 @@ function buildTidyRow(
         is_unknown: tree.isUnknown,
         confidence_level: tree.confidenceLevel,
 
-        // Tree Metrics (aggregate level)
+        // Metrics (aggregate tree-level)
         equivalent_gbh_cm: tree.gbh || null,
         height_m: tree.height || null,
         crown_diameter_m: tree.crownDiameter || null,
@@ -186,41 +267,29 @@ function buildTidyRow(
     };
 }
 
-function rowsToCSV(rows: TidyTreeRow[]): Blob {
-    if (rows.length === 0) {
-        console.warn('  ⚠️  No rows to export - returning empty CSV');
-        return new Blob([''], { type: 'text/csv;charset=utf-8;' });
-    }
-
-    // Header row
+function rowsToCSVString(rows: TidyTreeRow[]): string {
+    if (rows.length === 0) return '';
     const headers = Object.keys(rows[0]) as (keyof TidyTreeRow)[];
     let csv = headers.join(',') + '\n';
-
-    // Data rows
     for (const row of rows) {
         const values = headers.map(header => {
             const val = row[header];
-
-            // Handle null/undefined
             if (val === null || val === undefined) return '';
-
-            // Handle booleans
             if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
-
-            // Handle strings with commas or quotes
             if (typeof val === 'string') {
                 if (val.includes(',') || val.includes('"') || val.includes('\n')) {
                     return `"${val.replace(/"/g, '""')}"`;
                 }
                 return val;
             }
-
-            // Numbers
             return String(val);
         });
-
         csv += values.join(',') + '\n';
     }
+    return csv;
+}
 
+function rowsToCSV(rows: TidyTreeRow[]): Blob {
+    const csv = rowsToCSVString(rows);
     return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 }

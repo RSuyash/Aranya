@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRepositories } from '../hooks/useRepositories';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { CreateProjectForm } from '../components/projects/CreateProjectForm';
 import { Button } from '../components/ui/Button';
-import { Plus, MagnifyingGlass, UploadSimple, Warning, FileArrowUp, Copy, FileCsv } from 'phosphor-react';
+import { MagnifyingGlass, Warning, FileArrowUp, Copy, FileCsv } from 'phosphor-react';
+import { UploadCloud, FilePlus, Loader2, FileArchive } from 'lucide-react';
 import { Input } from '../components/ui/Input';
 import { useNavigate } from 'react-router-dom';
-import { parseImportFile, checkProjectExists, commitImport } from '../utils/sync/import';
+import { parseUniversalImport } from '../utils/sync/terraImport';
+import { checkProjectExists, commitImport } from '../utils/sync/import';
 import type { ProjectExportData } from '../utils/sync/export';
 import { db } from '../core/data-model/dexie';
 import { useHeader } from '../context/HeaderContext';
@@ -18,6 +20,7 @@ export const ProjectsPage: React.FC = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [search, setSearch] = useState('');
     const { setHeader } = useHeader();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Set Header Context
     React.useEffect(() => {
@@ -39,28 +42,40 @@ export const ProjectsPage: React.FC = () => {
     const [importConflict, setImportConflict] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [showImportWizard, setShowImportWizard] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     // File Handler
-    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const processFile = async (file: File) => {
+        setIsImporting(true);
         try {
-            const data = await parseImportFile(file);
-            const exists = await checkProjectExists(data.project.id);
+            // Universal parser handles .terx, .zip, and .json
+            const data = await parseUniversalImport(file);
 
+            // Existing conflict check logic...
+            const exists = await checkProjectExists(data.project.id);
             setImportData(data);
+
             if (exists) {
                 setImportConflict(true);
             } else {
-                // No conflict, just import as replacement (which is same as new in this case)
                 await executeImport(data, 'REPLACE');
             }
-        } catch (error) {
-            console.error('Parse failed:', error);
-            alert('Failed to read project file.');
+        } catch (err) {
+            console.error(err);
+            alert("Invalid File: " + (err as Error).message);
         } finally {
-            e.target.value = '';
+            setIsImporting(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            await processFile(e.dataTransfer.files[0]);
         }
     };
 
@@ -103,7 +118,21 @@ export const ProjectsPage: React.FC = () => {
     );
 
     return (
-        <div className="space-y-8">
+        <div
+            className="space-y-8 min-h-[calc(100vh-120px)] relative"
+            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
+        >
+            {/* Drag & Drop Overlay */}
+            {isDragOver && (
+                <div className="absolute inset-0 z-50 bg-[#050814]/90 border-2 border-dashed border-[#56ccf2] rounded-2xl flex flex-col items-center justify-center pointer-events-none animate-in fade-in">
+                    <UploadCloud className="w-16 h-16 text-[#56ccf2] mb-4" />
+                    <h3 className="text-2xl font-bold text-white">Drop to Import</h3>
+                    <p className="text-[#56ccf2]">Supports .terx, .zip, .json</p>
+                </div>
+            )}
+
             {/* Header Actions */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
@@ -113,19 +142,21 @@ export const ProjectsPage: React.FC = () => {
                 <div className="flex gap-2">
                     <input
                         type="file"
-                        id="import-project"
+                        ref={fileInputRef}
                         className="hidden"
-                        accept=".json"
-                        onChange={handleFileSelect}
+                        accept=".terx,.zip,.json" // Accept all formats
+                        onChange={(e) => e.target.files?.[0] && processFile(e.target.files[0])}
                     />
-                    <Button
-                        variant="secondary"
-                        leftIcon={<UploadSimple size={18} />}
-                        onClick={() => document.getElementById('import-project')?.click()}
+
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
                         disabled={isImporting}
+                        className="flex items-center gap-2 bg-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#2a3454] px-4 py-2 rounded-lg font-medium border border-[#1d2440] transition"
                     >
-                        {isImporting ? 'Importing...' : 'Import JSON'}
-                    </Button>
+                        {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileArchive className="w-4 h-4" />}
+                        Import Project
+                    </button>
+
                     <Button
                         variant="secondary"
                         leftIcon={<FileCsv size={18} />}
@@ -133,9 +164,14 @@ export const ProjectsPage: React.FC = () => {
                     >
                         Import CSV
                     </Button>
-                    <Button onClick={() => setIsCreating(true)} leftIcon={<Plus size={18} />}>
+
+                    <button
+                        onClick={() => setIsCreating(true)}
+                        className="flex items-center gap-2 bg-[#56ccf2] text-[#050814] px-4 py-2 rounded-lg font-bold hover:bg-[#4ab8de] transition shadow-lg shadow-[#56ccf2]/20"
+                    >
+                        <FilePlus className="w-4 h-4" />
                         New Project
-                    </Button>
+                    </button>
                 </div>
             </div>
 
