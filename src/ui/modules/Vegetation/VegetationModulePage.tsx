@@ -9,6 +9,8 @@ import { generateDynamicLayout } from '../../../core/plot-engine/dynamicGenerato
 import type { PlotNodeInstance, PlotConfiguration } from '../../../core/plot-engine/types';
 import { clsx } from 'clsx';
 import { PlotConfigurator } from './ui/PlotConfigurator';
+import { GPSAveragingModal } from '../../../components/ui/GPSAveragingModal';
+import { LiveTrackOverlay } from '../../../components/ui/LiveTrackOverlay';
 
 export const VegetationModulePage: React.FC = () => {
     const { projectId, moduleId } = useParams<{ projectId: string; moduleId: string }>();
@@ -28,27 +30,17 @@ export const VegetationModulePage: React.FC = () => {
         [moduleId]
     ) || [];
 
-    const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number; acc: number } | null>(null);
-    const [isGettingGps, setIsGettingGps] = useState(false);
+    const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number; acc: number; samples?: number } | null>(null);
+    const [isGPSModalOpen, setIsGPSModalOpen] = useState(false);
 
-    const handleGetGps = () => {
-        setIsGettingGps(true);
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setGpsCoords({
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    acc: pos.coords.accuracy
-                });
-                setIsGettingGps(false);
-            },
-            (err) => {
-                console.error(err);
-                alert("Failed to get GPS location. Ensure permissions are granted.");
-                setIsGettingGps(false);
-            },
-            { enableHighAccuracy: true }
-        );
+    const handleGPSSave = (data: { lat: number; lng: number; accuracy: number; samples: number }) => {
+        setGpsCoords({
+            lat: data.lat,
+            lng: data.lng,
+            acc: data.accuracy,
+            samples: data.samples
+        });
+        setIsGPSModalOpen(false);
     };
 
     const handleCreatePlot = async () => {
@@ -69,7 +61,11 @@ export const VegetationModulePage: React.FC = () => {
             coordinates: {
                 lat: gpsCoords?.lat || 0,
                 lng: gpsCoords?.lng || 0,
-                accuracyM: gpsCoords?.acc || 0
+                accuracyM: gpsCoords?.acc || 0,
+                fixType: gpsCoords?.samples ? 'AVERAGED' : 'SINGLE',
+                sampleCount: gpsCoords?.samples || 1,
+                durationSec: gpsCoords?.samples || 1, // Approx 1 sec per sample
+                timestamp: now
             },
             orientation: 0,
             slope: 0,
@@ -167,6 +163,15 @@ export const VegetationModulePage: React.FC = () => {
                     <Plus className="w-4 h-4" />
                     New Plot
                 </button>
+            </div>
+
+            {/* Live Tracking Panel */}
+            <div className="mb-6">
+                <LiveTrackOverlay
+                    projectId={projectId || ''}
+                    surveyorId="current-user" // TODO: Get from auth context
+                    moduleId={moduleId || ''}
+                />
             </div>
 
             {/* Plots Grid */}
@@ -293,8 +298,7 @@ export const VegetationModulePage: React.FC = () => {
                                     Location
                                 </label>
                                 <button
-                                    onClick={handleGetGps}
-                                    disabled={isGettingGps}
+                                    onClick={() => setIsGPSModalOpen(true)}
                                     className={clsx(
                                         "w-full border rounded-lg px-4 py-2.5 flex items-center justify-center gap-2 transition",
                                         gpsCoords
@@ -302,10 +306,17 @@ export const VegetationModulePage: React.FC = () => {
                                             : "bg-[#11182b] border-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff]"
                                     )}
                                 >
-                                    <MapPin className={clsx("w-4 h-4", isGettingGps && "animate-pulse")} />
-                                    {isGettingGps ? "Acquiring GPS..." : gpsCoords ? `Lat: ${gpsCoords.lat.toFixed(5)}, Lng: ${gpsCoords.lng.toFixed(5)}` : "Get GPS Location"}
+                                    <MapPin className={clsx("w-4 h-4")} />
+                                    {gpsCoords ? `Lat: ${gpsCoords.lat.toFixed(5)}, Lng: ${gpsCoords.lng.toFixed(5)} (±${gpsCoords.acc.toFixed(1)}m)` : "Acquire Precision GPS"}
                                 </button>
                             </div>
+
+                            {isGPSModalOpen && (
+                                <GPSAveragingModal
+                                    onClose={() => setIsGPSModalOpen(false)}
+                                    onSave={handleGPSSave}
+                                />
+                            )}
 
                             {/* Dynamic Plot Configurator */}
                             <PlotConfigurator onChange={setPlotConfig} />

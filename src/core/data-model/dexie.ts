@@ -7,6 +7,7 @@ import type {
     VegetationObservation,
     SamplingUnitProgress,
     AnalysisConfig,
+    SurveyTrack,
 } from './types';
 
 export class AranyaDB extends Dexie {
@@ -17,12 +18,13 @@ export class AranyaDB extends Dexie {
     vegetationObservations!: Table<VegetationObservation, string>;
     samplingUnits!: Table<SamplingUnitProgress, string>;
     analysisConfigs!: Table<AnalysisConfig, string>;
+    surveyTracks!: Table<SurveyTrack, string>;
     // speciesList, media, auditLogs can be added here
 
     constructor() {
         super('ProjectTerraDB_v1');
 
-        this.version(2).stores({
+        this.version(3).stores({
             projects: 'id, name, syncStatus',
             modules: 'id, projectId, type',
             plots: 'id, projectId, moduleId, syncStatus, [syncStatus+lastModifiedAt]',
@@ -32,9 +34,7 @@ export class AranyaDB extends Dexie {
                 'id, projectId, moduleId, plotId, syncStatus, [syncStatus+lastModifiedAt]',
             samplingUnits: 'id, projectId, plotId, moduleId, [plotId+samplingUnitId]',
             analysisConfigs: 'id, projectId, moduleId, type',
-            // speciesList: 'id, projectId, moduleId, scientificName',
-            // media: 'id, relatedId, type, syncStatus',
-            // auditLogs: '++id, changedAt, changedBy',
+            surveyTracks: 'id, projectId, moduleId, surveyorId, [projectId+moduleId]',
         });
     }
 }

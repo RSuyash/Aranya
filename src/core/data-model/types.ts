@@ -14,6 +14,37 @@ export interface PlotVisualizationSettings {
     plotConfiguration?: import('../plot-engine/types').PlotConfiguration;
 }
 
+// [NEW] Raw GPS Point (Optimized for Storage)
+export interface TrackPoint {
+    t: number; // Timestamp (epoch)
+    lat: number;
+    lng: number;
+    acc: number; // Accuracy
+    alt?: number; // Altitude
+    sp?: number; // Speed (m/s)
+}
+
+// [NEW] Survey Track (Effort Log)
+export interface SurveyTrack {
+    id: string;
+    projectId: string;
+    moduleId: string;
+    surveyorId: string;
+
+    startTime: number;
+    endTime?: number;
+
+    // Stored as simplified array
+    points: TrackPoint[];
+
+    // Summary Stats
+    distanceM: number;
+    durationS: number;
+    avgSpeedMs: number;
+
+    syncStatus?: SyncStatus;
+}
+
 export type BiomassModel =
     | 'CHAVE_2014_HEIGHT'   // Tropical Wet (Standard)
     | 'CHAVE_2005_DRY'      // Tropical Dry
@@ -122,8 +153,14 @@ export interface Plot {
     coordinates: {
         lat: number;
         lng: number;
-        accuracyM: number;
+        accuracyM: number; // Standard Error of the Mean (SEM)
         altitude?: number;
+
+        // Metadata for Quality Audit
+        fixType: 'SINGLE' | 'AVERAGED';
+        sampleCount?: number;
+        durationSec?: number;
+        timestamp?: number;
     };
 
     orientation: number; // 0-360 degrees (Azimuth)
