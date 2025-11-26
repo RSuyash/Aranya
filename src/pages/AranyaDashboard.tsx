@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
-import { TreePine, Plus, Map, ArrowRight, BarChart3, Download } from 'lucide-react';
+import { TreePine, Plus, Map, ArrowRight, BarChart3, Download, Upload } from 'lucide-react';
 import { exportProject, downloadBlob } from '../utils/sync/export';
 import { exportTidyCSV } from '../utils/export/tidyDataExport';
+import { ImportWizardModal } from '../components/import-wizard/ImportWizardModal';
 
 const AranyaDashboard: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const { projects, useModules, usePlots, useTreeObservations } = useRepositories();
+    const [showImport, setShowImport] = useState(false);
 
     const project = projects?.find(p => p.id === projectId);
     const modules = useModules(projectId);
@@ -80,13 +82,30 @@ const AranyaDashboard: React.FC = () => {
                     <h1 className="text-2xl font-bold text-[#f5f7ff]">{project.name}</h1>
                     <p className="text-sm text-[#9ba2c0] mt-1">{project.description}</p>
                 </div>
-                <button
-                    onClick={() => navigate(`/projects/${projectId}/settings`)}
-                    className="px-4 py-2 bg-[#56ccf2] text-[#050814] rounded-lg font-medium hover:bg-[#4ab8de] transition shadow-lg shadow-[#56ccf2]/20"
-                >
-                    Project Settings
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowImport(true)}
+                        className="flex items-center gap-2 bg-[#1d2440] hover:bg-[#2a3454] text-[#f2c94c] border border-[#f2c94c]/30 px-4 py-2 rounded-lg transition-all text-sm font-medium"
+                    >
+                        <Upload className="w-4 h-4" />
+                        Import CSV
+                    </button>
+                    <button
+                        onClick={() => navigate(`/projects/${projectId}/settings`)}
+                        className="px-4 py-2 bg-[#56ccf2] text-[#050814] rounded-lg font-medium hover:bg-[#4ab8de] transition shadow-lg shadow-[#56ccf2]/20"
+                    >
+                        Project Settings
+                    </button>
+                </div>
             </div>
+
+            {/* Import Wizard Modal */}
+            {showImport && (
+                <ImportWizardModal
+                    currentUserId={project.ownerId}
+                    onClose={() => setShowImport(false)}
+                />
+            )}
 
             {/* Main Content */}
             <main className="flex-1">

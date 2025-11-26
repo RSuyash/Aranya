@@ -1,0 +1,680 @@
+{
+    "version": 1,
+    "timestamp": 1764238000000,
+    "project": {
+        "id": "proj-rs-gis-001",
+        "name": "RS, GIS, and Ecology Lab",
+        "description": "Vegetation structure and composition survey across 9 urban and peri-urban sites in Pune. Includes woody and herbaceous strata.",
+        "ownerId": "user-lab-admin",
+        "ownerName": "Lab Administrator",
+        "collaborators": [],
+        "createdAt": 1764230000000,
+        "updatedAt": 1764238000000,
+        "syncStatus": "LOCAL_ONLY"
+    },
+    "modules": [
+        {
+            "id": "mod-veg-001",
+            "projectId": "proj-rs-gis-001",
+            "type": "VEGETATION_PLOTS",
+            "name": "Vegetation Survey",
+            "status": "ACTIVE",
+            "samplingMethod": "SYSTEMATIC",
+            "protocolVersion": 1,
+            "predefinedSpeciesList": [
+                {
+                    "id": "sp-001",
+                    "scientificName": "Tectona grandis",
+                    "commonName": "Teak",
+                    "type": "TREE"
+                },
+                {
+                    "id": "sp-002",
+                    "scientificName": "Azadirachta indica",
+                    "commonName": "Neem",
+                    "type": "TREE"
+                },
+                {
+                    "id": "sp-003",
+                    "scientificName": "Ficus benghalensis",
+                    "commonName": "Banyan",
+                    "type": "TREE"
+                },
+                {
+                    "id": "sp-004",
+                    "scientificName": "Pongamia pinnata",
+                    "commonName": "Karanj",
+                    "type": "TREE"
+                },
+                {
+                    "id": "sp-005",
+                    "scientificName": "Ficus racemosa",
+                    "commonName": "Umber",
+                    "type": "TREE"
+                },
+                {
+                    "id": "sp-006",
+                    "scientificName": "Dalbergia latifolia",
+                    "commonName": "Rosewood",
+                    "type": "TREE"
+                },
+                {
+                    "id": "sp-007",
+                    "scientificName": "Boswellia serrata",
+                    "commonName": "Salai",
+                    "type": "TREE"
+                },
+                {
+                    "id": "sp-008",
+                    "scientificName": "Gliricidia sepium",
+                    "commonName": "Gliricidia",
+                    "type": "TREE"
+                },
+                {
+                    "id": "sp-009",
+                    "scientificName": "Anogeissus latifolia",
+                    "commonName": "Dhawada",
+                    "type": "TREE"
+                }
+            ],
+            "strataRules": {
+                "minTreeGbhCm": 10,
+                "minShrubHeightCm": 50
+            },
+            "validationSettings": {
+                "mandatoryPhotos": false,
+                "maxGpsAccuracyM": 10
+            },
+            "customPlotAttributes": [
+                {
+                    "key": "locationName",
+                    "label": "Location Name",
+                    "inputType": "text"
+                }
+            ],
+            "defaultBlueprintId": "std-20x20-4q",
+            "createdAt": 1764230000000,
+            "updatedAt": 1764230000000
+        }
+    ],
+    "plots": [
+        {
+            "id": "plot-p01",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "MIT WPU Medicine Garden",
+            "code": "P01",
+            "coordinates": {
+                "lat": 18.5185,
+                "lng": 73.8152,
+                "accuracyM": 4,
+                "fixType": "AVERAGED",
+                "sampleCount": 20,
+                "timestamp": 1764231000000
+            },
+            "orientation": 0,
+            "slope": 2,
+            "aspect": "N",
+            "habitatType": "Urban Garden",
+            "customAttributes": {
+                "locationName": "MIT WPU Medicine Garden"
+            },
+            "images": [],
+            "status": "COMPLETED",
+            "surveyors": [
+                "Lab Team"
+            ],
+            "surveyDate": "2025-11-20",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        },
+        {
+            "id": "plot-p02",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "Vetal Tekdi Slope",
+            "code": "P02",
+            "coordinates": {
+                "lat": 18.5293,
+                "lng": 73.8189,
+                "accuracyM": 5,
+                "fixType": "SINGLE",
+                "timestamp": 1764231000000
+            },
+            "orientation": 45,
+            "slope": 15,
+            "aspect": "SW",
+            "habitatType": "Dry Deciduous Scrub",
+            "customAttributes": {
+                "locationName": "Vetal Tekdi"
+            },
+            "images": [],
+            "status": "PLANNED",
+            "surveyors": [],
+            "surveyDate": "2025-11-21",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        },
+        {
+            "id": "plot-p03",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "ARAI Hills Top",
+            "code": "P03",
+            "coordinates": {
+                "lat": 18.5210,
+                "lng": 73.8120,
+                "accuracyM": 6,
+                "fixType": "SINGLE",
+                "timestamp": 1764231000000
+            },
+            "orientation": 0,
+            "slope": 5,
+            "aspect": "N",
+            "habitatType": "Plateau Grassland",
+            "customAttributes": {
+                "locationName": "ARAI Hills"
+            },
+            "images": [],
+            "status": "PLANNED",
+            "surveyors": [],
+            "surveyDate": "2025-11-21",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        },
+        {
+            "id": "plot-p04",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "Pachgaon Parvati",
+            "code": "P04",
+            "coordinates": {
+                "lat": 18.4901,
+                "lng": 73.8405,
+                "accuracyM": 5,
+                "fixType": "SINGLE",
+                "timestamp": 1764231000000
+            },
+            "orientation": 90,
+            "slope": 20,
+            "aspect": "E",
+            "habitatType": "Afforested Slope",
+            "customAttributes": {
+                "locationName": "Pachgaon Parvati"
+            },
+            "images": [],
+            "status": "PLANNED",
+            "surveyors": [],
+            "surveyDate": "2025-11-22",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        },
+        {
+            "id": "plot-p05",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "Alice Garden",
+            "code": "P05",
+            "coordinates": {
+                "lat": 18.5529,
+                "lng": 73.8267,
+                "accuracyM": 3,
+                "fixType": "AVERAGED",
+                "sampleCount": 15,
+                "timestamp": 1764231000000
+            },
+            "orientation": 0,
+            "slope": 0,
+            "aspect": "N",
+            "habitatType": "Managed Garden",
+            "customAttributes": {
+                "locationName": "University Park"
+            },
+            "images": [],
+            "status": "PLANNED",
+            "surveyors": [],
+            "surveyDate": "2025-11-23",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        },
+        {
+            "id": "plot-p06",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "Empress Garden",
+            "code": "P06",
+            "coordinates": {
+                "lat": 18.5113,
+                "lng": 73.8924,
+                "accuracyM": 4,
+                "fixType": "SINGLE",
+                "timestamp": 1764231000000
+            },
+            "orientation": 0,
+            "slope": 0,
+            "aspect": "N",
+            "habitatType": "Botanical Garden",
+            "customAttributes": {
+                "locationName": "Empress Garden"
+            },
+            "images": [],
+            "status": "PLANNED",
+            "surveyors": [],
+            "surveyDate": "2025-11-23",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        },
+        {
+            "id": "plot-p07",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "Warje Hills I",
+            "code": "P07",
+            "coordinates": {
+                "lat": 18.4789,
+                "lng": 73.7965,
+                "accuracyM": 7,
+                "fixType": "AVERAGED",
+                "sampleCount": 12,
+                "timestamp": 1764231000000
+            },
+            "orientation": 180,
+            "slope": 25,
+            "aspect": "S",
+            "habitatType": "Degraded Slope",
+            "customAttributes": {
+                "locationName": "Warje Hills I"
+            },
+            "images": [],
+            "status": "IN_PROGRESS",
+            "surveyors": [
+                "RS Team"
+            ],
+            "surveyDate": "2025-11-24",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        },
+        {
+            "id": "plot-p08",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "Warje Hills II",
+            "code": "P08",
+            "coordinates": {
+                "lat": 18.4750,
+                "lng": 73.7980,
+                "accuracyM": 6,
+                "fixType": "SINGLE",
+                "timestamp": 1764231000000
+            },
+            "orientation": 200,
+            "slope": 30,
+            "aspect": "SW",
+            "habitatType": "Hill Slope",
+            "customAttributes": {
+                "locationName": "Warje Hills II"
+            },
+            "images": [],
+            "status": "IN_PROGRESS",
+            "surveyors": [
+                "RS Team"
+            ],
+            "surveyDate": "2025-11-24",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        },
+        {
+            "id": "plot-p09",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "blueprintId": "std-20x20-4q",
+            "blueprintVersion": 1,
+            "name": "Warje Urban Garden",
+            "code": "P09",
+            "coordinates": {
+                "lat": 18.4820,
+                "lng": 73.8010,
+                "accuracyM": 4,
+                "fixType": "SINGLE",
+                "timestamp": 1764231000000
+            },
+            "orientation": 0,
+            "slope": 0,
+            "aspect": "N",
+            "habitatType": "Park",
+            "customAttributes": {
+                "locationName": "Warje Urban Garden"
+            },
+            "images": [],
+            "status": "COMPLETED",
+            "surveyors": [
+                "RS Team"
+            ],
+            "surveyDate": "2025-11-25",
+            "createdAt": 1764231000000,
+            "updatedAt": 1764231000000,
+            "syncStatus": "LOCAL_ONLY"
+        }
+    ],
+    "samplingUnitProgress": [
+        {
+            "id": "sup-p01-q1",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q1",
+            "status": "DONE",
+            "createdAt": 1764231000000,
+            "lastUpdatedAt": 1764231000000
+        },
+        {
+            "id": "sup-p01-q2",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q2",
+            "status": "DONE",
+            "createdAt": 1764231000000,
+            "lastUpdatedAt": 1764231000000
+        },
+        {
+            "id": "sup-p01-q3",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q3",
+            "status": "DONE",
+            "createdAt": 1764231000000,
+            "lastUpdatedAt": 1764231000000
+        },
+        {
+            "id": "sup-p01-q4",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q4",
+            "status": "DONE",
+            "createdAt": 1764231000000,
+            "lastUpdatedAt": 1764231000000
+        },
+        {
+            "id": "sup-p07-q1",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p07",
+            "samplingUnitId": "q1",
+            "status": "DONE",
+            "createdAt": 1764231000000,
+            "lastUpdatedAt": 1764231000000
+        },
+        {
+            "id": "sup-p08-q1",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p08",
+            "samplingUnitId": "q1",
+            "status": "DONE",
+            "createdAt": 1764231000000,
+            "lastUpdatedAt": 1764231000000
+        }
+    ],
+    "treeObservations": [
+        {
+            "id": "tree-p01-t1",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q1",
+            "tagNumber": "T1",
+            "speciesName": "Pongamia pinnata",
+            "commonName": "Karanj",
+            "isUnknown": false,
+            "confidenceLevel": "HIGH",
+            "gbh": 15.2,
+            "height": 4.1,
+            "stemCount": 1,
+            "stems": [
+                {
+                    "id": "stem-p01-t1-1",
+                    "gbh": 15
+                }
+            ],
+            "condition": "ALIVE",
+            "phenology": "VEGETATIVE",
+            "validationStatus": "VERIFIED",
+            "createdAt": 1764232000000,
+            "updatedAt": 1764232000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        },
+        {
+            "id": "tree-p01-t2",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q2",
+            "tagNumber": "T2",
+            "speciesName": "Ficus racemosa",
+            "commonName": "Umber",
+            "isUnknown": false,
+            "confidenceLevel": "HIGH",
+            "gbh": 99.1,
+            "height": 13.9,
+            "stemCount": 1,
+            "stems": [
+                {
+                    "id": "stem-p01-t2-1",
+                    "gbh": 99
+                }
+            ],
+            "condition": "ALIVE",
+            "phenology": "VEGETATIVE",
+            "validationStatus": "VERIFIED",
+            "createdAt": 1764232000000,
+            "updatedAt": 1764232000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        },
+        {
+            "id": "tree-p01-t5",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q2",
+            "tagNumber": "T5",
+            "speciesName": "Pongamia pinnata",
+            "commonName": "Karanj",
+            "isUnknown": false,
+            "confidenceLevel": "HIGH",
+            "gbh": 68.0,
+            "height": 7.0,
+            "stemCount": 3,
+            "stems": [
+                {
+                    "id": "stem-p01-t5-1",
+                    "gbh": 48.5
+                },
+                {
+                    "id": "stem-p01-t5-2",
+                    "gbh": 28
+                },
+                {
+                    "id": "stem-p01-t5-3",
+                    "gbh": 35
+                }
+            ],
+            "condition": "ALIVE",
+            "phenology": "VEGETATIVE",
+            "validationStatus": "VERIFIED",
+            "createdAt": 1764232000000,
+            "updatedAt": 1764232000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        },
+        {
+            "id": "tree-p07-t56",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p07",
+            "samplingUnitId": "q3",
+            "tagNumber": "T56",
+            "speciesName": "Anogeissus latifolia",
+            "commonName": "Dhawada",
+            "isUnknown": false,
+            "confidenceLevel": "HIGH",
+            "gbh": 111.3,
+            "height": 14.0,
+            "stemCount": 1,
+            "stems": [
+                {
+                    "id": "stem-p07-t56-1",
+                    "gbh": 111
+                }
+            ],
+            "condition": "ALIVE",
+            "phenology": "VEGETATIVE",
+            "validationStatus": "VERIFIED",
+            "createdAt": 1764233000000,
+            "updatedAt": 1764233000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        },
+        {
+            "id": "tree-p07-t57",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p07",
+            "samplingUnitId": "q4",
+            "tagNumber": "T57",
+            "speciesName": "Dalbergia latifolia",
+            "commonName": "Rosewood",
+            "isUnknown": false,
+            "confidenceLevel": "HIGH",
+            "gbh": 81.0,
+            "height": 10.0,
+            "stemCount": 1,
+            "stems": [
+                {
+                    "id": "stem-p07-t57-1",
+                    "gbh": 80.5
+                }
+            ],
+            "condition": "ALIVE",
+            "phenology": "VEGETATIVE",
+            "validationStatus": "VERIFIED",
+            "createdAt": 1764233000000,
+            "updatedAt": 1764233000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        },
+        {
+            "id": "tree-p08-t58",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p08",
+            "samplingUnitId": "q1",
+            "tagNumber": "T58",
+            "speciesName": "Boswellia serrata",
+            "commonName": "Salai",
+            "isUnknown": false,
+            "confidenceLevel": "HIGH",
+            "gbh": 131.1,
+            "height": 16.0,
+            "stemCount": 1,
+            "stems": [
+                {
+                    "id": "stem-p08-t58-1",
+                    "gbh": 131
+                }
+            ],
+            "condition": "ALIVE",
+            "phenology": "SENESCING",
+            "remarks": "Leaf fall initiating, canopy thinning",
+            "validationStatus": "VERIFIED",
+            "createdAt": 1764234000000,
+            "updatedAt": 1764234000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        }
+    ],
+    "vegetationObservations": [
+        {
+            "id": "veg-p01-sp1-h",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q1",
+            "speciesName": "Mixed Herbs",
+            "growthForm": "HERB",
+            "isUnknown": true,
+            "confidenceLevel": "MEDIUM",
+            "coverPercentage": 28,
+            "avgHeightCm": 20,
+            "validationStatus": "PENDING",
+            "createdAt": 1764232000000,
+            "updatedAt": 1764232000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        },
+        {
+            "id": "veg-p01-sp1-g",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p01",
+            "samplingUnitId": "q1",
+            "speciesName": "Mixed Grasses",
+            "growthForm": "GRASS",
+            "isUnknown": true,
+            "confidenceLevel": "MEDIUM",
+            "coverPercentage": 28,
+            "avgHeightCm": 6,
+            "validationStatus": "PENDING",
+            "createdAt": 1764232000000,
+            "updatedAt": 1764232000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        },
+        {
+            "id": "veg-p09-sp1-h",
+            "projectId": "proj-rs-gis-001",
+            "moduleId": "mod-veg-001",
+            "plotId": "plot-p09",
+            "samplingUnitId": "q1",
+            "speciesName": "Mixed Herbs",
+            "growthForm": "HERB",
+            "isUnknown": true,
+            "confidenceLevel": "MEDIUM",
+            "coverPercentage": 40,
+            "avgHeightCm": 8,
+            "validationStatus": "PENDING",
+            "createdAt": 1764235000000,
+            "updatedAt": 1764235000000,
+            "syncStatus": "LOCAL_ONLY",
+            "images": []
+        }
+    ]
+}

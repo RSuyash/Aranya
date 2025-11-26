@@ -3,13 +3,14 @@ import { useRepositories } from '../hooks/useRepositories';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { CreateProjectForm } from '../components/projects/CreateProjectForm';
 import { Button } from '../components/ui/Button';
-import { Plus, MagnifyingGlass, UploadSimple, Warning, FileArrowUp, Copy } from 'phosphor-react';
+import { Plus, MagnifyingGlass, UploadSimple, Warning, FileArrowUp, Copy, FileCsv } from 'phosphor-react';
 import { Input } from '../components/ui/Input';
 import { useNavigate } from 'react-router-dom';
 import { parseImportFile, checkProjectExists, commitImport } from '../utils/sync/import';
 import type { ProjectExportData } from '../utils/sync/export';
 import { db } from '../core/data-model/dexie';
 import { useHeader } from '../context/HeaderContext';
+import { ImportWizardModal } from '../components/import-wizard/ImportWizardModal';
 
 export const ProjectsPage: React.FC = () => {
     const { projects } = useRepositories();
@@ -37,6 +38,7 @@ export const ProjectsPage: React.FC = () => {
     const [importData, setImportData] = useState<ProjectExportData | null>(null);
     const [importConflict, setImportConflict] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const [showImportWizard, setShowImportWizard] = useState(false);
 
     // File Handler
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,13 +124,28 @@ export const ProjectsPage: React.FC = () => {
                         onClick={() => document.getElementById('import-project')?.click()}
                         disabled={isImporting}
                     >
-                        {isImporting ? 'Importing...' : 'Import'}
+                        {isImporting ? 'Importing...' : 'Import JSON'}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        leftIcon={<FileCsv size={18} />}
+                        onClick={() => setShowImportWizard(true)}
+                    >
+                        Import CSV
                     </Button>
                     <Button onClick={() => setIsCreating(true)} leftIcon={<Plus size={18} />}>
                         New Project
                     </Button>
                 </div>
             </div>
+
+            {/* Import Wizard Modal */}
+            {showImportWizard && (
+                <ImportWizardModal
+                    currentUserId="user-lab-admin"
+                    onClose={() => setShowImportWizard(false)}
+                />
+            )}
 
             {/* Import Conflict Modal */}
             {importConflict && importData && (

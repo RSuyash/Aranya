@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRepositories } from '../hooks/useRepositories';
 import { calculateShannonIndex, calculateSimpsonIndex, calculateCommunityMetrics, type SpeciesStats } from '../analysis/indices';
@@ -6,6 +6,7 @@ import { calculateSAC } from '../analysis/sac';
 import { TreeStructure, ChartLineUp, Table, Leaf } from 'phosphor-react';
 import { SpeciesAreaCurveChart } from '../components/charts/SpeciesAreaCurveChart';
 import { useHeader } from '../context/HeaderContext';
+import { SACWizard } from '../components/analysis/SACWizard';
 
 export const AnalysisPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -16,6 +17,10 @@ export const AnalysisPage: React.FC = () => {
     const project = projects?.find(p => p.id === projectId);
     const plots = usePlots(projectId);
     const trees = useTreeObservations(projectId);
+
+    // SAC Wizard State
+    const [isSACWizardOpen, setIsSACWizardOpen] = useState(false);
+    const [sacPlotIds, setSacPlotIds] = useState<string[] | null>(null);
 
     useEffect(() => {
         setHeader({
@@ -55,8 +60,13 @@ export const AnalysisPage: React.FC = () => {
 
         const shannon = calculateShannonIndex(counts);
         const simpson = calculateSimpsonIndex(counts);
-        const communityStats = calculateCommunityMetrics(trees, plots.length);
-        const sacData = calculateSAC(trees, plots.map(p => p.id));
+
+        // Use selected plots or all plots
+        const targetPlotIds = sacPlotIds || plots.map(p => p.id);
+        const relevantTrees = trees.filter(t => targetPlotIds.includes(t.plotId));
+
+        const communityStats = calculateCommunityMetrics(relevantTrees, targetPlotIds.length);
+        const sacData = calculateSAC(relevantTrees, targetPlotIds);
 
         console.log('  ✅ Shannon Index (H\'):', shannon.toFixed(3));
         console.log('  ✅ Simpson\'s Index (1-D):', simpson.toFixed(3));
@@ -68,8 +78,8 @@ export const AnalysisPage: React.FC = () => {
             console.log(`     ${idx + 1}. ${stat.speciesName}: IVI=${stat.ivi.toFixed(2)}, N=${stat.abundance}`);
         });
 
-        return { shannon, simpson, communityStats, sacData };
-    }, [trees, plots]);
+        return { shannon, simpson, communityStats, sacData, activePlotCount: targetPlotIds.length };
+    }, [trees, plots, sacPlotIds]);
 
     if (!project) {
         return <div className="p-8 text-text-muted">Project not found.</div>;
@@ -89,6 +99,17 @@ export const AnalysisPage: React.FC = () => {
                     Back to Project
                 </button>
             </div>
+
+            {isSACWizardOpen && (
+                <SACWizard
+                    plots={plots}
+                    onClose={() => setIsSACWizardOpen(false)}
+                    onRun={(selectedIds) => {
+                        setSacPlotIds(selectedIds);
+                        setIsSACWizardOpen(false);
+                    }}
+                />
+            )}
 
             {(!metrics) ? (
                 <div className="glass-panel p-12 text-center text-text-muted border-dashed">
@@ -126,9 +147,17 @@ export const AnalysisPage: React.FC = () => {
                     </div>
 
                     <div className="glass-panel p-6 rounded-xl">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                            <ChartLineUp /> Species Area Curve (Randomized)
-                        </h3>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                <ChartLineUp /> Species Area Curve (Randomized)
+                            </h3>
+                            <button
+                                onClick={() => setIsSACWizardOpen(true)}
+                                className="text-xs font-bold bg-[#1d2440] text-[#56ccf2] px-3 py-1.5 rounded-lg hover:bg-[#2a3454] transition border border-[#56ccf2]/30"
+                            >
+                                Config: {sacPlotIds ? `${sacPlotIds.length} Plots` : 'All Plots'}
+                            </button>
+                        </div>
                         <SpeciesAreaCurveChart
                             data={metrics.sacData}
                             mode="random"
