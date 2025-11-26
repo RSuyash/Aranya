@@ -347,6 +347,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                         }
                                         return undefined;
                                     })()}
+                                    plot={plot}
                                 />
                             ) : (
                                 <PlotOverviewPanel

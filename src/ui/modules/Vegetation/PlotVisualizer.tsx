@@ -327,6 +327,7 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
                                         }
                                         return undefined;
                                     })()}
+                                    plot={plot}
                                 />
                             ) : (
                                 <PlotOverviewPanel

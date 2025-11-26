@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../core/data-model/dexie';
 import type { Plot } from '../../../core/data-model/types';
-import { Plus, Map as MapIcon, ArrowRight, Calendar, User, X, ArrowLeft, MapPin, Trash2 } from 'lucide-react';
+import { Plus, Map as MapIcon, ArrowRight, Calendar, User, X, ArrowLeft, MapPin, Trash2, Settings } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { generateDynamicLayout } from '../../../core/plot-engine/dynamicGenerator';
 import type { PlotNodeInstance, PlotConfiguration } from '../../../core/plot-engine/types';
@@ -153,6 +153,13 @@ export const VegetationModulePage: React.FC = () => {
                         </p>
                     </div>
                 </div>
+                <button
+                    onClick={() => navigate(`/projects/${projectId}/settings`)}
+                    className="inline-flex items-center gap-2 bg-[#11182b] border border-[#1d2440] text-[#f5f7ff] px-4 py-2 rounded-lg font-medium hover:bg-[#1d2440] hover:border-[#56ccf2] transition mr-2"
+                >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                </button>
                 <button
                     onClick={() => setIsNewPlotOpen(true)}
                     className="inline-flex items-center gap-2 bg-[#52d273] text-[#050814] px-4 py-2 rounded-lg font-medium hover:bg-[#45c165] transition"

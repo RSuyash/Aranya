@@ -14,6 +14,20 @@ export interface PlotVisualizationSettings {
     plotConfiguration?: import('../plot-engine/types').PlotConfiguration;
 }
 
+export type BiomassModel =
+    | 'CHAVE_2014_HEIGHT'   // Tropical Wet (Standard)
+    | 'CHAVE_2005_DRY'      // Tropical Dry
+    | 'BROWN_1997_MOIST'    // Pantropical (Height Independent)
+    | 'IDEALIZED_CYLINDER'; // Geometric
+
+export interface AnalysisSettings {
+    biomassModel: BiomassModel;
+    woodDensityStrategy: 'GLOBAL_DEFAULT' | 'GENUS_AVERAGE' | 'CUSTOM';
+    customWoodDensity: number; // g/cm3
+    carbonFraction: number;    // usually 0.47 or 0.5
+    minGbhForCarbon: number;   // cm (exclude saplings from carbon stock)
+}
+
 export interface Project {
     id: string; // UUID
     name: string; // e.g. "Pune Metro EIA 2025"
@@ -72,6 +86,9 @@ export interface VegetationModule extends BaseModule {
         maxExpectedHeightM?: number;  // Maximum expected tree height for the project/biome
         maxExpectedGbhCm?: number;    // Maximum expected GBH for the project/biome
     };
+
+    // --- Analysis & Physics ---
+    analysisSettings?: AnalysisSettings;
 
     // --- Custom Attributes ---
     customPlotAttributes: {

@@ -6,8 +6,7 @@ import { BlueprintRegistry } from '../../../core/plot-engine/blueprints';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
-import { Save, Upload, Trash2, FileText } from 'lucide-react';
-import { clsx } from 'clsx';
+import { Save, Upload, Trash2 } from 'lucide-react';
 
 interface VegetationSettingsFormProps {
     moduleId: string;
@@ -27,6 +26,13 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
                 samplingMethod: module.samplingMethod || 'SYSTEMATIC',
                 strataRules: module.strataRules || { minTreeGbhCm: 30, minShrubHeightCm: 50 },
                 validationSettings: module.validationSettings || { maxGpsAccuracyM: 10, mandatoryPhotos: true },
+                analysisSettings: module.analysisSettings || {
+                    biomassModel: 'CHAVE_2014_HEIGHT',
+                    woodDensityStrategy: 'GLOBAL_DEFAULT',
+                    customWoodDensity: 0.6,
+                    carbonFraction: 0.47,
+                    minGbhForCarbon: 10
+                },
                 defaultBlueprintId: module.defaultBlueprintId || blueprints[0]?.id,
                 predefinedSpeciesList: module.predefinedSpeciesList || []
             });
@@ -169,6 +175,71 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
                         <label htmlFor="mandatoryPhotos" className="text-sm text-[#f5f7ff]">
                             Require photos for every tree/observation
                         </label>
+                    </div>
+                </div>
+            </section>
+
+            {/* Biometrics & Carbon Models */}
+            <section className="space-y-4">
+                <div className="flex items-center gap-2 text-[#f2c94c] border-b border-[#1d2440] pb-2">
+                    <h3 className="text-sm font-medium uppercase tracking-wider">
+                        Biometrics & Carbon Models
+                    </h3>
+                </div>
+
+                <div className="bg-[#161b22] border border-[#1d2440] rounded-xl p-4 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm text-[#f5f7ff]">Biomass Model</label>
+                            <Select
+                                value={formData.analysisSettings?.biomassModel}
+                                onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    analysisSettings: { ...prev.analysisSettings!, biomassModel: e.target.value as any }
+                                }))}
+                                options={[
+                                    { label: 'Chave 2014 (Wet/Moist) - Standard', value: 'CHAVE_2014_HEIGHT' },
+                                    { label: 'Chave 2005 (Dry Forest)', value: 'CHAVE_2005_DRY' },
+                                    { label: 'Brown 1997 (No Height)', value: 'BROWN_1997_MOIST' },
+                                ]}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm text-[#f5f7ff]">Wood Density Strategy</label>
+                            <Select
+                                value={formData.analysisSettings?.woodDensityStrategy}
+                                onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    analysisSettings: { ...prev.analysisSettings!, woodDensityStrategy: e.target.value as any }
+                                }))}
+                                options={[
+                                    { label: 'Global Average (0.6 g/cm³)', value: 'GLOBAL_DEFAULT' },
+                                    { label: 'Custom Value', value: 'CUSTOM' }
+                                ]}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Advanced Parameters Row */}
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                        <Input
+                            label="Carbon Fraction"
+                            type="number" step="0.01"
+                            value={formData.analysisSettings?.carbonFraction}
+                            onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                analysisSettings: { ...prev.analysisSettings!, carbonFraction: parseFloat(e.target.value) }
+                            }))}
+                        />
+                        <Input
+                            label="Min GBH for Carbon (cm)"
+                            type="number"
+                            value={formData.analysisSettings?.minGbhForCarbon}
+                            onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                analysisSettings: { ...prev.analysisSettings!, minGbhForCarbon: parseFloat(e.target.value) }
+                            }))}
+                        />
                     </div>
                 </div>
             </section>
