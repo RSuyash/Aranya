@@ -63,7 +63,7 @@ const StatRow = ({ label, value, unit, diff, alert }: any) => (
                 {value} <span className="text-[#555b75] text-[10px]">{unit}</span>
             </div>
             {diff !== undefined && Math.abs(diff) > 1 && (
-                <div className={`text - [9px] ${diff > 0 ? 'text-[#52d273]' : 'text-[#f2c94c]'} `}>
+                <div className={`text-[9px] ${diff > 0 ? 'text-[#52d273]' : 'text-[#f2c94c]'}`}>
                     {diff > 0 ? '+' : ''}{diff.toFixed(0)}% vs Plot
                 </div>
             )}

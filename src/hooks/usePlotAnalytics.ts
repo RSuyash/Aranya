@@ -23,13 +23,41 @@ export const usePlotAnalytics = (
 
     const settings = module?.analysisSettings || DEFAULT_SETTINGS;
 
-    // 2. Calculate Plot-Level Stats
+    // 2. Resolve Layout (Common for both)
+    const rootNode = useMemo(() => {
+        if (!plot) return null;
+        if (plot.configuration) {
+            return generateDynamicLayout(plot.configuration, plot.id);
+        } else if (plot.blueprintId) {
+            const bp = BlueprintRegistry.get(plot.blueprintId);
+            if (bp) return generateLayout(bp, undefined, plot.id);
+        }
+        return null;
+    }, [plot]);
+
+    // Helper to find node area
+    const getNodeArea = (node: PlotNodeInstance | null, targetId: string): number | null => {
+        if (!node) return null;
+        if (node.id === targetId) {
+            if (node.shape.kind === 'RECTANGLE') return node.shape.width * node.shape.length;
+            if (node.shape.kind === 'CIRCLE') return Math.PI * Math.pow(node.shape.radius, 2);
+            if (node.shape.kind === 'POINT') return Math.PI * Math.pow(node.shape.radius || 1, 2);
+            return null;
+        }
+        for (const child of node.children) {
+            const area = getNodeArea(child, targetId);
+            if (area !== null) return area;
+        }
+        return null;
+    };
+
+    // 3. Calculate Plot-Level Stats
     const plotStats = useMemo(() => {
         if (!plot) return null;
 
         let areaM2 = 400; // Default fallback
 
-        // [FIX] Calculate true plot area from configuration if possible
+        // Calculate total plot area first (as fallback)
         if (plot.configuration) {
             const { width, length, radius } = plot.configuration.dimensions;
             if (plot.configuration.shape === 'CIRCLE') {
@@ -41,58 +69,43 @@ export const usePlotAnalytics = (
             areaM2 = Number(plot.customAttributes.areaM2);
         }
 
-        return calcStandStructure(trees, areaM2, settings);
-    }, [plot, trees, settings]);
+        // [FIX] Calculate "Surveyed Area" based on units that have trees
+        // This prevents "Unit vs Plot" from showing huge diffs when only 1 unit is done
+        const uniqueUnitIds = new Set(trees.map(t => t.samplingUnitId).filter(Boolean));
 
-    // 3. Calculate Unit-Level Stats
+        if (uniqueUnitIds.size > 0 && rootNode) {
+            let surveyedArea = 0;
+            uniqueUnitIds.forEach(uid => {
+                const uArea = getNodeArea(rootNode, uid as string);
+                if (uArea) surveyedArea += uArea;
+            });
+
+            if (surveyedArea > 0) {
+                areaM2 = surveyedArea;
+            }
+        }
+
+        return calcStandStructure(trees, areaM2, settings);
+    }, [plot, trees, settings, rootNode]);
+
+    // 4. Calculate Unit-Level Stats
     const unitStats = useMemo(() => {
         if (!plot || !selectedUnitId) return null;
-
-        // [FIX] Resolve Geometry to get Exact Area
-        let rootNode: PlotNodeInstance | null = null;
-
-        if (plot.configuration) {
-            rootNode = generateDynamicLayout(plot.configuration, plot.id);
-        } else if (plot.blueprintId) {
-            const bp = BlueprintRegistry.get(plot.blueprintId);
-            if (bp) rootNode = generateLayout(bp, undefined, plot.id);
-        }
 
         let unitAreaM2 = 100; // Safe fallback
 
         if (rootNode) {
-            // Recursive search for the specific node
-            const findNode = (node: PlotNodeInstance): PlotNodeInstance | null => {
-                if (node.id === selectedUnitId) return node;
-                for (const child of node.children) {
-                    const found = findNode(child);
-                    if (found) return found;
-                }
-                return null;
-            };
-
-            const unitNode = findNode(rootNode);
-
-            if (unitNode) {
-                if (unitNode.shape.kind === 'RECTANGLE') {
-                    unitAreaM2 = unitNode.shape.width * unitNode.shape.length;
-                } else if (unitNode.shape.kind === 'CIRCLE') {
-                    unitAreaM2 = Math.PI * Math.pow(unitNode.shape.radius, 2);
-                } else if (unitNode.shape.kind === 'POINT') {
-                    // Point sampling usually assumes a minimal area or is dimensionless
-                    // For density calcs, we often treat it as a small radius
-                    unitAreaM2 = Math.PI * Math.pow(unitNode.shape.radius || 1, 2);
-                }
-            }
+            const foundArea = getNodeArea(rootNode, selectedUnitId);
+            if (foundArea) unitAreaM2 = foundArea;
         }
 
         const unitTrees = overrideUnitTrees || trees.filter(t => t.samplingUnitId === selectedUnitId);
 
         return calcStandStructure(unitTrees, unitAreaM2, settings);
 
-    }, [plot, trees, selectedUnitId, settings, overrideUnitTrees]);
+    }, [plot, trees, selectedUnitId, settings, overrideUnitTrees, rootNode]);
 
-    // 4. Compare
+    // 5. Compare
     const comparison = useMemo(() => {
         if (!plotStats || !unitStats) return null;
         const getPct = (u: number, p: number) => p === 0 ? 0 : ((u - p) / p) * 100;
