@@ -4,6 +4,7 @@ import { Map as MapIcon, Info, ArrowLeft, Plus } from 'lucide-react';
 import { UnitDetailPanel } from './UnitDetailPanel';
 import { PlotOverviewPanel } from './PlotOverviewPanel';
 import { TreeEntryForm } from './TreeEntryForm';
+import { TreeEditForm } from './TreeEditForm';
 import { VegetationEntryForm } from './VegetationEntryForm';
 import { normalizeProgress, summarizeObservations } from './plotVisualizerUtils';
 import { PlotCanvas } from './ui/PlotCanvas';
@@ -23,7 +24,7 @@ export const PlotVisualizerPage: React.FC = () => {
 
     // Data
     const { plot, blueprint, isLoading: plotLoading, updateVisualizationSettings } = usePlotData(plotId);
-    const { trees, veg, progress } = usePlotObservations(plotId);
+    const { trees, progress } = usePlotObservations(plotId);
 
     // Derived state
     const progressByUnit = React.useMemo(() => normalizeProgress(progress), [progress]);
@@ -74,6 +75,7 @@ export const PlotVisualizerPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'MAP' | 'LIST'>('MAP');
     const [isAddingTree, setIsAddingTree] = useState(false);
     const [isAddingVeg, setIsAddingVeg] = useState(false);
+    const [editingTreeId, setEditingTreeId] = useState<string | null>(null);
 
     const [digitizeMode, setDigitizeMode] = useState<'NONE' | 'TREE' | 'VEG'>('NONE');
     const [initialPosition, setInitialPosition] = useState<{ x: number, y: number } | undefined>(undefined);
@@ -190,6 +192,10 @@ export const PlotVisualizerPage: React.FC = () => {
         setDigitizeMode('NONE');
     };
 
+    const handleEditTree = (treeId: string) => {
+        setEditingTreeId(treeId);
+    };
+
     // Get actual unit label from layout
     const selectedUnitLabel = selectedUnitId ? (unitLabelMap.get(selectedUnitId) || "Unknown Unit") : "";
 
@@ -290,6 +296,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                         visualizationSettings={vizSettings}
                                         digitizationMode={digitizeMode !== 'NONE'}
                                         onDigitizeTree={handleDigitizeClick}
+                                        onEditTree={handleEditTree}
                                     />
                                 )}
                                 {activeTab === 'LIST' && (
@@ -348,6 +355,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                         return undefined;
                                     })()}
                                     plot={plot}
+                                    onEditTree={handleEditTree}
                                 />
                             ) : (
                                 <PlotOverviewPanel
@@ -396,6 +404,17 @@ export const PlotVisualizerPage: React.FC = () => {
                         }}
                     />
                 </div>
+            )}
+
+            {/* Edit Tree Form */}
+            {editingTreeId && (
+                <TreeEditForm
+                    treeId={editingTreeId}
+                    onClose={() => setEditingTreeId(null)}
+                    onSaveSuccess={() => {
+                        // Refresh handled by live query
+                    }}
+                />
             )}
         </>
     );

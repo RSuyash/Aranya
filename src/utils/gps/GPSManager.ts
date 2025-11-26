@@ -2,28 +2,33 @@ import { db } from '../../core/data-model/dexie';
 import type { SurveyTrack, TrackPoint } from '../../core/data-model/types';
 import { v4 as uuidv4 } from 'uuid';
 
-type GPSMode = 'STATIONARY' | 'TRACKING' | 'IDLE';
+type GPSMode = 'IDLE' | 'TRACKING' | 'MEASURING';
 
 interface AveragingResult {
     lat: number;
     lng: number;
-    accuracy: number;
+    accuracy: number; // Standard Error
     samples: number;
+    duration: number; // seconds
 }
 
 class GPSManager {
     private watchId: number | null = null;
     private subscribers: Set<(state: any) => void> = new Set();
 
-    // State
+    // State Machine
     private mode: GPSMode = 'IDLE';
-    private samples: Array<{ lat: number, lng: number, acc: number }> = [];
+    private previousMode: GPSMode = 'IDLE'; // Memory for resume
+
+    // Buffers
+    private measurementSamples: Array<{ lat: number; lng: number; acc: number }> = [];
     private trackPoints: TrackPoint[] = [];
     private lastTrackPoint: { lat: number, lng: number } | null = null;
 
     // Tracking Session
     private currentTrackId: string | null = null;
     private trackStartTime: number = 0;
+    private trackingConfig: { minDistance: number, minTime: number } = { minDistance: 1, minTime: 300 };
 
     // Math: Haversine Distance
     private getDist(p1: { lat: number, lng: number }, p2: { lat: number, lng: number }) {
@@ -44,34 +49,97 @@ class GPSManager {
     private notify() {
         const state = {
             mode: this.mode,
-            samplesCount: this.samples.length,
+            samplesCount: this.measurementSamples.length,
             trackPoints: this.trackPoints, // Exposed for UI
             trackPointsCount: this.trackPoints.length,
-            currentResult: this.mode === 'STATIONARY' ? this.getWeightedCentroid() : null
+            currentResult: this.mode === 'MEASURING' ? this.getWeightedCentroid() : null
         };
         this.subscribers.forEach(cb => cb(state));
     }
 
-    public startAveraging() {
-        this.mode = 'STATIONARY';
-        this.samples = [];
-        this.startGPS((pos) => {
-            const { latitude, longitude, accuracy } = pos.coords;
+    // --- State Management API ---
 
-            // Quality Gate: Reject poor signals immediately (HDOP Filter)
-            if (accuracy > 25) return;
+    /**
+     * Called when opening a data entry form (Tree/Veg)
+     * 1. Pauses track logging (prevents "starfish")
+     * 2. Starts high-frequency buffering for averaging
+     */
+    // 1. SIMPLER & FASTER: Use Native Watch API
+    public startMeasuring() {
+        if (this.mode === 'MEASURING') return;
 
-            this.samples.push({ lat: latitude, lng: longitude, acc: accuracy });
+        console.log('🛰️ GPS: Switching to MEASURING mode');
+        this.previousMode = this.mode === 'TRACKING' ? 'TRACKING' : 'IDLE';
+        this.mode = 'MEASURING';
+        this.measurementSamples = []; // Reset buffer
+
+        // Clear any existing watchers first
+        if (this.watchId !== null) {
+            navigator.geolocation.clearWatch(this.watchId);
+        }
+
+        // THE CRITICAL CHANGE: 
+        // Use watchPosition instead of a loop. 
+        // The OS pushes data to us the millisecond it is available.
+        this.watchId = navigator.geolocation.watchPosition(
+            (pos) => this.handleGPSUpdate(pos),
+            (err) => console.warn("GPS Error", err),
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0   // Force fresh data, no cache
+            }
+        );
+
+        this.notify();
+    }
+
+    /**
+     * Called when saving/closing the form.
+     * 1. Returns the high-precision result.
+     * 2. Injects that result into the track log (continuity).
+     * 3. Resumes previous mode.
+     */
+    public stopMeasuring(): AveragingResult | null {
+        console.log('🛰️ GPS: Exiting MEASURING mode');
+
+        // 1. Calculate Final Result
+        const result = this.getWeightedCentroid();
+
+        // 2. Snap Track to Tree (The "Systems Engineer" Fix)
+        if (this.previousMode === 'TRACKING' && result && this.currentTrackId) {
+            this.addPointToTrack({
+                t: Date.now(),
+                lat: result.lat,
+                lng: result.lng,
+                acc: result.accuracy,
+                // Mark this point as a "Waypoint" measurement in the track stream?
+                // For now, just adding it ensures the path connects to the tree.
+            });
+        }
+
+        // 3. Resume State
+        this.mode = this.previousMode;
+
+        // 4. Battery Optimization: If we were IDLE before, shut down radio
+        if (this.mode === 'IDLE') {
+            this.stopGPS();
+        } else {
             this.notify();
-        });
+        }
+
+        return result;
+    }
+
+    public getMeasurementResult(): AveragingResult | null {
+        return this.getWeightedCentroid();
     }
 
     public getWeightedCentroid(): AveragingResult | null {
-        if (this.samples.length === 0) return null;
+        if (this.measurementSamples.length === 0) return null;
 
         let sumLat = 0, sumLng = 0, sumWeight = 0;
-
-        this.samples.forEach(p => {
+        this.measurementSamples.forEach(p => {
             // Weight = 1 / accuracy² (Inverse Variance)
             const w = 1 / (p.acc * p.acc || 1); // Avoid div by zero
             sumLat += p.lat * w;
@@ -79,15 +147,79 @@ class GPSManager {
             sumWeight += w;
         });
 
+        // Theoretical Standard Error ≈ 1 / sqrt(sum(weights))
+        // This represents the confidence in the *average*, usually much tighter than raw accuracy.
+        const se = 1 / Math.sqrt(sumWeight);
+
         return {
             lat: sumLat / sumWeight,
             lng: sumLng / sumWeight,
-            accuracy: 1 / Math.sqrt(sumWeight), // Theoretical SE
-            samples: this.samples.length
+            accuracy: se,
+            samples: this.measurementSamples.length,
+            duration: this.measurementSamples.length // Approx 1s per sample (assuming 1Hz)
         };
     }
 
+    // --- Core Event Loop ---
+
+    // 2. HANDLE UPDATES EFFICIENTLY
+    private handleGPSUpdate(pos: GeolocationPosition) {
+        const { latitude, longitude, accuracy, speed, altitude } = pos.coords;
+        const now = Date.now();
+
+        // MODE 1: MEASURING (High Precision Averaging)
+        if (this.mode === 'MEASURING') {
+            // Filter useless data (e.g. >50m error is too noisy for a plot center)
+            // We accept up to 50m initially to show the user "Searching...", 
+            // but for the average, we might want to be stricter later.
+
+            // We just push EVERYTHING. The math (Inverse Variance Weighting) 
+            // will naturally ignore the bad points (high accuracy number = low weight).
+            this.measurementSamples.push({ lat: latitude, lng: longitude, acc: accuracy });
+
+            this.notify(); // Update UI immediately
+            return;
+        }
+
+        // MODE 2: TRACKING (Survey Path)
+        if (this.mode === 'TRACKING') {
+            // Pocket Sleep / Process Death Check
+            const lastTime = this.trackPoints[this.trackPoints.length - 1]?.t || 0;
+            if (lastTime > 0 && (now - lastTime) > 10000) {
+                console.warn("⚠️ GPS: Gap detected (Pocket Sleep?)", (now - lastTime) / 1000, "s");
+                // We could insert a "Gap" marker here if needed
+            }
+
+            // Smart Filter: moved > minDistance OR time > minTime
+            const shouldRecord = !this.lastTrackPoint ||
+                this.getDist(this.lastTrackPoint, { lat: latitude, lng: longitude }) > this.trackingConfig.minDistance ||
+                (now - lastTime) > this.trackingConfig.minTime;
+
+            if (shouldRecord) {
+                this.addPointToTrack({
+                    t: now,
+                    lat: latitude,
+                    lng: longitude,
+                    acc: accuracy,
+                    sp: speed || 0,
+                    alt: altitude || 0
+                });
+                this.lastTrackPoint = { lat: latitude, lng: longitude };
+            }
+        }
+    }
+
+    private addPointToTrack(pt: TrackPoint) {
+        this.trackPoints.push(pt);
+        // Resilience: Incremental persistence logic here
+        if (this.trackPoints.length % 10 === 0) {
+            this.persistTrackChunk();
+        }
+        this.notify();
+    }
+
     public async startTracking(projectId: string, surveyorId: string, moduleId: string, config: { minDistance: number, minTime: number } = { minDistance: 1, minTime: 300 }) {
+        this.trackingConfig = config;
         this.mode = 'TRACKING';
         this.currentTrackId = uuidv4();
         this.trackStartTime = Date.now();
@@ -109,36 +241,7 @@ class GPSManager {
         };
         await db.surveyTracks.add(newTrack);
 
-        this.startGPS((pos) => {
-            const { latitude, longitude, accuracy, speed, altitude } = pos.coords;
-
-            // Smart Interval: Configurable
-            const now = Date.now();
-            const shouldRecord = !this.lastTrackPoint ||
-                this.getDist(this.lastTrackPoint, { lat: latitude, lng: longitude }) > config.minDistance ||
-                (now - (this.trackPoints[this.trackPoints.length - 1]?.t || 0)) > config.minTime;
-
-            if (shouldRecord) {
-                const newPoint: TrackPoint = {
-                    t: now,
-                    lat: latitude,
-                    lng: longitude,
-                    acc: accuracy,
-                    sp: speed || 0,
-                    alt: altitude || 0
-                };
-
-                this.trackPoints.push(newPoint);
-                this.lastTrackPoint = { lat: latitude, lng: longitude };
-
-                // Resilience: Save to DB every 10 points (Incremental Persistence)
-                if (this.trackPoints.length % 10 === 0) {
-                    this.persistTrackChunk();
-                }
-
-                this.notify();
-            }
-        });
+        this.startGPS(this.handleGPSUpdate.bind(this));
     }
 
     private async persistTrackChunk() {
@@ -188,17 +291,17 @@ class GPSManager {
         this.watchId = navigator.geolocation.watchPosition(
             callback,
             (err) => console.warn("GPS Error", err),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     }
 
     public getCurrentState() {
         return {
             mode: this.mode,
-            samplesCount: this.samples.length,
+            samplesCount: this.measurementSamples.length,
             trackPoints: this.trackPoints, // Exposed for UI
             trackPointsCount: this.trackPoints.length,
-            currentResult: this.mode === 'STATIONARY' ? this.getWeightedCentroid() : null
+            currentResult: this.mode === 'MEASURING' ? this.getWeightedCentroid() : null
         };
     }
 }

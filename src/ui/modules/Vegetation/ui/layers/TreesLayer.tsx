@@ -4,9 +4,10 @@ import type { TreeVizNode } from '../../viz/buildPlotVizModel';
 interface TreesLayerProps {
     trees: TreeVizNode[];
     visible?: boolean;
+    onEditTree?: (treeId: string) => void;
 }
 
-export const TreesLayer: React.FC<TreesLayerProps> = ({ trees, visible = true }) => {
+export const TreesLayer: React.FC<TreesLayerProps> = ({ trees, visible = true, onEditTree }) => {
     if (!visible) return null;
     return (
         <svg
@@ -28,7 +29,14 @@ export const TreesLayer: React.FC<TreesLayerProps> = ({ trees, visible = true })
             </defs>
 
             {trees.map((tree) => (
-                <g key={tree.id} className="tree-marker pointer-events-auto cursor-pointer group">
+                <g
+                    key={tree.id}
+                    className={`tree-marker pointer-events-auto group ${onEditTree ? 'cursor-pointer' : ''}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onEditTree?.(tree.id);
+                    }}
+                >
                     {/* Outer ring for depth */}
                     <circle
                         cx={tree.screenX}

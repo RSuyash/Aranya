@@ -1,24 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../core/data-model/dexie';
 import type { Plot } from '../../../core/data-model/types';
-import { Plus, Map as MapIcon, ArrowRight, Calendar, User, X, ArrowLeft, MapPin, Trash2, Settings } from 'lucide-react';
+import { Plus, Map as MapIcon, ArrowRight, Calendar, User, X, ArrowLeft, MapPin, Settings, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { generateDynamicLayout } from '../../../core/plot-engine/dynamicGenerator';
 import type { PlotNodeInstance, PlotConfiguration } from '../../../core/plot-engine/types';
 import { clsx } from 'clsx';
 import { PlotConfigurator } from './ui/PlotConfigurator';
-import { GPSAveragingModal } from '../../../components/ui/GPSAveragingModal';
 import { LiveTrackOverlay } from '../../../components/ui/LiveTrackOverlay';
+import { gpsManager } from '../../../utils/gps/GPSManager';
 
 export const VegetationModulePage: React.FC = () => {
     const { projectId, moduleId } = useParams<{ projectId: string; moduleId: string }>();
     const navigate = useNavigate();
     const [isNewPlotOpen, setIsNewPlotOpen] = useState(false);
+
+    // Simple Form State
     const [newPlotName, setNewPlotName] = useState('');
     const [newPlotCode, setNewPlotCode] = useState('');
     const [plotConfig, setPlotConfig] = useState<PlotConfiguration | null>(null);
+
+    // GPS State (Inline)
+    const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number; accuracy: number; samples: number } | null>(null);
 
     const moduleData = useLiveQuery(
         () => moduleId ? db.modules.get(moduleId) : undefined,
@@ -30,24 +35,35 @@ export const VegetationModulePage: React.FC = () => {
         [moduleId]
     ) || [];
 
-    const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number; acc: number; samples?: number } | null>(null);
-    const [isGPSModalOpen, setIsGPSModalOpen] = useState(false);
+    // --- GPS Logic for New Plot ---
+    useEffect(() => {
+        if (isNewPlotOpen) {
+            // 1. Start high-precision mode immediately when form opens
+            gpsManager.startMeasuring();
 
-    const handleGPSSave = (data: { lat: number; lng: number; accuracy: number; samples: number }) => {
-        setGpsCoords({
-            lat: data.lat,
-            lng: data.lng,
-            acc: data.accuracy,
-            samples: data.samples
-        });
-        setIsGPSModalOpen(false);
-    };
+            // 2. Subscribe to live updates
+            const unsubscribe = gpsManager.subscribe((state) => {
+                if (state.mode === 'MEASURING' && state.currentResult) {
+                    setLiveLocation(state.currentResult);
+                }
+            });
+
+            return () => {
+                unsubscribe();
+                // 3. Stop measuring when form closes (save battery)
+                gpsManager.stopMeasuring();
+            };
+        }
+    }, [isNewPlotOpen]);
 
     const handleCreatePlot = async () => {
         if (!projectId || !moduleId || !newPlotName || !newPlotCode || !moduleData || !plotConfig) return;
 
         const id = uuidv4();
         const now = Date.now();
+
+        // Use the best location we have
+        const finalLocation = liveLocation || { lat: 0, lng: 0, accuracy: 0, samples: 0 };
 
         const newPlot: Plot = {
             id,
@@ -59,12 +75,12 @@ export const VegetationModulePage: React.FC = () => {
             name: newPlotName,
             code: newPlotCode,
             coordinates: {
-                lat: gpsCoords?.lat || 0,
-                lng: gpsCoords?.lng || 0,
-                accuracyM: gpsCoords?.acc || 0,
-                fixType: gpsCoords?.samples ? 'AVERAGED' : 'SINGLE',
-                sampleCount: gpsCoords?.samples || 1,
-                durationSec: gpsCoords?.samples || 1, // Approx 1 sec per sample
+                lat: finalLocation.lat,
+                lng: finalLocation.lng,
+                accuracyM: finalLocation.accuracy,
+                fixType: finalLocation.samples > 10 ? 'AVERAGED' : 'SINGLE',
+                sampleCount: finalLocation.samples,
+                durationSec: finalLocation.samples, // Approx 1 sec per sample
                 timestamp: now
             },
             orientation: 0,
@@ -73,7 +89,7 @@ export const VegetationModulePage: React.FC = () => {
             habitatType: 'Forest',
             images: [],
             status: 'PLANNED',
-            surveyors: [],
+            surveyors: [], // TODO: Add current user
             surveyDate: new Date().toISOString().split('T')[0],
             customAttributes: {},
             createdAt: now,
@@ -82,16 +98,12 @@ export const VegetationModulePage: React.FC = () => {
 
         await db.plots.add(newPlot);
 
-        // Initialize sampling units from dynamic layout
+        // Initialize sampling units
         const layout = generateDynamicLayout(plotConfig, newPlot.id);
         const collectSamplingUnits = (node: PlotNodeInstance): string[] => {
             const units: string[] = [];
-            if (node.type === 'SAMPLING_UNIT') {
-                units.push(node.id);
-            }
-            node.children.forEach(child => {
-                units.push(...collectSamplingUnits(child));
-            });
+            if (node.type === 'SAMPLING_UNIT') units.push(node.id);
+            node.children.forEach(child => units.push(...collectSamplingUnits(child)));
             return units;
         };
 
@@ -113,83 +125,62 @@ export const VegetationModulePage: React.FC = () => {
         setIsNewPlotOpen(false);
         setNewPlotName('');
         setNewPlotCode('');
-        setGpsCoords(null);
+        setLiveLocation(null);
         navigate(`/project/${projectId}/module/${moduleId}/plot/${id}`);
-    };
-
-    const handleDeletePlot = async (e: React.MouseEvent, plotId: string) => {
-        e.stopPropagation();
-        if (confirm("Are you sure you want to delete this plot and all its trees?")) {
-            await db.transaction('rw', [db.plots, db.treeObservations, db.vegetationObservations, db.samplingUnits], async () => {
-                await db.plots.delete(plotId);
-                await db.treeObservations.where('plotId').equals(plotId).delete();
-                await db.vegetationObservations.where('plotId').equals(plotId).delete();
-                await db.samplingUnits.where('plotId').equals(plotId).delete();
-            });
-        }
     };
 
     if (!moduleData) return <div className="p-8 text-white">Loading Module...</div>;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-24">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => navigate(`/projects/${projectId}`)}
-                        className="w-8 h-8 rounded-full bg-[#11182b] border border-[#1d2440] flex items-center justify-center text-[#9ba2c0] hover:text-[#f5f7ff] hover:border-[#56ccf2] transition"
+                        className="w-10 h-10 rounded-full bg-[#11182b] border border-[#1d2440] flex items-center justify-center text-[#9ba2c0] hover:text-[#f5f7ff] hover:border-[#56ccf2] transition"
                     >
-                        <ArrowLeft className="w-4 h-4" />
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
                         <h1 className="text-2xl font-bold text-[#f5f7ff]">{moduleData.name}</h1>
                         <p className="text-[#9ba2c0] text-sm mt-1">
-                            {moduleData.type === 'VEGETATION_PLOTS' ? 'Vegetation Survey' : moduleData.type}
+                            Field Data Collection
                         </p>
                     </div>
                 </div>
                 <button
-                    onClick={() => navigate(`/projects/${projectId}/settings`)}
-                    className="inline-flex items-center gap-2 bg-[#11182b] border border-[#1d2440] text-[#f5f7ff] px-4 py-2 rounded-lg font-medium hover:bg-[#1d2440] hover:border-[#56ccf2] transition mr-2"
-                >
-                    <Settings className="w-4 h-4" />
-                    Settings
-                </button>
-                <button
                     onClick={() => setIsNewPlotOpen(true)}
-                    className="inline-flex items-center gap-2 bg-[#52d273] text-[#050814] px-4 py-2 rounded-lg font-medium hover:bg-[#45c165] transition"
+                    className="flex items-center gap-2 bg-[#52d273] text-[#050814] px-4 py-2.5 rounded-xl font-bold hover:bg-[#45c165] transition shadow-lg shadow-[#52d273]/20"
                 >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" />
                     New Plot
                 </button>
             </div>
 
-            {/* Live Tracking Panel */}
-            <div className="mb-6">
-                <LiveTrackOverlay
-                    projectId={projectId || ''}
-                    surveyorId="current-user" // TODO: Get from auth context
-                    moduleId={moduleId || ''}
-                />
-            </div>
+            {/* Patrol/Track Overlay */}
+            <LiveTrackOverlay
+                projectId={projectId || ''}
+                surveyorId="current-user"
+                moduleId={moduleId || ''}
+            />
 
             {/* Plots Grid */}
             {plots.length === 0 ? (
-                <div className="bg-[#0b1020] border border-[#1d2440] rounded-xl p-12 text-center">
-                    <div className="w-16 h-16 bg-[#11182b] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <MapIcon className="w-8 h-8 text-[#9ba2c0]" />
+                <div className="bg-[#0b1020] border border-[#1d2440] rounded-2xl p-12 text-center mt-8">
+                    <div className="w-16 h-16 bg-[#11182b] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#1d2440]">
+                        <MapIcon className="w-8 h-8 text-[#555b75]" />
                     </div>
-                    <h3 className="text-lg font-medium text-[#f5f7ff] mb-2">No plots yet</h3>
+                    <h3 className="text-lg font-bold text-[#f5f7ff] mb-2">No plots established</h3>
                     <p className="text-[#9ba2c0] mb-6 max-w-md mx-auto">
-                        Create your first plot to start collecting vegetation data.
+                        Start by creating a new plot at your current location.
                     </p>
                     <button
                         onClick={() => setIsNewPlotOpen(true)}
-                        className="inline-flex items-center gap-2 bg-[#11182b] border border-[#1d2440] text-[#f5f7ff] px-4 py-2 rounded-lg hover:bg-[#161d33] transition"
+                        className="inline-flex items-center gap-2 bg-[#11182b] border border-[#56ccf2] text-[#56ccf2] px-6 py-3 rounded-xl font-medium hover:bg-[#56ccf2] hover:text-[#050814] transition"
                     >
-                        <Plus className="w-4 h-4" />
-                        Create Plot
+                        <Plus className="w-5 h-5" />
+                        Establish First Plot
                     </button>
                 </div>
             ) : (
@@ -198,138 +189,128 @@ export const VegetationModulePage: React.FC = () => {
                         <div
                             key={plot.id}
                             onClick={() => navigate(`/project/${projectId}/module/${moduleId}/plot/${plot.id}`)}
-                            className="bg-[#0b1020] border border-[#1d2440] rounded-xl p-4 hover:border-[#52d273]/50 transition cursor-pointer group relative"
+                            className="bg-[#0b1020] border border-[#1d2440] rounded-2xl p-5 hover:border-[#56ccf2] transition cursor-pointer group relative overflow-hidden"
                         >
-                            <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-lg bg-[#11182b] flex items-center justify-center text-[#56ccf2]">
-                                        <MapIcon className="w-4 h-4" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-[#f5f7ff] group-hover:text-[#52d273] transition">
-                                            {plot.name}
-                                        </h3>
-                                        <span className="text-xs text-[#9ba2c0]">{plot.code}</span>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] border ${plot.status === 'COMPLETED' ? 'bg-[#0b2214] text-[#52d273] border-[#21452b]' :
-                                        plot.status === 'IN_PROGRESS' ? 'bg-[#071824] text-[#56ccf2] border-[#15324b]' :
-                                            'bg-[#11182b] text-[#9ba2c0] border-[#1d2440]'
-                                        }`}>
-                                        {plot.status.replace('_', ' ')}
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-lg font-bold text-[#f5f7ff] group-hover:text-[#56ccf2] transition">
+                                        {plot.name}
+                                    </h3>
+                                    <span className="text-xs font-mono text-[#9ba2c0] bg-[#11182b] px-2 py-0.5 rounded border border-[#1d2440]">
+                                        {plot.code}
                                     </span>
-                                    <button
-                                        onClick={(e) => handleDeletePlot(e, plot.id)}
-                                        className="text-[#9ba2c0] hover:text-[#ff7e67] transition p-1"
-                                        title="Delete Plot"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
                                 </div>
+                                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${plot.status === 'COMPLETED' ? 'bg-[#0b2214] text-[#52d273] border-[#21452b]' :
+                                        plot.status === 'IN_PROGRESS' ? 'bg-[#071824] text-[#56ccf2] border-[#15324b]' :
+                                            'bg-[#1d2440] text-[#9ba2c0] border-[#2d3855]'
+                                    }`}>
+                                    {plot.status.replace('_', ' ')}
+                                </span>
                             </div>
 
-                            <div className="space-y-2 text-xs text-[#9ba2c0]">
-                                <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-4 text-xs text-[#9ba2c0]">
+                                <div className="flex items-center gap-1.5">
                                     <Calendar className="w-3.5 h-3.5" />
                                     <span>{plot.surveyDate}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <User className="w-3.5 h-3.5" />
-                                    <span>{plot.surveyors.length > 0 ? plot.surveyors.join(', ') : 'Unassigned'}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <MapPin className="w-3.5 h-3.5" />
+                                    <span>{plot.coordinates.accuracyM < 5 ? 'High Precision' : `±${plot.coordinates.accuracyM.toFixed(0)}m`}</span>
                                 </div>
-                            </div>
-
-                            <div className="mt-4 pt-3 border-t border-[#1d2440] flex justify-between items-center">
-                                <span className="text-[10px] text-[#555b75]">
-                                    {plot.configuration ? `${plot.configuration.dimensions.width}x${plot.configuration.dimensions.length}m` : 'Legacy Plot'}
-                                </span>
-                                <ArrowRight className="w-4 h-4 text-[#52d273] opacity-0 group-hover:opacity-100 transform translate-x-[-4px] group-hover:translate-x-0 transition" />
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* New Plot Dialog */}
+            {/* New Plot Bottom Sheet (Mobile Friendly) */}
             {isNewPlotOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#0b1020] border border-[#1d2440] rounded-2xl w-full max-w-lg shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto">
-                        <div className="px-6 py-4 border-b border-[#1d2440] flex items-center justify-center bg-[#050814] z-10 rounded-t-2xl relative">
-                            <h3 className="text-lg font-semibold text-[#f5f7ff]">New Plot</h3>
-                            <button
-                                onClick={() => setIsNewPlotOpen(false)}
-                                className="absolute right-6 text-[#9ba2c0] hover:text-[#f5f7ff] transition"
-                            >
-                                <X className="w-5 h-5" />
+                <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4 animate-in fade-in duration-200">
+                    <div className="bg-[#0b1020] border-t md:border border-[#1d2440] rounded-t-2xl md:rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+
+                        {/* Header */}
+                        <div className="px-6 py-4 border-b border-[#1d2440] flex items-center justify-between bg-[#050814] sticky top-0 z-10">
+                            <h3 className="text-lg font-bold text-[#f5f7ff]">Establish New Plot</h3>
+                            <button onClick={() => setIsNewPlotOpen(false)} className="p-2 hover:bg-[#1d2440] rounded-full transition">
+                                <X className="w-5 h-5 text-[#9ba2c0]" />
                             </button>
                         </div>
+
                         <div className="p-6 space-y-6">
+                            {/* 1. Live GPS Status - The "Simple" Part */}
+                            <div className={clsx(
+                                "rounded-xl p-4 border transition-colors",
+                                !liveLocation ? "bg-[#11182b] border-[#1d2440]" :
+                                    liveLocation.accuracy <= 5 ? "bg-[#0b2214] border-[#21452b]" : "bg-[#3a2e10] border-[#f2c94c]/30"
+                            )}>
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className={clsx("w-5 h-5", liveLocation && liveLocation.accuracy <= 5 ? "text-[#52d273]" : "text-[#f2c94c]")} />
+                                        <span className="text-sm font-bold text-[#f5f7ff]">Plot Location</span>
+                                    </div>
+                                    {liveLocation ? (
+                                        <div className={clsx("text-[10px] font-bold px-2 py-0.5 rounded-full uppercase",
+                                            liveLocation.accuracy <= 5 ? "bg-[#52d273]/20 text-[#52d273]" : "bg-[#f2c94c]/20 text-[#f2c94c]"
+                                        )}>
+                                            {liveLocation.accuracy <= 5 ? "Strong Signal" : "Improving..."}
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-[10px] text-[#56ccf2]">
+                                            <Loader2 className="w-3 h-3 animate-spin" /> Acquiring Satellites...
+                                        </div>
+                                    )}
+                                </div>
+
+                                {liveLocation ? (
+                                    <div className="font-mono text-2xl text-[#f5f7ff] tracking-tight">
+                                        {liveLocation.lat.toFixed(6)}, {liveLocation.lng.toFixed(6)}
+                                        <div className="text-xs font-sans text-[#9ba2c0] mt-1 flex gap-3">
+                                            <span>Error: ±{liveLocation.accuracy.toFixed(1)}m</span>
+                                            <span>Samples: {liveLocation.samples}</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="h-8 w-3/4 bg-[#1d2440] rounded animate-pulse" />
+                                )}
+                            </div>
+
+                            {/* 2. Basic Info */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-[#9ba2c0] mb-1.5 uppercase tracking-wide">
-                                        Plot Name
-                                    </label>
+                                    <label className="block text-xs font-bold text-[#9ba2c0] mb-1.5 uppercase">Name</label>
                                     <input
                                         type="text"
                                         value={newPlotName}
                                         onChange={(e) => setNewPlotName(e.target.value)}
-                                        placeholder="e.g. North Slope Plot 1"
-                                        className="w-full bg-[#050814] border border-[#1d2440] rounded-lg px-4 py-2.5 text-[#f5f7ff] placeholder-[#555b75] focus:outline-none focus:border-[#56ccf2] transition"
+                                        placeholder="e.g. Ridge Plot 1"
+                                        className="w-full bg-[#050814] border border-[#1d2440] rounded-xl px-4 py-3 text-[#f5f7ff] focus:border-[#56ccf2] outline-none"
                                         autoFocus
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-[#9ba2c0] mb-1.5 uppercase tracking-wide">
-                                        Plot Code
-                                    </label>
+                                    <label className="block text-xs font-bold text-[#9ba2c0] mb-1.5 uppercase">Code</label>
                                     <input
                                         type="text"
                                         value={newPlotCode}
                                         onChange={(e) => setNewPlotCode(e.target.value)}
-                                        placeholder="e.g. P-101"
-                                        className="w-full bg-[#050814] border border-[#1d2440] rounded-lg px-4 py-2.5 text-[#f5f7ff] placeholder-[#555b75] focus:outline-none focus:border-[#56ccf2] transition"
+                                        placeholder="e.g. P-01"
+                                        className="w-full bg-[#050814] border border-[#1d2440] rounded-xl px-4 py-3 text-[#f5f7ff] focus:border-[#56ccf2] outline-none"
                                     />
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-[#9ba2c0] mb-1.5 uppercase tracking-wide">
-                                    Location
-                                </label>
-                                <button
-                                    onClick={() => setIsGPSModalOpen(true)}
-                                    className={clsx(
-                                        "w-full border rounded-lg px-4 py-2.5 flex items-center justify-center gap-2 transition",
-                                        gpsCoords
-                                            ? "bg-[#0b2214] border-[#21452b] text-[#52d273]"
-                                            : "bg-[#11182b] border-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff]"
-                                    )}
-                                >
-                                    <MapPin className={clsx("w-4 h-4")} />
-                                    {gpsCoords ? `Lat: ${gpsCoords.lat.toFixed(5)}, Lng: ${gpsCoords.lng.toFixed(5)} (±${gpsCoords.acc.toFixed(1)}m)` : "Acquire Precision GPS"}
-                                </button>
-                            </div>
-
-                            {isGPSModalOpen && (
-                                <GPSAveragingModal
-                                    onClose={() => setIsGPSModalOpen(false)}
-                                    onSave={handleGPSSave}
-                                />
-                            )}
-
-                            {/* Dynamic Plot Configurator */}
+                            {/* 3. Layout Config */}
                             <PlotConfigurator onChange={setPlotConfig} />
 
-                            <div className="pt-2">
-                                <button
-                                    onClick={handleCreatePlot}
-                                    disabled={!newPlotName || !newPlotCode || !plotConfig}
-                                    className="w-full bg-[#56ccf2] text-[#050814] font-semibold py-3 rounded-xl hover:bg-[#4ab8de] disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                >
-                                    Create & Start Survey
-                                </button>
-                            </div>
+                            {/* Action */}
+                            <button
+                                onClick={handleCreatePlot}
+                                disabled={!newPlotName || !newPlotCode || !plotConfig || !liveLocation}
+                                className="w-full bg-[#56ccf2] text-[#050814] font-bold py-4 rounded-xl hover:bg-[#4ab8de] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-lg"
+                            >
+                                {liveLocation ? <CheckCircle className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
+                                {liveLocation ? "Create Plot" : "Waiting for GPS..."}
+                            </button>
                         </div>
                     </div>
                 </div>

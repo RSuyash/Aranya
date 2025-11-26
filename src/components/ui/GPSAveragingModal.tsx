@@ -16,23 +16,29 @@ export const GPSAveragingModal: React.FC<GPSAveragingModalProps> = ({ onClose, o
     }>({ lat: 0, lng: 0, accuracy: 0, samples: 0 });
 
     useEffect(() => {
-        gpsManager.startAveraging();
+        gpsManager.startMeasuring();
 
         const unsubscribe = gpsManager.subscribe((state) => {
-            if (state.currentResult) {
+            if (state.mode === 'MEASURING' && state.currentResult) {
                 setStats(state.currentResult);
             }
         });
 
         return () => {
             unsubscribe();
-            gpsManager.stopGPS();
+            // Ensure we exit measuring mode if unmounted
+            gpsManager.stopMeasuring();
         };
     }, []);
 
     const handleAccept = () => {
-        if (stats.samples > 0) {
-            gpsManager.stopGPS();
+        // Stop measuring and get final result
+        const result = gpsManager.stopMeasuring();
+
+        if (result) {
+            onSave(result);
+        } else if (stats.samples > 0) {
+            // Fallback to last known stats if for some reason result is null
             onSave(stats);
         }
     };
@@ -106,13 +112,13 @@ export const GPSAveragingModal: React.FC<GPSAveragingModalProps> = ({ onClose, o
                     {/* Actions */}
                     <button
                         onClick={handleAccept}
-                        disabled={!isQualitySufficient && stats.samples < 20} // Allow override after 20 samples if desperate
-                        className={`w-full py-3 rounded-xl font-semibold transition ${isQualitySufficient || stats.samples >= 20
-                                ? 'bg-[#56ccf2] text-[#050814] hover:bg-[#4ab8de]'
-                                : 'bg-[#1d2440] text-[#555b75] cursor-not-allowed'
+                        disabled={stats.samples === 0}
+                        className={`w-full py-3 rounded-xl font-semibold transition ${stats.samples > 0
+                            ? 'bg-[#56ccf2] text-[#050814] hover:bg-[#4ab8de]'
+                            : 'bg-[#1d2440] text-[#555b75] cursor-not-allowed'
                             }`}
                     >
-                        Accept Coordinate
+                        {stats.samples > 0 && !isQualitySufficient ? "Force Accept (Low Accuracy)" : "Accept Coordinate"}
                     </button>
 
                     {stats.samples >= 20 && !isQualitySufficient && (

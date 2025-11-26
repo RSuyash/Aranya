@@ -47,6 +47,7 @@ interface UnitDetailPanelProps {
     onNextUnit?: () => void;
     onPrevUnit?: () => void;
     plot?: Plot; // Pass the plot object for analytics
+    onEditTree?: (treeId: string) => void;
 }
 
 const StatRow = ({ label, value, unit, diff, alert }: any) => (
@@ -84,7 +85,8 @@ export const UnitDetailPanel: React.FC<UnitDetailPanelProps> = ({
     onAddVeg,
     onNextUnit,
     onPrevUnit,
-    plot
+    plot,
+    onEditTree
 }) => {
     // Fetch Data (Trees only for now)
     const trees = useLiveQuery(
@@ -341,19 +343,28 @@ export const UnitDetailPanel: React.FC<UnitDetailPanelProps> = ({
                     </h3>
 
                     {trees.slice(0, 5).map(tree => (
-                        <div key={tree.id} className="bg-[#050814] border border-[#1d2440] rounded-lg p-3 flex items-center justify-between group">
+                        <div
+                            key={tree.id}
+                            onClick={() => onEditTree?.(tree.id)}
+                            className="bg-[#050814] border border-[#1d2440] rounded-lg p-3 flex items-center justify-between group cursor-pointer hover:border-[#56ccf2] transition"
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded bg-[#11182b] flex items-center justify-center text-[#56ccf2] font-mono text-xs">
                                     {tree.tagNumber}
                                 </div>
                                 <div>
                                     <div className="text-sm text-[#f5f7ff] font-medium">{tree.speciesName}</div>
-                                    <div className="text-xs text-[#9ba2c0]">GBH: {tree.gbh}cm</div>
+                                    <div className="text-xs text-[#9ba2c0]">GBH: {(tree.gbh || 0).toFixed(1)}cm</div>
                                 </div>
                             </div>
                             <button
-                                onClick={() => db.treeObservations.delete(tree.id)}
-                                className="text-[#9ba2c0] hover:text-[#ff7e67] opacity-0 group-hover:opacity-100 transition"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm('Are you sure you want to delete this tree?')) {
+                                        db.treeObservations.delete(tree.id);
+                                    }
+                                }}
+                                className="text-[#9ba2c0] hover:text-[#ff7e67] opacity-0 group-hover:opacity-100 transition p-2"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>

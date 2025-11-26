@@ -18,6 +18,7 @@ interface PlotCanvasProps {
     digitizationMode?: boolean;
     onDigitizeTree?: (unitId: string, x: number, y: number) => void;
     visualizationSettings?: PlotVisualizationSettings;
+    onEditTree?: (treeId: string) => void;
 }
 
 export const PlotCanvas: React.FC<PlotCanvasProps> = ({
@@ -29,6 +30,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
     visualizationSettings,
     digitizationMode = false,
     onDigitizeTree,
+    onEditTree,
 }) => {
     const { plot, blueprint, isLoading: dataLoading } = usePlotData(plotId);
     const { trees, veg, progress } = usePlotObservations(plotId);
@@ -214,6 +216,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
             <TreesLayer
                 trees={vizModel.trees}
                 visible={visualizationSettings?.showTreeVisualization ?? true}
+                onEditTree={!digitizationMode ? onEditTree : undefined}
             />
             <LabelsLayer
                 units={vizModel.units}

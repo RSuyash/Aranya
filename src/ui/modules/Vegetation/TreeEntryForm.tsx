@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, ChevronRight, Save, Camera, Leaf, Plus, Trash2, Search } from 'lucide-react';
+import { X, ChevronRight, Save, Camera, Leaf, Plus, Trash2, Search, Activity, CheckCircle, MapPin } from 'lucide-react';
+import { gpsManager } from '../../../utils/gps/GPSManager';
 import { clsx } from 'clsx';
 import { db } from '../../../core/data-model/dexie';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,6 +45,31 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const [height, setHeight] = useState('');
     const [hasBarkPhoto, setHasBarkPhoto] = useState(false);
     const [hasLeafPhoto, setHasLeafPhoto] = useState(false);
+
+    // GPS Stats State
+    const [gpsStats, setGpsStats] = useState<{ samples: number, acc: number | null }>({ samples: 0, acc: null });
+
+    // 1. LIFECYCLE HOOK: Manage GPS State
+    useEffect(() => {
+        // Start measuring immediately on mount
+        gpsManager.startMeasuring();
+
+        // Subscribe to updates
+        const unsubscribe = gpsManager.subscribe((state) => {
+            if (state.mode === 'MEASURING' && state.currentResult) {
+                setGpsStats({
+                    samples: state.currentResult.samples,
+                    acc: state.currentResult.accuracy
+                });
+            }
+        });
+
+        return () => {
+            unsubscribe();
+            // Safeguard: Ensure we exit measuring mode if user clicks X or closes unexpectedly
+            gpsManager.stopMeasuring();
+        };
+    }, []);
 
     // Fetch module data to get predefined species list and validation settings
     const moduleData = useLiveQuery(() => db.modules.get(moduleId)) as VegetationModule | undefined;
@@ -145,6 +171,9 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             return;
         }
 
+        // 2. DATA CAPTURE: Get the high-precision centroid
+        const gpsResult = gpsManager.getMeasurementResult();
+
         const now = Date.now();
 
         // Data Hygiene: Clean and validate inputs
@@ -174,7 +203,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             plotId,
             samplingUnitId: unitId,
             tagNumber: cleanTag,
-            speciesListId: selectedSpeciesId, // Link to master species list
+            speciesListId: selectedSpeciesId || undefined, // Link to master species list
             speciesName: cleanSpeciesName,
             isUnknown,
             confidenceLevel: isUnknown ? 'LOW' : 'HIGH',
@@ -186,8 +215,16 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             phenology: 'VEGETATIVE',
             validationStatus: status, // Auto-flag if warnings exist
             remarks, // Store warnings for reviewer
+
+            // Location Data (Dual Coordinate System)
             localX: initialPosition?.x,
             localY: initialPosition?.y,
+            // Absolute GPS (Gold Standard)
+            lat: gpsResult?.lat || 0,
+            lng: gpsResult?.lng || 0,
+            gpsAccuracyM: gpsResult?.accuracy || 0,
+            gpsSampleCount: gpsResult?.samples || 0,
+
             createdAt: now,
             updatedAt: now,
             images: [] // Initialize empty images array
@@ -230,11 +267,25 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             setHasBarkPhoto(false);
             setHasLeafPhoto(false);
             setCurrentStep('ID');
+
+            // CRITICAL: Restart measuring for the next tree!
+            gpsManager.startMeasuring();
+            setGpsStats({ samples: 0, acc: null });
+
             onSaveSuccess(); // Trigger any parent refreshes if needed, but keep form open
         } else {
             onSaveSuccess();
             onClose();
         }
+    };
+
+    // Helper for Pill Color
+    const getAccuracyColor = (acc: number | null, samples: number) => {
+        if (!acc) return 'text-[#9ba2c0] border-[#1d2440]'; // Gray
+        if (samples < 10) return 'text-[#f2c94c] border-[#f2c94c]/30'; // Yellow (Gathering)
+        if (acc < 2.0) return 'text-[#52d273] border-[#52d273]/30'; // Green (Excellent)
+        if (acc < 5.0) return 'text-[#56ccf2] border-[#56ccf2]/30'; // Blue (Good)
+        return 'text-[#ff7e67] border-[#ff7e67]/30'; // Red (Poor)
     };
 
     const renderStepIndicator = () => (
@@ -275,8 +326,26 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                         </div>
                     </div>
                 </div>
-                <div className="text-xs font-mono text-[#56ccf2] bg-[#071824] px-2 py-1 rounded border border-[#15324b]">
-                    TAG: {tagNumber || '...'}
+                <div className="flex items-center gap-3">
+                    <div className="text-xs font-mono text-[#56ccf2] bg-[#071824] px-2 py-1 rounded border border-[#15324b]">
+                        TAG: {tagNumber || '...'}
+                    </div>
+
+                    {/* LIVE GPS PILL */}
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full border bg-[#0b1020] text-xs font-mono transition-colors ${getAccuracyColor(gpsStats.acc, gpsStats.samples)}`}>
+                        {gpsStats.samples < 10 ? (
+                            <Activity className="w-3 h-3 animate-pulse" />
+                        ) : gpsStats.acc && gpsStats.acc < 3 ? (
+                            <CheckCircle className="w-3 h-3" />
+                        ) : (
+                            <MapPin className="w-3 h-3" />
+                        )}
+
+                        <span>
+                            {gpsStats.samples === 0 ? "Acquiring GPS..." :
+                                `n=${gpsStats.samples} ±${gpsStats.acc?.toFixed(1)}m`}
+                        </span>
+                    </div>
                 </div>
             </div>
 

@@ -265,6 +265,12 @@ export interface TreeObservation {
     localX?: number; // Relative to Sampling Unit origin
     localY?: number;
 
+    // Absolute Coordinates (GIS / Satellite Reference)
+    lat?: number;
+    lng?: number;
+    gpsAccuracyM?: number; // The standard error of the average
+    gpsSampleCount?: number; // n, useful for auditing data quality later
+
     // --- Media ---
     images: Array<{
         url: string;
