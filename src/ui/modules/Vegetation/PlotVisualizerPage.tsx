@@ -11,10 +11,9 @@ import { PlotCanvas } from './ui/PlotCanvas';
 import { PlotSettingsMenu } from './ui/PlotSettingsMenu';
 import { usePlotData } from './data/usePlotData';
 import { usePlotObservations } from './data/usePlotObservations';
-import { generateLayout } from '../../../core/plot-engine/generateLayout';
-import { generateDynamicLayout } from '../../../core/plot-engine/dynamicGenerator';
 import { clsx } from 'clsx';
 import type { PlotVisualizationSettings } from '../../../core/data-model/types';
+import { useResponsive } from '../../../hooks/useResponsive';
 
 export const PlotVisualizerPage: React.FC = () => {
     const { projectId, moduleId, plotId } = useParams<{ projectId: string; moduleId: string; plotId: string }>();
@@ -23,44 +22,12 @@ export const PlotVisualizerPage: React.FC = () => {
     if (!projectId || !moduleId || !plotId) return <div>Invalid URL Parameters</div>;
 
     // Data
-    const { plot, blueprint, isLoading: plotLoading, updateVisualizationSettings } = usePlotData(plotId);
+    const { plot, isLoading: plotLoading, updateVisualizationSettings, unitLabelMap } = usePlotData(plotId);
     const { trees, progress } = usePlotObservations(plotId);
 
     // Derived state
     const progressByUnit = React.useMemo(() => normalizeProgress(progress), [progress]);
     const obsSummaryByUnit = React.useMemo(() => summarizeObservations(trees), [trees]);
-
-    // Build unit label map from layout
-    const unitLabelMap = useMemo(() => {
-        if (!plot) return new Map<string, string>();
-
-        // Use dynamic layout generation for plots that have configuration
-        if (plot.configuration) {
-            const layout = generateDynamicLayout(plot.configuration, plotId);
-            const map = new Map<string, string>();
-
-            const collectLabels = (node: any) => {
-                map.set(node.id, node.label);
-                node.children?.forEach(collectLabels);
-            };
-
-            collectLabels(layout);
-            return map;
-        } else if (blueprint) {
-            const layout = generateLayout(blueprint, undefined, plotId);
-            const map = new Map<string, string>();
-
-            const collectLabels = (node: any) => {
-                map.set(node.id, node.label);
-                node.children?.forEach(collectLabels);
-            };
-
-            collectLabels(layout);
-            return map;
-        }
-
-        return new Map<string, string>();
-    }, [blueprint, plot, plotId]);
 
     // Create sorted list of unit IDs for navigation
     const sortedUnitIds = useMemo(() => {
@@ -68,9 +35,9 @@ export const PlotVisualizerPage: React.FC = () => {
     }, [unitLabelMap]);
 
     // UI State
-    const [containerWidth, setContainerWidth] = useState<number>(0);
-    const [containerHeight, setContainerHeight] = useState<number>(0);
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const { width: containerWidth, height: containerHeight } = useResponsive(containerRef);
+
     const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'MAP' | 'LIST'>('MAP');
     const [isAddingTree, setIsAddingTree] = useState(false);
@@ -110,27 +77,6 @@ export const PlotVisualizerPage: React.FC = () => {
             setVizSettings(defaultVizSettings);
         }
     }, [plot]);
-
-    // Resize Observer
-    useEffect(() => {
-        if (!containerRef.current) return;
-
-        // Immediate measurement
-        const rect = containerRef.current.getBoundingClientRect();
-        console.log('PlotVisualizerPage: Initial container size', rect.width, rect.height);
-        setContainerWidth(rect.width);
-        setContainerHeight(rect.height);
-
-        const observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                console.log('PlotVisualizerPage: ResizeObserver', entry.contentRect.width, entry.contentRect.height);
-                setContainerWidth(entry.contentRect.width);
-                setContainerHeight(entry.contentRect.height);
-            }
-        });
-        observer.observe(containerRef.current);
-        return () => observer.disconnect();
-    }, []);
 
     // Adjust panel height based on focus
     useEffect(() => {

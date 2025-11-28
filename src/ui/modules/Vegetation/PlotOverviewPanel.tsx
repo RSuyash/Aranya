@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Play, Map as MapIcon, TreeDeciduous, Sprout,
     Activity, Scan, Target, Signal, Database
@@ -6,45 +6,8 @@ import {
 import type { Plot } from '../../../core/data-model/types';
 import type { ProgressByUnit, ObsSummaryByUnit } from './plotVisualizerUtils';
 import { getAggregateStats } from './plotVisualizerUtils';
-import { clsx } from 'clsx';
-
-// --- VISUAL COMPONENT: TECH SEPARATOR ---
-const TechSeparator = ({ label, icon: Icon, color = "text-primary" }: any) => (
-    <div className="flex items-center gap-3 py-4 select-none group">
-        <div className={clsx("p-1.5 rounded-lg bg-panel-soft border border-border group-hover:border-primary/30 transition-colors", color)}>
-            <Icon size={14} strokeWidth={2} />
-        </div>
-        <span className={clsx("text-[10px] font-bold uppercase tracking-[0.2em]", color)}>
-            {label}
-        </span>
-        <div className="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent relative">
-            <div className={clsx("absolute left-0 top-1/2 -translate-y-1/2 w-8 h-px opacity-50", color.replace('text-', 'bg-'))} />
-        </div>
-    </div>
-);
-
-// --- VISUAL COMPONENT: HOLO STAT CARD ---
-const HoloStat = ({ label, value, unit, icon: Icon, colorClass, borderClass }: any) => (
-    <div className="relative overflow-hidden rounded-2xl bg-panel-soft/50 border border-border p-5 flex flex-col justify-between group hover:border-primary/30 transition-all duration-500 hover:shadow-lg">
-        {/* Ambient Glow */}
-        <div className={clsx("absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br", colorClass)} style={{ opacity: 0.05 }} />
-
-        <div className="flex justify-between items-start mb-3 relative z-10">
-            <div className={clsx("p-2 rounded-xl bg-panel border border-border text-text-muted transition-colors", borderClass)}>
-                <Icon size={20} strokeWidth={1.5} />
-            </div>
-        </div>
-
-        <div className="relative z-10">
-            <div className="text-3xl font-black text-text-main tracking-tighter mb-0.5">
-                {value}
-            </div>
-            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-muted">
-                {label} <span className="opacity-50 ml-1">{unit}</span>
-            </div>
-        </div>
-    </div>
-);
+import { TechSeparator } from '../../../components/ui/TechSeparator';
+import { HoloStat } from '../../../components/ui/HoloStat';
 
 // --- VISUAL COMPONENT: PROGRESS MONITOR ---
 const ProgressMonitor = ({ completed, total }: { completed: number, total: number }) => {
@@ -96,8 +59,12 @@ export const PlotOverviewPanel: React.FC<PlotOverviewPanelProps> = ({
     onStartSurvey
 }) => {
     const totalUnits = Object.keys(progressByUnit).length;
-    const completedUnits = Object.values(progressByUnit).filter(p => p.status === 'DONE').length;
-    const { totalTrees, totalVeg } = getAggregateStats(obsSummaryByUnit);
+    const completedUnits = Object.values(progressByUnit).filter(p => p?.status === 'DONE').length;
+
+    const { totalTrees, totalVeg } = useMemo(
+        () => getAggregateStats(obsSummaryByUnit),
+        [obsSummaryByUnit]
+    );
 
     return (
         <div className="h-full flex flex-col bg-panel border-t md:border-t-0 md:border-l border-border shadow-2xl w-full md:w-[400px] relative overflow-hidden">
@@ -119,7 +86,7 @@ export const PlotOverviewPanel: React.FC<PlotOverviewPanelProps> = ({
                         </h2>
                     </div>
                     <div className="flex flex-col items-end">
-                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-panel-soft border border-border text-xs font-mono text-[#56ccf2]">
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-panel-soft border border-border text-xs font-mono text-primary">
                             <Signal size={12} />
                             <span>±{plot.coordinates.accuracyM.toFixed(0)}m</span>
                         </div>
@@ -135,7 +102,7 @@ export const PlotOverviewPanel: React.FC<PlotOverviewPanelProps> = ({
                 </section>
 
                 <section>
-                    <TechSeparator label="Telemetry" icon={Database} color="text-[#52d273]" />
+                    <TechSeparator label="Telemetry" icon={Database} color="text-success" />
                     <div className="grid grid-cols-2 gap-4">
                         <HoloStat label="Biomass" value={totalTrees} unit="TREES" icon={TreeDeciduous} colorClass="from-emerald-500/20 to-green-500/5" borderClass="group-hover:border-emerald-500/50 group-hover:text-emerald-500" />
                         <HoloStat label="Flora" value={totalVeg} unit="OBS" icon={Sprout} colorClass="from-amber-500/20 to-orange-500/5" borderClass="group-hover:border-amber-500/50 group-hover:text-amber-500" />
@@ -143,9 +110,9 @@ export const PlotOverviewPanel: React.FC<PlotOverviewPanelProps> = ({
                 </section>
 
                 <section>
-                    <TechSeparator label="Spatial Anchor" icon={MapIcon} color="text-[#56ccf2]" />
+                    <TechSeparator label="Spatial Anchor" icon={MapIcon} color="text-primary" />
                     <div className="rounded-2xl bg-panel-soft/50 border border-border p-4 flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-[#56ccf2]/10 text-[#56ccf2]">
+                        <div className="p-3 rounded-full bg-primary/10 text-primary">
                             <Target size={20} />
                         </div>
                         <div>

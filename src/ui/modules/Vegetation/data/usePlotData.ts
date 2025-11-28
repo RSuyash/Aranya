@@ -40,12 +40,25 @@ export function usePlotData(plotId: string) {
         return null;
     }, [plot, blueprint, isDynamic]);
 
-    // 4. Actions
+    // 4. Compute Unit Label Map
+    // We compute this here so UI components don't have to.
+    const unitLabelMap = useMemo(() => {
+        if (!layout) return new Map<string, string>();
+        const map = new Map<string, string>();
+        const traverse = (node: any) => {
+            map.set(node.id, node.label);
+            node.children?.forEach(traverse);
+        };
+        traverse(layout);
+        return map;
+    }, [layout]);
+
+    // 5. Actions
     const updateVisualizationSettings = async (settings: PlotVisualizationSettings) => {
         await db.plots.update(plotId, { visualizationSettings: settings });
     };
 
-    // 5. Derived State
+    // 6. Derived State
     const isLoading = !plot || (!blueprint && !isDynamic);
     const hasConfiguration = !!(isDynamic ? plot?.configuration : blueprint);
 
@@ -58,6 +71,7 @@ export function usePlotData(plotId: string) {
         // Engine
         blueprint,
         layout, // <--- New: Pre-calculated layout tree
+        unitLabelMap,
 
         // State
         isLoading,

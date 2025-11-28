@@ -1,6 +1,6 @@
 import type { SamplingUnitProgress, TreeObservation } from '../../../core/data-model/types';
 
-export type ProgressByUnit = Record<string, SamplingUnitProgress>;
+export type ProgressByUnit = Record<string, SamplingUnitProgress | undefined>;
 
 export type ObsSummaryByUnit = Record<string, {
     treeCount: number;
@@ -20,25 +20,27 @@ export function normalizeProgress(progressList: SamplingUnitProgress[]): Progres
 
 /**
  * Summarizes observations per sampling unit.
- * Currently supports TreeObservations. Can be extended for VegetationObservations.
+ * Supports TreeObservations and VegetationObservations.
  */
 export function summarizeObservations(
     trees: TreeObservation[],
-    // vegs: VegetationObservation[] // Future support
+    vegs: any[] = [] // Default to empty, type as any for now or import VegetationObservation
 ): ObsSummaryByUnit {
     const map: ObsSummaryByUnit = {};
 
-    // Initialize map for all units found in trees
-    // Note: We might want to initialize this based on the plot layout nodes instead, 
-    // but for now we'll just aggregate what we have data for.
-    // The renderer handles missing keys gracefully.
+    // Helper to ensure key exists
+    const init = (id: string) => {
+        if (!map[id]) map[id] = { treeCount: 0, vegCount: 0 };
+    }
 
-    trees.forEach(tree => {
-        const unitId = tree.samplingUnitId;
-        if (!map[unitId]) {
-            map[unitId] = { treeCount: 0, vegCount: 0 };
-        }
-        map[unitId].treeCount++;
+    trees.forEach(t => {
+        init(t.samplingUnitId);
+        map[t.samplingUnitId].treeCount++;
+    });
+
+    vegs.forEach(v => {
+        init(v.samplingUnitId);
+        map[v.samplingUnitId].vegCount++;
     });
 
     return map;
