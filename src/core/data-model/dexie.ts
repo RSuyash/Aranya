@@ -24,14 +24,14 @@ export class AranyaDB extends Dexie {
     constructor() {
         super('ProjectTerraDB_v1');
 
-        this.version(5).stores({
+        this.version(6).stores({
             projects: 'id, name, syncStatus',
             modules: 'id, projectId, type',
             plots: 'id, projectId, moduleId, syncStatus, [syncStatus+lastModifiedAt]',
             treeObservations:
-                'id, projectId, moduleId, plotId, samplingUnitId, tagNumber, speciesId, [plotId+tagNumber], createdAt, updatedAt, syncStatus, [syncStatus+lastModifiedAt], [plotId+samplingUnitId]',
+                'id, projectId, moduleId, plotId, samplingUnitId, tagNumber, speciesId, speciesName, [plotId+tagNumber], createdAt, updatedAt, syncStatus, [syncStatus+lastModifiedAt], [plotId+samplingUnitId]',
             vegetationObservations:
-                'id, projectId, moduleId, plotId, syncStatus, [syncStatus+lastModifiedAt]',
+                'id, projectId, moduleId, plotId, speciesName, syncStatus, [syncStatus+lastModifiedAt]',
             samplingUnits: 'id, projectId, plotId, moduleId, [plotId+samplingUnitId]',
             analysisConfigs: 'id, projectId, moduleId, type',
             surveyTracks: 'id, projectId, moduleId, surveyorId, [projectId+moduleId]',

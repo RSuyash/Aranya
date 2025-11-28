@@ -15,9 +15,6 @@ export interface UnitVizNode {
     screenHeight: number;
 
     // Style
-    fillColor: string;
-    strokeColor: string;
-    strokeWidth: number;
     zIndex: number;
 
     // Data
@@ -97,17 +94,6 @@ function computeBounds(nodes: PlotNodeInstance[]) {
     return { minX, minY, maxX, maxY };
 }
 
-function getStatusColor(status: 'NOT_STARTED' | 'IN_PROGRESS' | 'DONE'): { fill: string; stroke: string } {
-    switch (status) {
-        case 'DONE':
-            return { fill: 'color-mix(in srgb, var(--success) 15%, transparent)', stroke: 'var(--success)' };
-        case 'IN_PROGRESS':
-            return { fill: 'color-mix(in srgb, var(--primary) 15%, transparent)', stroke: 'var(--primary)' };
-        default:
-            return { fill: 'color-mix(in srgb, var(--text-muted) 8%, transparent)', stroke: 'var(--text-muted)' };
-    }
-}
-
 export function buildPlotVizModel({
     rootInstance,
     trees,
@@ -115,9 +101,9 @@ export function buildPlotVizModel({
     progress,
     viewportWidth,
     viewportHeight,
-    visualizationSettings,
+    visualizationSettings, // Kept for reference but not filtering here anymore
 }: BuildVizModelArgs): PlotVizModel {
-    const padding = 16;
+    const padding = 24; // Increased padding for aesthetics
     const allNodes = collectAllNodes(rootInstance);
     const bounds = computeBounds(allNodes);
 
@@ -125,8 +111,12 @@ export function buildPlotVizModel({
     const plotWidthMeters = bounds.maxX - bounds.minX;
     const plotHeightMeters = bounds.maxY - bounds.minY;
 
-    const scaleX = (viewportWidth - 2 * padding) / plotWidthMeters;
-    const scaleY = (viewportHeight - 2 * padding) / plotHeightMeters;
+    // Avoid division by zero
+    const effectiveW = plotWidthMeters || 1;
+    const effectiveH = plotHeightMeters || 1;
+
+    const scaleX = (viewportWidth - 2 * padding) / effectiveW;
+    const scaleY = (viewportHeight - 2 * padding) / effectiveH;
     const scale = Math.min(scaleX, scaleY);
 
     // Build progress map
@@ -145,31 +135,25 @@ export function buildPlotVizModel({
         vegCountMap.set(v.samplingUnitId, (vegCountMap.get(v.samplingUnitId) || 0) + 1);
     });
 
-    // Filter nodes based on visualization settings
-    const showQuadrants = visualizationSettings?.showQuadrants !== false; // Default true
-    const showSubplots = visualizationSettings?.showSubplots !== false; // Default true
-    const filteredNodes = allNodes.filter(node => {
-        if (node.role === 'QUADRANT' && !showQuadrants) return false;
-        if (node.role === 'SUBPLOT' && !showSubplots) return false;
-        return true;
-    });
-
     // Map nodes to viz units
-    const units: UnitVizNode[] = filteredNodes.map(node => {
+    // CRITICAL CHANGE: We DO NOT filter nodes here based on settings.
+    // We generate the entire physics model, then the UI Layer decides what to draw.
+    const units: UnitVizNode[] = allNodes.map(node => {
         const { width, height } = getNodeDimensions(node);
+        // Transform Coordinates: Bottom-Left Origin (Cartesian) -> Top-Left Origin (SVG)
         const screenX = padding + (node.x - bounds.minX) * scale;
         const screenY = padding + (bounds.maxY - (node.y + height)) * scale;
         const screenWidth = width * scale;
         const screenHeight = height * scale;
 
         const status = progressMap.get(node.id) || 'NOT_STARTED';
-        const colors = getStatusColor(status);
 
         // Determine z-index based on role and type
         let zIndex = 0;
         if (node.role === 'MAIN_PLOT') zIndex = 0;
+        else if (node.role === 'QUADRANT') zIndex = 1;
         else if (node.type === 'SAMPLING_UNIT' && !node.role) zIndex = 1;
-        else if (node.role === 'SUBPLOT') zIndex = 2;
+        else if (node.role === 'SUBPLOT') zIndex = 2; // Subplots always on top
 
         return {
             id: node.id,
@@ -180,9 +164,6 @@ export function buildPlotVizModel({
             screenY,
             screenWidth,
             screenHeight,
-            fillColor: colors.fill,
-            strokeColor: colors.stroke,
-            strokeWidth: node.role === 'SUBPLOT' ? 2 : 1,
             zIndex,
             status,
             treeCount: treeCountMap.get(node.id) || 0,
@@ -196,8 +177,6 @@ export function buildPlotVizModel({
         trees,
         units,
         scale,
-        bounds,
-        padding,
         config: visualizationSettings?.plotConfiguration,
     });
 

@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Activity, CheckCircle, MapPin } from 'lucide-react';
+import {
+    X, Target, ChevronRight, ArrowLeft,
+    Save, CopyPlus
+} from 'lucide-react';
 import { gpsManager } from '../../../../../utils/gps/GPSManager';
 import { db } from '../../../../../core/data-model/dexie';
 import { v4 as uuidv4 } from 'uuid';
 import type { TreeObservation, VegetationModule } from '../../../../../core/data-model/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { TreeEntryFormProps, Step } from './types';
-import { StepIndicator } from './components/StepIndicator';
 import { IdStep } from './components/IdStep';
 import { MetricsStep } from './components/MetricsStep';
 import { PhotosStep } from './components/PhotosStep';
 import { ReviewStep } from './components/ReviewStep';
+import { clsx } from 'clsx';
 
 export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     projectId,
@@ -24,7 +27,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
 }) => {
     const [currentStep, setCurrentStep] = useState<Step>('ID');
 
-    // Form State
+    // --- Form State ---
     const [tagNumber, setTagNumber] = useState('');
     const [speciesName, setSpeciesName] = useState('');
     const [speciesSearch, setSpeciesSearch] = useState('');
@@ -38,10 +41,9 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const [hasBarkPhoto, setHasBarkPhoto] = useState(false);
     const [hasLeafPhoto, setHasLeafPhoto] = useState(false);
 
-    // GPS Stats State
+    // --- GPS Stats ---
     const [gpsStats, setGpsStats] = useState<{ samples: number, acc: number | null }>({ samples: 0, acc: null });
 
-    // 1. LIFECYCLE HOOK: Manage GPS State
     useEffect(() => {
         gpsManager.startMeasuring();
         const unsubscribe = gpsManager.subscribe((state) => {
@@ -52,17 +54,18 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                 });
             }
         });
-
         return () => {
             unsubscribe();
             gpsManager.stopMeasuring();
         };
     }, []);
 
-    // Fetch module data
     const moduleData = useLiveQuery(() => db.modules.get(moduleId)) as VegetationModule | undefined;
 
-    // Filter species
+    // --- Smart Logic ---
+    const heightThreshold = moduleData?.validationSettings?.maxExpectedHeightM || 70;
+    const gbhThreshold = moduleData?.validationSettings?.maxExpectedGbhCm || 500;
+
     const filteredSpecies = useMemo(() => {
         if (!moduleData?.predefinedSpeciesList || !speciesSearch) return [];
         const term = speciesSearch.toLowerCase();
@@ -71,34 +74,21 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                 s.scientificName.toLowerCase().includes(term) ||
                 s.commonName.toLowerCase().includes(term)
             )
-            .slice(0, 10);
+            .slice(0, 8);
     }, [moduleData, speciesSearch]);
 
-    // Validation thresholds
-    const heightThreshold = moduleData?.validationSettings?.maxExpectedHeightM || 70;
-    const gbhThreshold = moduleData?.validationSettings?.maxExpectedGbhCm || 500;
+    // Handle Species Selection + Auto Advance
+    const handleSpeciesSelect = (name: string, id: string) => {
+        setSpeciesName(name);
+        setSpeciesSearch(name);
+        setSelectedSpeciesId(id);
 
-    // Biometric validation
-    const validationWarnings = useMemo(() => {
-        const warnings: string[] = [];
-        stems.forEach((s, i) => {
-            const val = parseFloat(s.gbh);
-            if (!isNaN(val)) {
-                if (val < 1) warnings.push(`Stem ${i + 1}: GBH ${val}cm is too small (likely <1cm).`);
-                else if (val > gbhThreshold) warnings.push(`Stem ${i + 1}: GBH ${val}cm is unusually large (>${gbhThreshold}cm).`);
-            }
-        });
-        const h = parseFloat(height);
-        if (!isNaN(h)) {
-            if (h > heightThreshold) warnings.push(`Height ${h}m is exceptionally tall (>${heightThreshold}m for this biome).`);
-            else if (h < 0.1 && h !== 0) warnings.push(`Height ${h}m is unusually small (likely >0.1m).`);
+        // UX: If tag is already filled, auto-advance to metrics
+        if (tagNumber.length >= 1) {
+            setCurrentStep('METRICS');
         }
-        return warnings;
-    }, [stems, height, heightThreshold, gbhThreshold]);
+    };
 
-    const hasBiometricWarnings = validationWarnings.length > 0;
-
-    // Validate tag uniqueness
     const validateTagUniqueness = async (): Promise<boolean> => {
         if (!plotId || !tagNumber) return false;
         const existingTree = await db.treeObservations
@@ -107,7 +97,6 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
         return !existingTree;
     };
 
-    // Calculate equivalent GBH
     const equivalentGBH = useMemo(() => {
         const validStems = stems.filter(s => s.gbh && !isNaN(parseFloat(s.gbh)));
         if (validStems.length === 0) return 0;
@@ -118,7 +107,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
         return Math.sqrt(sumOfSquares);
     }, [stems]);
 
-    // Auto-suggest next tag
+    // Auto-Tag Logic
     useEffect(() => {
         const fetchLastTag = async () => {
             const lastTree = await db.treeObservations
@@ -140,80 +129,59 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const handleSave = async (addAnother: boolean) => {
         const isTagUnique = await validateTagUniqueness();
         if (!isTagUnique) {
-            alert(`Tag "${tagNumber.trim().toUpperCase()}" already exists in this plot.`);
+            alert(`Tag "${tagNumber.trim().toUpperCase()}" already exists.`);
             return;
         }
 
         const gpsResult = gpsManager.getMeasurementResult();
         const now = Date.now();
-        const cleanTag = tagNumber.trim().toUpperCase();
-        const cleanSpeciesName = isUnknown
-            ? (morphospeciesCode || 'Unknown Specimen').trim()
-            : speciesName.trim();
-        const cleanHeight = height ? parseFloat(height) : undefined;
         const validStems = stems
             .filter(s => s.gbh && !isNaN(parseFloat(s.gbh)))
             .map(s => ({ id: s.id, gbh: parseFloat(s.gbh) }));
 
-        const status = hasBiometricWarnings ? 'FLAGGED' : 'PENDING';
-        const remarks = hasBiometricWarnings ? validationWarnings.join('; ') : undefined;
+        // Validation Check
+        const validationWarnings: string[] = [];
+        if (equivalentGBH > gbhThreshold) validationWarnings.push(`GBH > ${gbhThreshold}cm`);
+        if (height && parseFloat(height) > heightThreshold) validationWarnings.push(`Height > ${heightThreshold}m`);
 
         const newTree: TreeObservation = {
             id: uuidv4(),
-            projectId,
-            moduleId,
-            plotId,
-            samplingUnitId: unitId,
-            tagNumber: cleanTag,
+            projectId, moduleId, plotId, samplingUnitId: unitId,
+            tagNumber: tagNumber.trim().toUpperCase(),
             speciesListId: selectedSpeciesId || undefined,
-            speciesName: cleanSpeciesName,
+            speciesName: isUnknown ? (morphospeciesCode || 'Unknown') : speciesName.trim(),
             isUnknown,
             confidenceLevel: isUnknown ? 'LOW' : 'HIGH',
             gbh: equivalentGBH,
-            height: cleanHeight,
+            height: height ? parseFloat(height) : undefined,
             stems: validStems.length > 1 ? validStems : undefined,
             stemCount: validStems.length,
             condition: 'ALIVE',
             phenology: 'VEGETATIVE',
-            validationStatus: status,
-            remarks,
+            validationStatus: validationWarnings.length > 0 ? 'FLAGGED' : 'PENDING',
+            remarks: validationWarnings.join('; '),
             localX: initialPosition?.x,
             localY: initialPosition?.y,
             lat: gpsResult?.lat || 0,
             lng: gpsResult?.lng || 0,
             gpsAccuracyM: gpsResult?.accuracy || 0,
             gpsSampleCount: gpsResult?.samples || 0,
-            createdAt: now,
-            updatedAt: now,
+            createdAt: now, updatedAt: now,
             images: []
         };
 
         await db.treeObservations.add(newTree);
 
-        // Update Unit Status
-        const existingProgress = await db.samplingUnits
-            .where({ plotId, samplingUnitId: unitId })
-            .first();
-
+        // Update Unit Progress
+        const existingProgress = await db.samplingUnits.where({ plotId, samplingUnitId: unitId }).first();
         if (!existingProgress) {
-            await db.samplingUnits.add({
-                id: uuidv4(),
-                projectId,
-                moduleId,
-                plotId,
-                samplingUnitId: unitId,
-                status: 'IN_PROGRESS',
-                createdAt: now,
-                lastUpdatedAt: now
-            });
+            await db.samplingUnits.add({ id: uuidv4(), projectId, moduleId, plotId, samplingUnitId: unitId, status: 'IN_PROGRESS', createdAt: now, lastUpdatedAt: now });
         } else if (existingProgress.status === 'NOT_STARTED') {
-            await db.samplingUnits.update(existingProgress.id, {
-                status: 'IN_PROGRESS',
-                lastUpdatedAt: now
-            });
+            await db.samplingUnits.update(existingProgress.id, { status: 'IN_PROGRESS', lastUpdatedAt: now });
         }
 
         if (addAnother) {
+            // Reset for rapid entry
             setTagNumber((prev) => (parseInt(prev) + 1).toString());
             setSpeciesName('');
             setSpeciesSearch('');
@@ -233,127 +201,159 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
         }
     };
 
-    const getAccuracyColor = (acc: number | null, samples: number) => {
-        if (!acc) return 'text-text-muted border-border';
-        if (samples < 10) return 'text-warning border-warning/30';
-        if (acc < 2.0) return 'text-success border-success/30';
-        if (acc < 5.0) return 'text-primary border-primary/30';
-        return 'text-danger border-danger/30';
+    const canProceed = () => {
+        if (currentStep === 'ID') return tagNumber && ((!isUnknown && speciesName) || (isUnknown && morphospeciesCode));
+        if (currentStep === 'METRICS') return stems.some(s => s.gbh && !isNaN(parseFloat(s.gbh)));
+        return true;
     };
 
+    const stepOrder: Step[] = ['ID', 'METRICS', 'PHOTOS', 'REVIEW'];
+    const currentStepIdx = stepOrder.indexOf(currentStep);
+    const progressPercent = ((currentStepIdx + 1) / stepOrder.length) * 100;
+
     return (
-        <div className="fixed inset-0 z-[60] bg-app flex flex-col animate-in slide-in-from-bottom duration-300">
-            {/* Header */}
-            <div className="px-4 py-4 border-b border-border flex items-center justify-between bg-panel">
-                <div className="flex items-center gap-3">
-                    <button onClick={onClose} className="text-text-muted hover:text-text-main">
-                        <X className="w-6 h-6" />
-                    </button>
-                    <div>
-                        <h2 className="text-lg font-bold text-text-main">New Tree</h2>
-                        <div className="flex items-center gap-2 text-xs text-text-muted">
-                            <span className="bg-panel-soft px-1.5 py-0.5 rounded text-primary font-medium">{unitLabel}</span>
-                            <span>•</span>
-                            {initialPosition ? (
-                                <span className="font-mono text-success">
-                                    X:{initialPosition.x.toFixed(1)} Y:{initialPosition.y.toFixed(1)}
-                                </span>
-                            ) : (
-                                <span>Manual Entry</span>
-                            )}
+        // OVERLAY: High Z-Index to cover Mobile Nav
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+
+            {/* MAIN CARD CONTAINER */}
+            <div className="w-full h-full md:h-auto md:max-h-[85vh] md:max-w-3xl bg-app md:bg-panel border-0 md:border md:border-border md:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative">
+
+                {/* --- 1. HEADER --- */}
+                <div className="flex-none px-6 py-4 border-b border-border bg-panel-soft/80 backdrop-blur-md flex items-center justify-between z-10">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-panel border border-border text-text-muted hover:text-text-main hover:border-primary transition-all"
+                        >
+                            <X size={18} />
+                        </button>
+                        <div>
+                            <div className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-1.5">
+                                <Target size={12} /> {unitLabel}
+                            </div>
+                            <div className="text-sm font-bold text-text-main flex items-center gap-2">
+                                New Tree Entry
+                                {gpsStats.acc && (
+                                    <span className={clsx("text-[10px] font-mono px-1.5 py-0.5 rounded border", gpsStats.acc < 5 ? "bg-success/10 border-success/20 text-success" : "bg-warning/10 border-warning/20 text-warning")}>
+                                        GPS ±{gpsStats.acc.toFixed(1)}m
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="text-xs font-mono text-primary bg-panel-soft px-2 py-1 rounded border border-primary/20">
-                        TAG: {tagNumber || '...'}
-                    </div>
 
-                    {/* LIVE GPS PILL */}
-                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full border bg-panel text-xs font-mono transition-colors ${getAccuracyColor(gpsStats.acc, gpsStats.samples)}`}>
-                        {gpsStats.samples < 10 ? (
-                            <Activity className="w-3 h-3 animate-pulse" />
-                        ) : gpsStats.acc && gpsStats.acc < 3 ? (
-                            <CheckCircle className="w-3 h-3" />
-                        ) : (
-                            <MapPin className="w-3 h-3" />
+                    {/* Step Tracker */}
+                    <div className="hidden sm:flex items-center gap-2">
+                        {stepOrder.map((s, i) => (
+                            <div key={s} className={clsx("w-2 h-2 rounded-full transition-all", i === currentStepIdx ? "bg-primary scale-125" : i < currentStepIdx ? "bg-success" : "bg-border")} />
+                        ))}
+                    </div>
+                </div>
+
+                {/* --- 2. PROGRESS BAR (Mobile) --- */}
+                <div className="h-1 w-full bg-panel-soft sm:hidden">
+                    <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+                </div>
+
+                {/* --- 3. SCROLLABLE CONTENT --- */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 relative bg-app md:bg-panel">
+                    <div className="max-w-xl mx-auto h-full flex flex-col">
+                        {currentStep === 'ID' && (
+                            <IdStep
+                                tagNumber={tagNumber} setTagNumber={setTagNumber}
+                                speciesName={speciesName} setSpeciesName={setSpeciesName}
+                                speciesSearch={speciesSearch} setSpeciesSearch={setSpeciesSearch}
+                                selectedSpeciesId={selectedSpeciesId} setSelectedSpeciesId={setSelectedSpeciesId}
+                                isUnknown={isUnknown} setIsUnknown={setIsUnknown}
+                                morphospeciesCode={morphospeciesCode} setMorphospeciesCode={setMorphospeciesCode}
+                                filteredSpecies={filteredSpecies}
+                                onSelectSpecies={handleSpeciesSelect}
+                                onNext={() => setCurrentStep('METRICS')}
+                            />
+                        )}
+                        {currentStep === 'METRICS' && (
+                            <MetricsStep
+                                stems={stems} setStems={setStems}
+                                height={height} setHeight={setHeight}
+                                equivalentGBH={equivalentGBH}
+                                onNext={() => setCurrentStep('PHOTOS')}
+                            />
+                        )}
+                        {currentStep === 'PHOTOS' && (
+                            <PhotosStep
+                                hasBarkPhoto={hasBarkPhoto} setHasBarkPhoto={setHasBarkPhoto}
+                                hasLeafPhoto={hasLeafPhoto} setHasLeafPhoto={setHasLeafPhoto}
+                                onNext={() => setCurrentStep('REVIEW')}
+                            />
+                        )}
+                        {currentStep === 'REVIEW' && (
+                            <ReviewStep
+                                tagNumber={tagNumber} speciesName={speciesName}
+                                isUnknown={isUnknown} morphospeciesCode={morphospeciesCode}
+                                stems={stems} equivalentGBH={equivalentGBH}
+                                hasBarkPhoto={hasBarkPhoto} hasLeafPhoto={hasLeafPhoto}
+                                height={height}
+                                validationWarnings={
+                                    (() => {
+                                        const warnings = [];
+                                        if (equivalentGBH > gbhThreshold) warnings.push(`GBH > ${gbhThreshold}cm`);
+                                        if (height && parseFloat(height) > heightThreshold) warnings.push(`Height > ${heightThreshold}m`);
+                                        return warnings;
+                                    })()
+                                }
+                                onNext={() => setCurrentStep('ID')}
+                            />
+                        )}
+                    </div>
+                </div>
+
+                {/* --- 4. COMMAND BAR (Footer) --- */}
+                <div className="flex-none p-4 md:p-6 bg-panel-soft/80 backdrop-blur-xl border-t border-border z-20 pb-safe">
+                    <div className="flex gap-4 max-w-xl mx-auto">
+
+                        {/* BACK */}
+                        {currentStep !== 'ID' && (
+                            <button
+                                onClick={() => setCurrentStep(stepOrder[currentStepIdx - 1])}
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center bg-panel border border-border text-text-muted hover:text-text-main hover:bg-panel-soft active:scale-95 transition-all"
+                            >
+                                <ArrowLeft size={24} />
+                            </button>
                         )}
 
-                        <span>
-                            {gpsStats.samples === 0 ? "Acquiring GPS..." :
-                                `n=${gpsStats.samples} ±${gpsStats.acc?.toFixed(1)}m`}
-                        </span>
+                        {/* NEXT / SAVE */}
+                        {currentStep !== 'REVIEW' ? (
+                            <button
+                                onClick={() => setCurrentStep(stepOrder[currentStepIdx + 1])}
+                                disabled={!canProceed()}
+                                className={clsx(
+                                    "flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-bold text-lg transition-all shadow-lg active:scale-[0.98]",
+                                    canProceed()
+                                        ? "bg-primary text-white shadow-primary/20 hover:bg-primary/90"
+                                        : "bg-panel border border-border text-text-muted cursor-not-allowed opacity-60"
+                                )}
+                            >
+                                Next Step <ChevronRight size={24} strokeWidth={3} />
+                            </button>
+                        ) : (
+                            <div className="flex-1 flex gap-3">
+                                <button
+                                    onClick={() => handleSave(true)}
+                                    className="flex-1 h-14 rounded-2xl bg-panel border-2 border-primary text-primary font-bold flex flex-col items-center justify-center leading-none gap-1 active:scale-95 transition-all hover:bg-primary/5"
+                                >
+                                    <CopyPlus size={20} />
+                                    <span className="text-[10px] uppercase tracking-wider">Save & Add</span>
+                                </button>
+                                <button
+                                    onClick={() => handleSave(false)}
+                                    className="flex-[1.5] h-14 rounded-2xl bg-success text-white font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-success/20 active:scale-95 transition-all hover:bg-success/90"
+                                >
+                                    <Save size={24} strokeWidth={2.5} />
+                                    Finish
+                                </button>
+                            </div>
+                        )}
                     </div>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-                <StepIndicator currentStep={currentStep} />
-
-                <div className="max-w-md mx-auto h-full">
-                    {currentStep === 'ID' && (
-                        <IdStep
-                            tagNumber={tagNumber}
-                            setTagNumber={setTagNumber}
-                            speciesName={speciesName}
-                            setSpeciesName={setSpeciesName}
-                            speciesSearch={speciesSearch}
-                            setSpeciesSearch={setSpeciesSearch}
-                            selectedSpeciesId={selectedSpeciesId}
-                            setSelectedSpeciesId={setSelectedSpeciesId}
-                            isUnknown={isUnknown}
-                            setIsUnknown={setIsUnknown}
-                            morphospeciesCode={morphospeciesCode}
-                            setMorphospeciesCode={setMorphospeciesCode}
-                            filteredSpecies={filteredSpecies}
-                            onNext={() => setCurrentStep('METRICS')}
-                            onCancel={onClose}
-                        />
-                    )}
-
-                    {currentStep === 'METRICS' && (
-                        <MetricsStep
-                            stems={stems}
-                            setStems={setStems}
-                            height={height}
-                            setHeight={setHeight}
-                            equivalentGBH={equivalentGBH}
-                            onNext={() => {
-                                const hasValidStem = stems.some(s => s.gbh && !isNaN(parseFloat(s.gbh)));
-                                if (hasValidStem) setCurrentStep('PHOTOS');
-                            }}
-                            onBack={() => setCurrentStep('ID')}
-                        />
-                    )}
-
-                    {currentStep === 'PHOTOS' && (
-                        <PhotosStep
-                            hasBarkPhoto={hasBarkPhoto}
-                            setHasBarkPhoto={setHasBarkPhoto}
-                            hasLeafPhoto={hasLeafPhoto}
-                            setHasLeafPhoto={setHasLeafPhoto}
-                            onNext={() => setCurrentStep('REVIEW')}
-                            onBack={() => setCurrentStep('METRICS')}
-                        />
-                    )}
-
-                    {currentStep === 'REVIEW' && (
-                        <ReviewStep
-                            tagNumber={tagNumber}
-                            speciesName={speciesName}
-                            isUnknown={isUnknown}
-                            morphospeciesCode={morphospeciesCode}
-                            stems={stems}
-                            equivalentGBH={equivalentGBH}
-                            hasBarkPhoto={hasBarkPhoto}
-                            hasLeafPhoto={hasLeafPhoto}
-                            validationWarnings={validationWarnings}
-                            onBack={() => setCurrentStep('PHOTOS')}
-                            onNext={() => { }}
-                            onSave={handleSave}
-                        />
-                    )}
                 </div>
             </div>
         </div>

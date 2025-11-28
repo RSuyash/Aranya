@@ -13,10 +13,8 @@ export default {
             colors: {
                 // Map Tailwind classes to your CSS Variables
                 app: 'var(--bg-app)',
-                panel: {
-                    DEFAULT: 'var(--bg-panel)',
-                    soft: 'var(--bg-panel-soft)',
-                },
+                panel: 'var(--bg-panel)',
+                'panel-soft': 'var(--bg-panel-soft)',
                 border: 'var(--border)',
                 text: {
                     main: 'var(--text-main)',
@@ -47,3 +45,6 @@ export default {
         require('tailwindcss-animate'),
     ],
 }
+
+
+

@@ -1,13 +1,46 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { usePlotData } from '../data/usePlotData';
 import { usePlotObservations } from '../data/usePlotObservations';
 import { generateLayout } from '../../../../core/plot-engine/generateLayout';
 import { generateDynamicLayout } from '../../../../core/plot-engine/dynamicGenerator';
 import { buildPlotVizModel } from '../viz/buildPlotVizModel';
-import { UnitsLayer } from './layers/UnitsLayer';
-import { TreesLayer } from './layers/TreesLayer';
-import { LabelsLayer } from './layers/LabelsLayer';
+import { EnvironmentLayer } from './layers/EnvironmentLayer';
+import { BioMarker } from './layers/BioMarker';
 import type { PlotVisualizationSettings } from '../../../../core/data-model/types';
+import { clsx } from 'clsx';
+import { Target, Maximize, Ruler } from 'lucide-react';
+
+// --- SUB-COMPONENT: TELEMETRY HUD ---
+const TelemetryHUD = ({ plotCode, dimensions, mode, scale }: any) => (
+    <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between select-none overflow-hidden z-20">
+        <div className="flex justify-between items-start">
+            <div className="flex items-center gap-2 bg-panel/90 backdrop-blur-md border border-border px-3 py-1.5 rounded-full shadow-lg transition-all animate-in fade-in slide-in-from-top-2">
+                <Maximize size={14} className="text-primary" />
+                <span className="text-xs font-bold text-text-main">{plotCode}</span>
+                <span className="h-3 w-px bg-border mx-1" />
+                <span className="text-[10px] font-mono text-text-muted">
+                    {dimensions.width}m × {dimensions.length}m
+                </span>
+            </div>
+
+            <div className={clsx(
+                "flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm backdrop-blur-md transition-all font-mono text-xs",
+                mode === 'DIGITIZE'
+                    ? "bg-success/10 border-success/30 text-success font-bold"
+                    : "bg-panel/80 border-border text-text-muted"
+            )}>
+                {mode === 'DIGITIZE' ? '● DIGITIZING' : 'VIEW ONLY'}
+            </div>
+        </div>
+
+        <div className="flex justify-end animate-in fade-in slide-in-from-bottom-2">
+            <div className="bg-panel/80 backdrop-blur-sm border border-border px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-3">
+                <Ruler size={14} className="text-text-muted" />
+                <span className="text-xs font-mono text-text-main">1m ≈ {scale.toFixed(1)}px</span>
+            </div>
+        </div>
+    </div>
+);
 
 interface PlotCanvasProps {
     plotId: string;
@@ -32,10 +65,11 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
     onDigitizeTree,
     onEditTree,
 }) => {
-    const { plot, blueprint, isLoading: dataLoading } = usePlotData(plotId);
+    const { plot, blueprint, isLoading } = usePlotData(plotId);
     const { trees, veg, progress } = usePlotObservations(plotId);
-    const [mousePos, setMousePos] = React.useState<{ x: number, y: number } | null>(null);
+    const [mousePos, setMousePos] = useState<{ x: number, y: number } | null>(null);
 
+    // 1. Resolve Layout Engine
     const rootInstance = useMemo(() => {
         if (!plot) return null;
         if (plot.blueprintId === 'dynamic' && plot.configuration) {
@@ -47,6 +81,9 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         return null;
     }, [blueprint, plot, plotId]);
 
+    // 2. Build Visualization Model
+    // We pass NO filtering settings here. The model contains EVERYTHING.
+    // Visibility is handled by the Layer components.
     const vizModel = useMemo(() => {
         if (!rootInstance || viewportWidth === 0 || viewportHeight === 0) {
             return null;
@@ -59,40 +96,32 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
             progress,
             viewportWidth,
             viewportHeight,
+            // Pass settings for physics config (spacing rules) but NOT for filtering
             visualizationSettings: {
-                showQuadrants: visualizationSettings?.showQuadrants ?? true,
-                showSubplots: visualizationSettings?.showSubplots ?? true,
-                showQuadrantLines: visualizationSettings?.showQuadrantLines ?? true,
-                showTreeVisualization: visualizationSettings?.showTreeVisualization ?? true,
-                showLabels: visualizationSettings?.showLabels ?? true,
-                subplotOpacity: visualizationSettings?.subplotOpacity ?? 0.2,
+                ...visualizationSettings,
+                showQuadrants: true,
+                showSubplots: true,
                 plotConfiguration: plot?.configuration
-            }
+            } as any
         });
     }, [rootInstance, trees, veg, progress, viewportWidth, viewportHeight, visualizationSettings, plot]);
 
-    // Snap to Grid Logic (0.5m grid)
+    // 3. Grid Snapping
     const snappedPos = useMemo(() => {
         if (!mousePos || !vizModel || !plot?.configuration) return null;
-
         const mainPlot = vizModel.units.find(u => u.role === 'MAIN_PLOT');
         if (!mainPlot) return null;
 
         const scaleX = mainPlot.screenWidth / plot.configuration.dimensions.width;
         const scaleY = mainPlot.screenHeight / plot.configuration.dimensions.length;
-
         const relX = mousePos.x - mainPlot.screenX;
         const relY = mousePos.y - mainPlot.screenY;
-
         const metersX = relX / scaleX;
         const metersY = plot.configuration.dimensions.length - (relY / scaleY);
 
-        const gridSize = 0.5;
-        const snappedMetersX = Math.round(metersX / gridSize) * gridSize;
-        const snappedMetersY = Math.round(metersY / gridSize) * gridSize;
-
-        const clampedX = Math.max(0, Math.min(plot.configuration.dimensions.width, snappedMetersX));
-        const clampedY = Math.max(0, Math.min(plot.configuration.dimensions.length, snappedMetersY));
+        // Clamp
+        const clampedX = Math.max(0, Math.min(plot.configuration.dimensions.width, metersX));
+        const clampedY = Math.max(0, Math.min(plot.configuration.dimensions.length, metersY));
 
         const screenX = mainPlot.screenX + (clampedX * scaleX);
         const screenY = mainPlot.screenY + ((plot.configuration.dimensions.length - clampedY) * scaleY);
@@ -100,168 +129,134 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         return { screenX, screenY, metersX: clampedX, metersY: clampedY };
     }, [mousePos, vizModel, plot]);
 
+    // 4. Hit Testing (for Digitization only)
+    // The interactive clicks for selection are handled directly by the SVG elements in the layers
+    // via pointer-events-auto. This hook is mainly for the "Digitization" reticle context.
+    const resolveContext = () => {
+        if (!snappedPos || !vizModel) return null;
+        const units = vizModel.units.filter(u =>
+            snappedPos.screenX >= u.screenX && snappedPos.screenX <= u.screenX + u.screenWidth &&
+            snappedPos.screenY >= u.screenY && snappedPos.screenY <= u.screenY + u.screenHeight &&
+            u.type === 'SAMPLING_UNIT'
+        );
+        units.sort((a, b) => b.zIndex - a.zIndex);
+        const target = units[0];
+
+        if (target) {
+            const unitHeightMeters = target.screenHeight / vizModel.scale;
+            const unitYTopScreen = target.screenY;
+            const localYScreen = snappedPos.screenY - unitYTopScreen;
+            const localYMeters = unitHeightMeters - (localYScreen / vizModel.scale);
+            const localXMeters = (snappedPos.screenX - target.screenX) / vizModel.scale;
+
+            return { unitId: target.id, label: target.label, localX: localXMeters, localY: localYMeters };
+        }
+        return null;
+    };
+
+    const hoveredContext = useMemo(resolveContext, [snappedPos, vizModel]);
+
     const handleMouseMove = (e: React.MouseEvent) => {
-        if (!digitizationMode) return;
         const rect = e.currentTarget.getBoundingClientRect();
-        setMousePos({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        });
+        setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     };
 
-    // REFINED HIT TEST LOGIC
-    const resolveSpatialContext = (
-        node: typeof rootInstance,
-        globalX: number,
-        globalY: number
-    ): { unitId: string; label: string; localX: number; localY: number } | null => {
-
-        // Recursive search function
-        const search = (current: typeof rootInstance, relX: number, relY: number): { unitId: string; label: string; localX: number; localY: number } | null => {
-            if (!current) return null;
-
-            // 1. Check Children First (Reverse order for Z-index correctness: Top first)
-            // Subplots are usually last in children array, so we check them first.
-            if (current.children) {
-                for (let i = current.children.length - 1; i >= 0; i--) {
-                    const child = current.children[i];
-
-                    // Calculate child's bounds relative to current node
-                    // Child.x / Child.y are offsets from current node's origin
-                    const childX = child.x;
-                    const childY = child.y;
-                    const childW = child.shape.kind === 'RECTANGLE' ? child.shape.width : 0;
-                    const childL = child.shape.kind === 'RECTANGLE' ? child.shape.length : 0;
-
-                    // Check if point is inside child
-                    if (relX >= childX && relX <= childX + childW && relY >= childY && relY <= childY + childL) {
-                        // Point is inside this child. Recurse deeper.
-                        // Pass coordinates relative to the child's origin
-                        const result = search(child, relX - childX, relY - childY);
-                        if (result) return result;
-                    }
-                }
-            }
-
-            // 2. If no children matched, check if THIS node is a valid sampling unit
-            if (current.type === 'SAMPLING_UNIT') {
-                return {
-                    unitId: current.id,
-                    label: current.label,
-                    localX: relX, // Already relative to this unit
-                    localY: relY
-                };
-            }
-
-            return null;
-        };
-
-        // Start search from root
-        return search(node, globalX, globalY);
-    };
-
-    const [hoveredContext, setHoveredContext] = React.useState<{ unitId: string; label: string; localX: number; localY: number } | null>(null);
-
-    React.useEffect(() => {
-        if (digitizationMode && snappedPos && rootInstance) {
-            const context = resolveSpatialContext(rootInstance, snappedPos.metersX, snappedPos.metersY);
-            setHoveredContext(context);
-        } else {
-            setHoveredContext(null);
-        }
-    }, [digitizationMode, snappedPos, rootInstance]);
-
+    // Global click handler for digitization
     const handleClick = () => {
-        if (digitizationMode && snappedPos && onDigitizeTree && rootInstance) {
-            // 1. Resolve Context
-            const context = resolveSpatialContext(rootInstance, snappedPos.metersX, snappedPos.metersY);
-
-            if (context) {
-                // 2. Pass resolved context to parent
-                onDigitizeTree(context.unitId, context.localX, context.localY);
-            } else {
-                console.warn("Clicked outside valid sampling unit");
-            }
+        if (digitizationMode && hoveredContext && onDigitizeTree) {
+            onDigitizeTree(hoveredContext.unitId, hoveredContext.localX, hoveredContext.localY);
         }
     };
 
-    if (dataLoading || !vizModel) {
+    if (isLoading || !vizModel) {
         return (
-            <div className="w-full h-full flex items-center justify-center">
-                <div className="text-text-muted">Loading map...</div>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-app text-text-muted animate-pulse">
+                <Target size={48} className="mb-4 opacity-20" />
+                <span className="text-xs font-bold uppercase tracking-widest">Initializing Environment...</span>
             </div>
         );
     }
 
     return (
         <div
-            className={`relative w-full h-full bg-app ${digitizationMode ? 'cursor-crosshair' : ''}`}
+            className={clsx(
+                "relative w-full h-full bg-app overflow-hidden select-none group",
+                digitizationMode ? "cursor-none" : "cursor-default"
+            )}
             style={{ width: viewportWidth, height: viewportHeight }}
             onMouseMove={handleMouseMove}
             onMouseLeave={() => setMousePos(null)}
             onClick={handleClick}
         >
-            {/* Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-panel to-app" />
+            {/* --- 0. GLOBAL ANIMATION STYLES --- */}
+            <style>{`
+                @keyframes sway {
+                    0%, 100% { transform: rotate(-3deg); }
+                    50% { transform: rotate(3deg); }
+                }
+            `}</style>
 
-            {/* Layers */}
-            <UnitsLayer
-                units={vizModel.units}
-                selectedUnitId={selectedUnitId}
-                onSelectUnit={!digitizationMode ? onSelectUnit : undefined}
-                showQuadrants={visualizationSettings?.showQuadrants ?? true}
-                showSubplots={visualizationSettings?.showSubplots ?? true}
-                showQuadrantLines={visualizationSettings?.showQuadrantLines ?? false}
-            />
-            <TreesLayer
-                trees={vizModel.trees}
-                visible={visualizationSettings?.showTreeVisualization ?? true}
-                onEditTree={!digitizationMode ? onEditTree : undefined}
-            />
-            <LabelsLayer
-                units={vizModel.units}
-                visible={visualizationSettings?.showLabels ?? true}
-            />
+            {/* Parent SVG must allow pointer events to pass through to children where 'pointer-events-auto' is set */}
+            <svg width="100%" height="100%" className="absolute inset-0 pointer-events-none" style={{ overflow: 'visible' }}>
 
-            {/* Ghost Tree for Digitization */}
+                {/* 1. Environment (Floor, Grid, Labels) */}
+                <EnvironmentLayer
+                    units={vizModel.units}
+                    selectedUnitId={selectedUnitId}
+                    onSelectUnit={!digitizationMode ? onSelectUnit : undefined}
+                    showQuadrants={visualizationSettings?.showQuadrants ?? true}
+                    showSubplots={visualizationSettings?.showSubplots ?? true}
+                />
+
+                {/* 2. Organisms (Trees) */}
+                {visualizationSettings?.showTreeVisualization && vizModel.trees.map((tree, i) => (
+                    <BioMarker
+                        key={tree.id}
+                        x={tree.screenX}
+                        y={tree.screenY}
+                        radius={tree.radius * 2} // Use scaled visual radius
+                        species={tree.speciesName}
+                        delay={i * 50} // Stagger animation for organic feel
+                        onClick={!digitizationMode && onEditTree ? (e) => {
+                            e.stopPropagation();
+                            onEditTree(tree.id);
+                        } : undefined}
+                    />
+                ))}
+
+            </svg>
+
+            {/* 3. Reticle (Interactive Overlay) - Only visible during Digitization */}
             {digitizationMode && snappedPos && (
                 <div
-                    className="absolute pointer-events-none flex flex-col items-center z-50"
-                    style={{
-                        left: snappedPos.screenX,
-                        top: snappedPos.screenY,
-                        transform: 'translate(-50%, -50%)'
-                    }}
+                    className="absolute pointer-events-none z-50 transition-transform duration-75 ease-out"
+                    style={{ transform: `translate(${snappedPos.screenX}px, ${snappedPos.screenY}px)` }}
                 >
-                    <div className="w-4 h-4 rounded-full border-2 border-success bg-success/30 shadow-[0_0_10px_rgba(82,210,115,0.5)]" />
-
-                    {/* Smart Label */}
-                    <div className="mt-2 px-2 py-1 bg-panel/95 border border-success/50 rounded-md shadow-xl text-left whitespace-nowrap">
-                        <div className="text-[10px] text-text-muted uppercase tracking-wider font-bold">
-                            {hoveredContext ? `TARGET: ${hoveredContext.label}` : 'TARGET LOCATION'}
-                        </div>
-                        {hoveredContext ? (
-                            <>
-                                <div className="text-xs text-success font-mono font-bold">
-                                    X: {hoveredContext.localX.toFixed(2)}m (Local)
-                                </div>
-                                <div className="text-xs text-success font-mono font-bold">
-                                    Y: {hoveredContext.localY.toFixed(2)}m (Local)
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="text-xs text-success font-mono font-bold">
-                                    X: {snappedPos.metersX.toFixed(2)}m
-                                </div>
-                                <div className="text-xs text-success font-mono font-bold">
-                                    Y: {snappedPos.metersY.toFixed(2)}m
-                                </div>
-                            </>
-                        )}
+                    <div className="absolute -translate-x-1/2 -translate-y-1/2">
+                        <div className={clsx("w-px h-10 transition-colors duration-200", hoveredContext ? "bg-success" : "bg-warning")} />
+                        <div className={clsx("h-px w-10 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-200", hoveredContext ? "bg-success" : "bg-warning")} />
+                        <div className="w-4 h-4 border-2 border-white rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-lg" />
                     </div>
+                    {hoveredContext && (
+                        <div className="absolute left-4 top-4 bg-panel/90 backdrop-blur-md border border-border px-3 py-2 rounded-lg shadow-xl text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2">
+                            <div className="font-bold text-success flex items-center gap-2">
+                                <Target size={12} /> {hoveredContext.label}
+                            </div>
+                            <div className="font-mono text-text-muted mt-1 border-t border-border pt-1">
+                                X: {hoveredContext.localX.toFixed(2)}m <span className="mx-1 opacity-20">|</span> Y: {hoveredContext.localY.toFixed(2)}m
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
+
+            {/* 4. HUD */}
+            <TelemetryHUD
+                plotCode={plot?.code || 'PLOT'}
+                dimensions={plot?.configuration?.dimensions || { width: 0, length: 0 }}
+                mode={digitizationMode ? 'DIGITIZE' : 'VIEW'}
+                scale={vizModel.scale}
+            />
         </div>
     );
 };

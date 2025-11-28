@@ -1,117 +1,126 @@
 import React from 'react';
-import { Loader2, Satellite, Signal, AlertTriangle, Lock } from 'lucide-react';
+import {
+    Satellite, AlertTriangle,
+    CheckCircle2, MapPin, Crosshair
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import type { GPSState } from '../../../../../core/gps/types';
 
+// --- MICRO COMPONENT: SIGNAL BARS ---
+const SignalMeter = ({ accuracy }: { accuracy: number }) => {
+    // Logic: <5m = 4 bars, <10m = 3 bars, <20m = 2 bars, >20m = 1 bar
+    const bars = accuracy === 0 ? 0 : accuracy <= 5 ? 4 : accuracy <= 10 ? 3 : accuracy <= 20 ? 2 : 1;
+    const color = bars >= 3 ? 'bg-success' : bars === 2 ? 'bg-warning' : 'bg-danger';
+
+    return (
+        <div className="flex gap-0.5 items-end h-4">
+            {[1, 2, 3, 4].map(i => (
+                <div
+                    key={i}
+                    className={clsx(
+                        "w-1 rounded-sm transition-all duration-300",
+                        i <= bars ? color : "bg-black/10 dark:bg-white/10", // Adaptive empty state
+                        i === 1 ? "h-1.5" : i === 2 ? "h-2" : i === 3 ? "h-3" : "h-4"
+                    )}
+                />
+            ))}
+        </div>
+    );
+};
+
 interface GPSStatusCardProps {
     gps: GPSState;
+    className?: string;
 }
 
-export const GPSStatusCard: React.FC<GPSStatusCardProps> = ({ gps }) => {
-    const { status, location, error } = gps;
+export const GPSStatusCard: React.FC<GPSStatusCardProps> = ({ gps, className }) => {
+    const { status, location, error, satelliteCount } = gps;
 
-    // Map internal status to UI themes
-    const theme = {
-        IDLE: 'SEARCHING',
-        REQUESTING_PERMISSION: 'SEARCHING',
-        INITIALIZING: 'SEARCHING',
-        SEARCHING: 'SEARCHING',
-        LOCKED: 'EXCELLENT',
-        ERROR: 'ERROR',
-        PERMISSION_DENIED: 'ERROR'
-    }[status] || 'SEARCHING';
+    const hasFix = !!location;
+    const isLocked = status === 'LOCKED';
+    const isSearching = ['INITIALIZING', 'SEARCHING', 'REQUESTING_PERMISSION'].includes(status);
+    const isError = status === 'ERROR' || status === 'PERMISSION_DENIED';
 
-    const colors = {
-        SEARCHING: 'border-border bg-panel-soft',
-        ERROR: 'border-danger/30 bg-danger/10',
-        EXCELLENT: 'border-success/30 bg-success/10'
-    };
-
-    const textColors = {
-        SEARCHING: 'text-text-muted',
-        ERROR: 'text-danger',
-        EXCELLENT: 'text-success'
-    };
-
-    const StatusIcon = {
-        SEARCHING: Loader2,
-        ERROR: AlertTriangle,
-        EXCELLENT: Lock
-    }[theme as 'SEARCHING' | 'ERROR' | 'EXCELLENT'] || Loader2;
+    const accuracy = location?.accuracy || 0;
+    const accuracyDisplay = hasFix ? `±${accuracy.toFixed(1)}m` : '--';
 
     return (
         <div className={clsx(
-            "rounded-2xl p-5 border-2 transition-all duration-500 relative overflow-hidden",
-            colors[theme as keyof typeof colors]
+            "relative w-full overflow-hidden transition-all duration-300 bg-transparent",
+            className
         )}>
-            {/* Background Pulse Animation for Searching */}
-            {theme === 'SEARCHING' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ffffff05] to-transparent animate-shimmer" />
-            )}
 
-            <div className="flex items-start justify-between mb-4 relative z-10">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+
+                {/* LEFT: Primary Status */}
+                <div className="flex items-center gap-3 min-w-0">
                     <div className={clsx(
-                        "w-10 h-10 rounded-full flex items-center justify-center border",
-                        theme === 'SEARCHING' ? "border-border bg-panel" :
-                            theme === 'EXCELLENT' ? "border-success bg-success/20" :
-                                "border-danger bg-danger/20"
+                        "relative flex items-center justify-center w-12 h-12 rounded-xl border shrink-0 transition-colors shadow-sm",
+                        isError ? "bg-danger/10 border-danger/20 text-danger" :
+                            isLocked ? "bg-success/10 border-success/20 text-success" :
+                                "bg-primary/10 border-primary/20 text-primary"
                     )}>
-                        <StatusIcon className={clsx("w-5 h-5", theme === 'SEARCHING' && "animate-spin", textColors[theme as keyof typeof textColors])} />
+                        {isError ? <AlertTriangle size={20} /> :
+                            isLocked ? <CheckCircle2 size={20} /> :
+                                <Crosshair size={20} className={isSearching ? "animate-[spin_3s_linear_infinite]" : ""} />}
+
+                        {isSearching && !isLocked && !isError && (
+                            <div className="absolute inset-0 rounded-xl border border-primary/40 animate-ping" />
+                        )}
                     </div>
-                    <div>
-                        <h4 className="text-text-main font-bold text-sm uppercase tracking-wider">GPS Signal</h4>
-                        <p className={clsx("text-xs font-medium", textColors[theme as keyof typeof textColors])}>
-                            {status === 'REQUESTING_PERMISSION' ? 'Requesting Access...' :
-                                status === 'PERMISSION_DENIED' ? 'Permission Denied' :
-                                    status === 'INITIALIZING' ? 'Starting GPS...' :
-                                        status === 'SEARCHING' ? 'Acquiring Satellites...' :
-                                            status === 'LOCKED' ? 'Signal Locked (High Precision)' :
-                                                error || 'Signal Lost'}
-                        </p>
+
+                    <div className="flex flex-col truncate">
+                        <div className="flex items-center gap-2">
+                            <span className={clsx(
+                                "text-sm font-bold uppercase tracking-wider truncate",
+                                isError ? "text-danger" : isLocked ? "text-success" : "text-primary"
+                            )}>
+                                {isError ? "GPS Error" : isLocked ? "Signal Locked" : "Acquiring..."}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs text-text-muted font-mono mt-0.5">
+                            <span className="flex items-center gap-1">
+                                <MapPin size={12} className="opacity-70" />
+                                {hasFix ?
+                                    `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` :
+                                    "Waiting for location..."}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                {/* Signal Bars Visual */}
-                <div className="flex gap-1 items-end h-6">
-                    {[1, 2, 3, 4].map(bar => (
-                        <div key={bar} className={clsx(
-                            "w-1.5 rounded-sm transition-all duration-300",
-                            bar === 1 ? "h-2" : bar === 2 ? "h-3" : bar === 3 ? "h-4" : "h-6",
-                            theme === 'EXCELLENT' ? "bg-success" :
-                                theme === 'SEARCHING' && bar <= 2 ? "bg-warning animate-pulse" :
-                                    "bg-border"
-                        )} />
-                    ))}
+                {/* RIGHT: Telemetry Stats */}
+                <div className="flex items-center gap-6 sm:pl-6 sm:border-l border-border w-full sm:w-auto justify-between sm:justify-end">
+
+                    <div className="flex flex-col items-start sm:items-end">
+                        <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Sats</span>
+                        <div className="flex items-center gap-1 text-sm font-mono text-text-main font-bold">
+                            <Satellite size={14} className={satelliteCount > 3 ? "text-primary" : "text-warning"} />
+                            {satelliteCount}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-end">
+                        <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Precision</span>
+                        <div className="flex items-center gap-2">
+                            <span className={clsx(
+                                "text-sm font-mono font-bold",
+                                accuracy <= 5 ? "text-success" : accuracy <= 20 ? "text-primary" : "text-warning"
+                            )}>
+                                {accuracyDisplay}
+                            </span>
+                            <SignalMeter accuracy={accuracy} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Data Display */}
-            {location ? (
-                <div className="grid grid-cols-2 gap-4 relative z-10">
-                    <div className="bg-app/50 rounded-xl p-3 border border-white/5">
-                        <div className="text-[10px] text-text-muted uppercase mb-1 flex items-center gap-1">
-                            <Satellite className="w-3 h-3" /> Coordinates
-                        </div>
-                        <div className="font-mono text-text-main font-medium text-sm truncate">
-                            {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                        </div>
-                    </div>
-                    <div className="bg-app/50 rounded-xl p-3 border border-white/5">
-                        <div className="text-[10px] text-text-muted uppercase mb-1 flex items-center gap-1">
-                            <Signal className="w-3 h-3" /> Accuracy
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                            <span className={clsx("font-mono font-bold text-lg", textColors[theme as keyof typeof textColors])}>
-                                ±{location.accuracy.toFixed(1)}
-                            </span>
-                            <span className="text-xs text-text-muted">meters</span>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="h-16 bg-app/30 rounded-xl animate-pulse border border-white/5 flex items-center justify-center text-text-muted text-xs">
-                    Waiting for location data...
+            {/* Error Message Overlay */}
+            {isError && error && (
+                <div className="mt-3 p-3 rounded-lg bg-danger/10 border border-danger/20 text-xs text-danger font-medium flex items-center gap-2">
+                    <AlertTriangle size={12} />
+                    {error}
                 </div>
             )}
         </div>

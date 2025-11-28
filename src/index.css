@@ -1,88 +1,189 @@
 @import "tailwindcss";
 
-
 :root {
-  /* --- DARK MODE (Deep Space) --- */
-  --bg-app: #050814;
-  --bg-panel: #0b1020;
-  --bg-panel-soft: #11182b;
+  /* --- DARK MODE: ORBITAL DEEP (High Legibility) --- */
 
-  --text-main: #f5f7ff;
-  --text-muted: #9ba2c0;
+  /* Backgrounds */
+  --bg-app: 2, 4, 8;
+  /* #020408 - Pitch Black */
+  --bg-panel: 13, 18, 30;
+  /* #0d121e - Deep Navy */
+  --bg-panel-soft: 23, 29, 45;
+  /* #171d2d - Lighter Card Surface */
 
-  --border: #1d2440;
+  /* Text - High Contrast Tuning */
+  --text-main: 255, 255, 255;
+  /* Pure White */
+  --text-muted: 226, 232, 240;
+  /* Slate-200 - Very Bright Grey (was darker) */
 
-  /* Neon Accents */
-  --primary: #56ccf2;
-  --success: #52d273;
-  --warning: #f2c94c;
-  --danger: #ff7e67;
+  /* Borders */
+  --border: 255, 255, 255;
+  --border-opacity: 0.15;
+  /* Stronger borders */
 
-  --glass-bg: rgba(11, 16, 32, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  /* Accents */
+  --primary: 56, 189, 248;
+  /* Sky 400 */
+  --success: 52, 211, 153;
+  /* Emerald 400 */
+  --warning: 251, 191, 36;
+  /* Amber 400 */
+  --danger: 248, 113, 113;
+  /* Red 400 */
 }
 
 :root[data-theme="light"] {
-  /* --- LIGHT MODE (Scientific Clean) --- */
-  --bg-app: #f1f5f9;
-  /* Slate-100 */
-  --bg-panel: #ffffff;
-  /* White */
-  --bg-panel-soft: #f8fafc;
-  /* Slate-50 */
+  /* --- LIGHT MODE: SHARP LAB (High Legibility) --- */
 
-  --text-main: #0f172a;
-  /* Slate-900 (High Contrast) */
-  --text-muted: #64748b;
-  /* Slate-500 */
+  /* Backgrounds */
+  --bg-app: 255, 255, 255;
+  /* Pure White */
+  --bg-panel: 255, 255, 255;
+  /* Pure White */
+  --bg-panel-soft: 241, 245, 249;
+  /* Slate-100 - Distinct Light Grey */
 
-  --border: #e2e8f0;
-  /* Slate-200 */
+  /* Text - High Contrast Tuning */
+  --text-main: 2, 6, 23;
+  /* Slate-950 - Ink Black */
+  --text-muted: 71, 85, 105;
+  /* Slate-600 - Dark Grey (was too light before) */
 
-  /* Professional Accents (Darker for white background readability) */
-  --primary: #0891b2;
-  /* Cyan-600 */
-  --success: #16a34a;
-  /* Green-600 */
-  --warning: #d97706;
-  /* Amber-600 */
-  --danger: #dc2626;
-  /* Red-600 */
+  /* Borders */
+  --border: 203, 213, 225;
+  /* Slate-300 - Crisp Grey */
+  --border-opacity: 1;
 
-  --glass-bg: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(0, 0, 0, 0.05);
+  /* Accents */
+  --primary: 2, 132, 199;
+  /* Sky 600 - Deep Blue */
+  --success: 21, 128, 61;
+  /* Green 700 - Deep Green */
+  --warning: 180, 83, 9;
+  /* Amber 700 */
+  --danger: 185, 28, 28;
+  /* Red 700 */
 }
 
+/* --- UTILITY MAPPINGS --- */
+
+.bg-app {
+  background-color: rgb(var(--bg-app));
+}
+
+.bg-panel {
+  background-color: rgb(var(--bg-panel));
+}
+
+.bg-panel-soft {
+  background-color: rgb(var(--bg-panel-soft));
+}
+
+.text-text-main {
+  color: rgb(var(--text-main));
+}
+
+.text-text-muted {
+  color: rgb(var(--text-muted));
+}
+
+.border-border {
+  border-color: rgba(var(--border), var(--border-opacity));
+}
+
+/* Accents */
+.text-primary {
+  color: rgb(var(--primary));
+}
+
+.bg-primary {
+  background-color: rgb(var(--primary));
+}
+
+.border-primary {
+  border-color: rgb(var(--primary));
+}
+
+.text-success {
+  color: rgb(var(--success));
+}
+
+.bg-success {
+  background-color: rgb(var(--success));
+}
+
+.text-warning {
+  color: rgb(var(--warning));
+}
+
+.bg-warning {
+  background-color: rgb(var(--warning));
+}
+
+.text-danger {
+  color: rgb(var(--danger));
+}
+
+.bg-danger {
+  background-color: rgb(var(--danger));
+}
+
+/* Global Reset */
 body {
-  background-color: var(--bg-app);
-  color: var(--text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  background-color: rgb(var(--bg-app));
+  color: rgb(var(--text-main));
+  transition: background-color 0.1s ease, color 0.1s ease;
 }
 
-/* Theme-Aware Glass Panel */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+/* FIX: Force placeholders to be visible */
+input::placeholder,
+textarea::placeholder {
+  color: rgb(var(--text-muted));
+  opacity: 0.7;
+  /* Increased from 0.4 */
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+
+
+@keyframes sway-wind {
+
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+
+  50% {
+    transform: rotate(2deg);
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+@keyframes rustle {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  25% {
+    transform: scale(1.02) rotate(1deg);
+  }
+
+  75% {
+    transform: scale(0.98) rotate(-1deg);
+  }
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
+@keyframes squish {
+  0% {
+    transform: scale(1);
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  40% {
+    transform: scale(1.2, 0.8);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
