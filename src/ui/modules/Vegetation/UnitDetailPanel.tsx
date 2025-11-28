@@ -10,28 +10,7 @@ import { usePlotAnalytics } from '../../../hooks/usePlotAnalytics';
 import { useState } from 'react';
 import { GINI_RANGES, getGiniInsight } from '../../../analysis/insights/gini';
 
-const InfoTooltip = ({ children, content }: { children: React.ReactNode, content: React.ReactNode }) => {
-    const [isVisible, setIsVisible] = useState(false);
-
-    return (
-        <div
-            className="relative flex items-center"
-            onMouseEnter={() => setIsVisible(true)}
-            onMouseLeave={() => setIsVisible(false)}
-            onClick={() => setIsVisible(!isVisible)}
-        >
-            {children}
-            {isVisible && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-panel-soft border border-border rounded-xl shadow-2xl z-50 text-xs text-text-muted">
-                    {content}
-                    {/* Arrow */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-border" />
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-[7px] border-transparent border-t-panel-soft" />
-                </div>
-            )}
-        </div>
-    );
-};
+import { Tooltip } from '../../../components/ui/Tooltip';
 
 interface UnitDetailPanelProps {
     projectId: string;
@@ -57,9 +36,9 @@ const StatRow = ({ label, value, unit, diff, alert, valueColor = "text-text-main
             <div className={`text-sm font-mono font-bold flex items-center justify-end gap-2 ${valueColor}`}>
                 {/* Warning Dot for Estimates */}
                 {alert && (
-                    <InfoTooltip content="Estimated value. Height data missing for >50% of trees, so standard allometric equations were used.">
+                    <Tooltip content="Estimated value. Height data missing for >50% of trees, so standard allometric equations were used.">
                         <span className="w-2 h-2 rounded-full bg-warning cursor-help" />
-                    </InfoTooltip>
+                    </Tooltip>
                 )}
                 {value} <span className="text-text-muted text-[10px]">{unit}</span>
             </div>
@@ -265,7 +244,7 @@ export const UnitDetailPanel: React.FC<UnitDetailPanelProps> = ({
                         const insight = getGiniInsight(gini);
 
                         return (
-                            <InfoTooltip
+                            <Tooltip
                                 content={
                                     <div className="space-y-3 min-w-[200px]">
                                         <div>
@@ -314,7 +293,7 @@ export const UnitDetailPanel: React.FC<UnitDetailPanelProps> = ({
                                         {gini < 0.2 ? 'Low' : 'Good'} structural diversity (Gini {gini.toFixed(2)})
                                     </span>
                                 </div>
-                            </InfoTooltip>
+                            </Tooltip>
                         );
                     })()}
                 </div>

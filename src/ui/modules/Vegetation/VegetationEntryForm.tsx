@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
-import { X, ChevronRight, Save, Camera, Sprout, TreeDeciduous, Leaf, Wheat, Flower } from 'lucide-react';
+import { X, ChevronRight, Save } from 'lucide-react';
 import { clsx } from 'clsx';
 import { db } from '../../../core/data-model/dexie';
 import { v4 as uuidv4 } from 'uuid';
 import type { VegetationObservation } from '../../../core/data-model/types';
+import { VegetationIdStep } from './components/VegetationIdStep';
+import type { GrowthForm } from './components/VegetationIdStep';
+import { VegetationMetricsStep } from './components/VegetationMetricsStep';
+import { VegetationPhotosStep } from './components/VegetationPhotosStep';
+import { VegetationReviewStep } from './components/VegetationReviewStep';
 
 interface VegetationEntryFormProps {
     projectId: string;
@@ -17,15 +22,6 @@ interface VegetationEntryFormProps {
 }
 
 type Step = 'ID' | 'METRICS' | 'PHOTOS' | 'REVIEW';
-type GrowthForm = 'HERB' | 'SHRUB' | 'CLIMBER' | 'GRASS' | 'FERN';
-
-const GROWTH_FORMS: Array<{ value: GrowthForm; label: string; icon: React.ReactNode; color: string }> = [
-    { value: 'HERB', label: 'Herb', icon: <Sprout className="w-6 h-6" />, color: '#52d273' },
-    { value: 'SHRUB', label: 'Shrub', icon: <TreeDeciduous className="w-6 h-6" />, color: '#56ccf2' },
-    { value: 'CLIMBER', label: 'Climber', icon: <Leaf className="w-6 h-6" />, color: '#9b87f5' },
-    { value: 'GRASS', label: 'Grass', icon: <Wheat className="w-6 h-6" />, color: '#f4d03f' },
-    { value: 'FERN', label: 'Fern', icon: <Flower className="w-6 h-6" />, color: '#6cb2eb' },
-];
 
 export const VegetationEntryForm: React.FC<VegetationEntryFormProps> = ({
     projectId,
@@ -166,184 +162,47 @@ export const VegetationEntryForm: React.FC<VegetationEntryFormProps> = ({
 
                 <div className="max-w-md mx-auto space-y-6">
                     {currentStep === 'ID' && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                            {/* Growth Form Selection */}
-                            <div>
-                                <label className="block text-xs font-medium text-text-muted uppercase mb-3">Growth Form *</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {GROWTH_FORMS.map(form => (
-                                        <button
-                                            key={form.value}
-                                            onClick={() => setGrowthForm(form.value)}
-                                            className={clsx(
-                                                "p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition",
-                                                growthForm === form.value
-                                                    ? "border-primary bg-primary/10"
-                                                    : "border-border bg-panel-soft hover:border-primary"
-                                            )}
-                                        >
-                                            <div style={{ color: growthForm === form.value ? form.color : 'var(--text-muted)' }}>
-                                                {form.icon}
-                                            </div>
-                                            <span className={clsx(
-                                                "text-sm font-medium",
-                                                growthForm === form.value ? "text-text-main" : "text-text-muted"
-                                            )}>
-                                                {form.label}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Species Name */}
-                            <div>
-                                <label className="block text-xs font-medium text-text-muted uppercase mb-2">Species</label>
-                                <input
-                                    type="text"
-                                    value={speciesName}
-                                    onChange={e => setSpeciesName(e.target.value)}
-                                    disabled={isUnknown}
-                                    className="w-full bg-panel-soft border border-border rounded-xl px-4 py-3 text-lg text-text-main focus:border-primary outline-none disabled:opacity-50"
-                                    placeholder="Search species..."
-                                />
-                                <div className="mt-3 flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        id="unknown-species"
-                                        checked={isUnknown}
-                                        onChange={e => setIsUnknown(e.target.checked)}
-                                        className="w-4 h-4 rounded border-border bg-panel-soft text-primary"
-                                    />
-                                    <label htmlFor="unknown-species" className="text-sm text-text-muted">Unknown Species</label>
-                                </div>
-                            </div>
-                        </div>
+                        <VegetationIdStep
+                            growthForm={growthForm}
+                            setGrowthForm={setGrowthForm}
+                            speciesName={speciesName}
+                            setSpeciesName={setSpeciesName}
+                            isUnknown={isUnknown}
+                            setIsUnknown={setIsUnknown}
+                        />
                     )}
 
                     {currentStep === 'METRICS' && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div>
-                                <label className="block text-xs font-medium text-text-muted uppercase mb-2">
-                                    Individual Count <span className="text-text-muted/70 lowercase">(optional)</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={abundanceCount}
-                                    onChange={e => setAbundanceCount(e.target.value)}
-                                    className="w-full bg-panel-soft border border-border rounded-xl px-4 py-3 text-2xl font-mono text-text-main focus:border-primary outline-none"
-                                    placeholder="0"
-                                    autoFocus
-                                    min="0"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-medium text-text-muted uppercase mb-2">
-                                    Ground Cover (%) <span className="text-text-muted/70 lowercase">(optional)</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={coverPercentage}
-                                    onChange={e => {
-                                        const val = parseFloat(e.target.value);
-                                        if (e.target.value === '' || (val >= 0 && val <= 100)) {
-                                            setCoverPercentage(e.target.value);
-                                        }
-                                    }}
-                                    className="w-full bg-panel-soft border border-border rounded-xl px-4 py-3 text-2xl font-mono text-text-main focus:border-primary outline-none"
-                                    placeholder="0"
-                                    min="0"
-                                    max="100"
-                                    step="0.1"
-                                />
-                                {coverPercentage && parseFloat(coverPercentage) > 100 && (
-                                    <p className="mt-2 text-xs text-danger">Cover percentage must be between 0-100</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-medium text-text-muted uppercase mb-2">
-                                    Avg Height (cm) <span className="text-text-muted/70 lowercase">(optional)</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={avgHeight}
-                                    onChange={e => setAvgHeight(e.target.value)}
-                                    className="w-full bg-panel-soft border border-border rounded-xl px-4 py-3 text-lg font-mono text-text-main focus:border-primary outline-none"
-                                    placeholder="0.0"
-                                    min="0"
-                                    step="0.1"
-                                />
-                            </div>
-                        </div>
+                        <VegetationMetricsStep
+                            abundanceCount={abundanceCount}
+                            setAbundanceCount={setAbundanceCount}
+                            coverPercentage={coverPercentage}
+                            setCoverPercentage={setCoverPercentage}
+                            avgHeight={avgHeight}
+                            setAvgHeight={setAvgHeight}
+                        />
                     )}
 
                     {currentStep === 'PHOTOS' && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                            <button
-                                onClick={() => setHasGroundPhoto(!hasGroundPhoto)}
-                                className={clsx(
-                                    "w-full p-6 rounded-xl border-2 border-dashed flex flex-col items-center gap-3 transition",
-                                    hasGroundPhoto ? "border-success bg-success/10" : "border-border bg-panel-soft hover:border-primary"
-                                )}
-                            >
-                                <Camera className={clsx("w-8 h-8", hasGroundPhoto ? "text-success" : "text-text-muted")} />
-                                <span className={clsx("font-medium", hasGroundPhoto ? "text-success" : "text-text-muted")}>
-                                    {hasGroundPhoto ? "Ground Photo Added" : "Take Ground Photo"}
-                                </span>
-                            </button>
-
-                            <button
-                                onClick={() => setHasCloseupPhoto(!hasCloseupPhoto)}
-                                className={clsx(
-                                    "w-full p-6 rounded-xl border-2 border-dashed flex flex-col items-center gap-3 transition",
-                                    hasCloseupPhoto ? "border-success bg-success/10" : "border-border bg-panel-soft hover:border-primary"
-                                )}
-                            >
-                                <Camera className={clsx("w-8 h-8", hasCloseupPhoto ? "text-success" : "text-text-muted")} />
-                                <span className={clsx("font-medium", hasCloseupPhoto ? "text-success" : "text-text-muted")}>
-                                    {hasCloseupPhoto ? "Close-up Photo Added" : "Take Close-up Photo"}
-                                </span>
-                            </button>
-                        </div>
+                        <VegetationPhotosStep
+                            hasGroundPhoto={hasGroundPhoto}
+                            setHasGroundPhoto={setHasGroundPhoto}
+                            hasCloseupPhoto={hasCloseupPhoto}
+                            setHasCloseupPhoto={setHasCloseupPhoto}
+                        />
                     )}
 
                     {currentStep === 'REVIEW' && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div className="bg-panel-soft border border-border rounded-xl p-4 space-y-3">
-                                <div className="flex justify-between border-b border-border pb-2">
-                                    <span className="text-text-muted">Growth Form</span>
-                                    <span className="font-medium text-text-main">{growthForm}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-border pb-2">
-                                    <span className="text-text-muted">Species</span>
-                                    <span className="font-medium text-text-main">{isUnknown ? 'Unknown' : speciesName}</span>
-                                </div>
-                                {abundanceCount && (
-                                    <div className="flex justify-between border-b border-border pb-2">
-                                        <span className="text-text-muted">Count</span>
-                                        <span className="font-mono text-text-main">{abundanceCount}</span>
-                                    </div>
-                                )}
-                                {coverPercentage && (
-                                    <div className="flex justify-between border-b border-border pb-2">
-                                        <span className="text-text-muted">Cover</span>
-                                        <span className="font-mono text-text-main">{coverPercentage}%</span>
-                                    </div>
-                                )}
-                                {avgHeight && (
-                                    <div className="flex justify-between border-b border-border pb-2">
-                                        <span className="text-text-muted">Height</span>
-                                        <span className="font-mono text-text-main">{avgHeight} cm</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between">
-                                    <span className="text-text-muted">Photos</span>
-                                    <span className="text-text-main">{[hasGroundPhoto, hasCloseupPhoto].filter(Boolean).length} added</span>
-                                </div>
-                            </div>
-                        </div>
+                        <VegetationReviewStep
+                            growthForm={growthForm}
+                            speciesName={speciesName}
+                            isUnknown={isUnknown}
+                            abundanceCount={abundanceCount}
+                            coverPercentage={coverPercentage}
+                            avgHeight={avgHeight}
+                            hasGroundPhoto={hasGroundPhoto}
+                            hasCloseupPhoto={hasCloseupPhoto}
+                        />
                     )}
                 </div>
             </div>

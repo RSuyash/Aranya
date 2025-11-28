@@ -1,20 +1,5 @@
 import type { PlotConfiguration, PlotNodeInstance, ShapeDefinition, SubplotRule } from './types';
-
-// Simple hash function for stable IDs
-function simpleHash(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash).toString(16);
-}
-
-function makeInstanceId(plotId: string | undefined, blueprintId: string, version: number, path: string): string {
-    const raw = `${plotId || ''}:${blueprintId}:v${version}:${path}`;
-    return simpleHash(raw);
-}
+import { makeInstanceId } from './utils';
 
 /**
  * Generates a dynamic plot layout based on the provided configuration.
