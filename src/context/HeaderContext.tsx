@@ -12,6 +12,8 @@ interface HeaderState {
     status: ReactNode | null;
     moduleColor: 'default' | 'emerald' | 'cyan' | 'amber' | 'rose' | 'blue' | 'indigo' | 'violet';
     isLoading: boolean;
+    // NEW: Global flag to hide Shell Navigation (Sidebar/BottomNav)
+    isFullScreen: boolean;
 }
 
 interface HeaderContextType extends HeaderState {
@@ -28,6 +30,7 @@ export const HeaderProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         status: null,
         moduleColor: 'default',
         isLoading: false,
+        isFullScreen: false, // Default to showing nav
     });
 
     const setHeader = React.useCallback((updates: Partial<HeaderState>) => {
@@ -47,14 +50,11 @@ export const useHeader = (config?: Partial<HeaderState>) => {
     const context = useContext(HeaderContext);
     if (!context) throw new Error('useHeader must be used within a HeaderProvider');
 
-    // Auto-update on mount if config is provided
     useEffect(() => {
         if (config) {
             context.setHeader(config);
         }
-        // Cleanup logic could go here to reset header on unmount
-        // But usually, the next page just overwrites it.
-    }, [config?.title, config?.breadcrumbs, config?.isLoading, config?.moduleColor, config?.status, config?.actions]);
+    }, [config?.title, config?.breadcrumbs, config?.isLoading, config?.moduleColor, config?.status, config?.actions, config?.isFullScreen]);
 
     return context;
 };

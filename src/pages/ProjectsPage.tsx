@@ -140,10 +140,10 @@ export const ProjectsPage: React.FC = () => {
         >
             {/* Drag & Drop Overlay */}
             {isDragOver && (
-                <div className="absolute inset-0 z-50 bg-[#050814]/90 border-2 border-dashed border-[#56ccf2] rounded-2xl flex flex-col items-center justify-center pointer-events-none animate-in fade-in">
-                    <UploadCloud className="w-16 h-16 text-[#56ccf2] mb-4" />
+                <div className="absolute inset-0 z-50 bg-app/90 border-2 border-dashed border-primary rounded-2xl flex flex-col items-center justify-center pointer-events-none animate-in fade-in">
+                    <UploadCloud className="w-16 h-16 text-primary mb-4" />
                     <h3 className="text-2xl font-bold text-white">Drop to Import</h3>
-                    <p className="text-[#56ccf2]">Supports .terx, .zip, .json</p>
+                    <p className="text-primary">Supports .terx, .zip, .json</p>
                 </div>
             )}
 
@@ -165,7 +165,7 @@ export const ProjectsPage: React.FC = () => {
                     <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isImporting}
-                        className="flex items-center gap-2 bg-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#2a3454] px-4 py-2 rounded-lg font-medium border border-[#1d2440] transition"
+                        className="flex items-center gap-2 bg-panel-soft text-text-muted hover:text-text-main hover:bg-panel/80 px-4 py-2 rounded-lg font-medium border border-border transition"
                     >
                         {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileArchive className="w-4 h-4" />}
                         Import Project
@@ -181,7 +181,7 @@ export const ProjectsPage: React.FC = () => {
 
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="flex items-center gap-2 bg-[#56ccf2] text-[#050814] px-4 py-2 rounded-lg font-bold hover:bg-[#4ab8de] transition shadow-lg shadow-[#56ccf2]/20"
+                        className="flex items-center gap-2 bg-primary text-app px-4 py-2 rounded-lg font-bold hover:bg-primary/80 transition shadow-lg shadow-primary/20"
                     >
                         <FilePlus className="w-4 h-4" />
                         New Project
@@ -200,43 +200,43 @@ export const ProjectsPage: React.FC = () => {
             {/* Import Conflict Modal */}
             {importConflict && importData && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-                    <div className="bg-[#0b1020] border border-[#1d2440] rounded-2xl max-w-md w-full p-6 shadow-2xl">
-                        <div className="flex items-center gap-3 text-[#f2c94c] mb-4">
+                    <div className="bg-panel border border-border rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                        <div className="flex items-center gap-3 text-warning mb-4">
                             <Warning size={32} weight="fill" />
                             <h3 className="text-xl font-bold text-white">Project Conflict</h3>
                         </div>
 
-                        <p className="text-[#9ba2c0] mb-6">
-                            A project with ID <code className="text-[#f5f7ff] bg-white/10 px-1 rounded">{importData.project.id.slice(0, 8)}...</code> already exists on this device.
+                        <p className="text-text-muted mb-6">
+                            A project with ID <code className="text-text-main bg-white/10 px-1 rounded">{importData.project.id.slice(0, 8)}...</code> already exists on this device.
                         </p>
 
                         <div className="space-y-3">
                             <button
                                 onClick={() => executeImport(importData, 'CREATE_NEW')}
-                                className="w-full flex items-center justify-between p-4 rounded-xl bg-[#11182b] border border-[#1d2440] hover:border-[#56ccf2] group transition text-left"
+                                className="w-full flex items-center justify-between p-4 rounded-xl bg-panel-soft border border-border hover:border-primary group transition text-left"
                             >
                                 <div>
-                                    <div className="font-bold text-[#f5f7ff] group-hover:text-[#56ccf2]">Import as New Copy</div>
-                                    <div className="text-xs text-[#9ba2c0]">Create a duplicate with new IDs. Safer.</div>
+                                    <div className="font-bold text-text-main group-hover:text-primary">Import as New Copy</div>
+                                    <div className="text-xs text-text-muted">Create a duplicate with new IDs. Safer.</div>
                                 </div>
-                                <Copy size={24} className="text-[#56ccf2]" />
+                                <Copy size={24} className="text-primary" />
                             </button>
 
                             <button
                                 onClick={() => executeImport(importData, 'REPLACE')}
-                                className="w-full flex items-center justify-between p-4 rounded-xl bg-[#11182b] border border-[#1d2440] hover:border-[#ff7e67] group transition text-left"
+                                className="w-full flex items-center justify-between p-4 rounded-xl bg-panel-soft border border-border hover:border-danger group transition text-left"
                             >
                                 <div>
-                                    <div className="font-bold text-[#f5f7ff] group-hover:text-[#ff7e67]">Overwrite Existing</div>
-                                    <div className="text-xs text-[#9ba2c0]">Replace local data with this file.</div>
+                                    <div className="font-bold text-text-main group-hover:text-danger">Overwrite Existing</div>
+                                    <div className="text-xs text-text-muted">Replace local data with this file.</div>
                                 </div>
-                                <FileArrowUp size={24} className="text-[#ff7e67]" />
+                                <FileArrowUp size={24} className="text-danger" />
                             </button>
                         </div>
 
                         <button
                             onClick={() => { setImportData(null); setImportConflict(false); }}
-                            className="mt-6 w-full py-3 text-sm font-medium text-[#9ba2c0] hover:text-white"
+                            className="mt-6 w-full py-3 text-sm font-medium text-text-muted hover:text-white"
                         >
                             Cancel Import
                         </button>

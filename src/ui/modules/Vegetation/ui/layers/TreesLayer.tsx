@@ -17,14 +17,14 @@ export const TreesLayer: React.FC<TreesLayerProps> = ({ trees, visible = true, o
             <defs>
                 {/* Radial gradient for tree markers */}
                 <radialGradient id="tree-gradient">
-                    <stop offset="0%" style={{ stopColor: '#52d273', stopOpacity: 1 }} />
-                    <stop offset="70%" style={{ stopColor: '#3ab65c', stopOpacity: 0.95 }} />
-                    <stop offset="100%" style={{ stopColor: '#2a9847', stopOpacity: 0.9 }} />
+                    <stop offset="0%" style={{ stopColor: 'var(--success)', stopOpacity: 1 }} />
+                    <stop offset="70%" style={{ stopColor: 'var(--success)', stopOpacity: 0.8 }} />
+                    <stop offset="100%" style={{ stopColor: 'var(--success)', stopOpacity: 0.6 }} />
                 </radialGradient>
 
                 {/* Drop shadow filter */}
                 <filter id="tree-shadow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#52d273" floodOpacity="0.4" />
+                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="var(--success)" floodOpacity="0.4" />
                 </filter>
             </defs>
 
@@ -43,9 +43,10 @@ export const TreesLayer: React.FC<TreesLayerProps> = ({ trees, visible = true, o
                         cy={tree.screenY}
                         r={tree.radius + 2}
                         fill="none"
-                        stroke="rgba(82, 210, 115, 0.3)"
+                        stroke="var(--success)"
+                        strokeOpacity={0.3}
                         strokeWidth={1.5}
-                        className="transition-all duration-300 group-hover:stroke-[rgba(82,210,115,0.6)]"
+                        className="transition-all duration-300 group-hover:stroke-success"
                     />
 
                     {/* Main tree circle */}

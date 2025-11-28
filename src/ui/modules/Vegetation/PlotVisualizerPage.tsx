@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Map as MapIcon, Info, ArrowLeft, Plus } from 'lucide-react';
 import { UnitDetailPanel } from './UnitDetailPanel';
 import { PlotOverviewPanel } from './PlotOverviewPanel';
-import { TreeEntryForm } from './TreeEntryForm';
+import { TreeEntryForm } from './components/TreeEntryForm';
 import { TreeEditForm } from './TreeEditForm';
 import { VegetationEntryForm } from './VegetationEntryForm';
 import { normalizeProgress, summarizeObservations } from './plotVisualizerUtils';
@@ -202,20 +202,20 @@ export const PlotVisualizerPage: React.FC = () => {
     return (
         <>
             {plotLoading || !plot ? (
-                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-20 bg-[#050814] flex items-center justify-center">
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-20 bg-app flex items-center justify-center">
                     <div className="p-8 text-white">Loading Plot...</div>
                 </div>
             ) : (
-                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-20 bg-[#050814]">
-                    <div className="h-full flex flex-col bg-[#050814] overflow-hidden relative">
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-20 bg-app">
+                    <div className="h-full flex flex-col bg-app overflow-hidden relative">
                         {/* Main Content Area (Map/List) */}
                         <div className="flex-1 flex flex-col relative min-h-0">
                             {/* Tabs / Toolbar */}
-                            <div className="h-12 border-b border-[#1d2440] flex items-center px-4 md:pr-[496px] gap-4 bg-[#0b1020] z-10 flex-shrink-0 min-w-0">
+                            <div className="h-12 border-b border-border flex items-center px-4 md:pr-[496px] gap-4 bg-panel z-10 flex-shrink-0 min-w-0">
                                 {/* Back Button */}
                                 <button
                                     onClick={() => navigate(`/project/${projectId}/module/${moduleId}`)}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440] transition"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-main hover:bg-panel-soft transition"
                                     title="Back to Project"
                                 >
                                     <ArrowLeft className="w-4 h-4" />
@@ -223,13 +223,13 @@ export const PlotVisualizerPage: React.FC = () => {
                                 </button>
 
                                 {/* Vertical Divider */}
-                                <div className="h-6 w-px bg-[#1d2440]" />
+                                <div className="h-6 w-px bg-border" />
 
                                 <button
                                     onClick={() => setActiveTab('MAP')}
                                     className={clsx(
                                         "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
-                                        activeTab === 'MAP' ? "bg-[#1d2440] text-[#56ccf2]" : "text-[#9ba2c0] hover:text-[#f5f7ff]"
+                                        activeTab === 'MAP' ? "bg-panel-soft text-primary" : "text-text-muted hover:text-text-main"
                                     )}
                                 >
                                     <MapIcon className="w-4 h-4" /> Map
@@ -238,19 +238,19 @@ export const PlotVisualizerPage: React.FC = () => {
                                     onClick={() => setActiveTab('LIST')}
                                     className={clsx(
                                         "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
-                                        activeTab === 'LIST' ? "bg-[#1d2440] text-[#56ccf2]" : "text-[#9ba2c0] hover:text-[#f5f7ff]"
+                                        activeTab === 'LIST' ? "bg-panel-soft text-primary" : "text-text-muted hover:text-text-main"
                                     )}
                                 >
                                     <Info className="w-4 h-4" /> List
                                 </button>
 
                                 {/* Digitize Toggle Group */}
-                                <div className="flex bg-[#1d2440] rounded-lg p-1 gap-1">
+                                <div className="flex bg-panel-soft rounded-lg p-1 gap-1 border border-border">
                                     <button
                                         onClick={() => setDigitizeMode(digitizeMode === 'TREE' ? 'NONE' : 'TREE')}
                                         className={clsx(
                                             "px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-2",
-                                            digitizeMode === 'TREE' ? "bg-[#52d273] text-[#050814]" : "text-[#9ba2c0] hover:text-white"
+                                            digitizeMode === 'TREE' ? "bg-success text-app shadow-sm" : "text-text-muted hover:text-text-main"
                                         )}
                                     >
                                         <Plus className="w-3 h-3" /> Tree
@@ -259,7 +259,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                         onClick={() => setDigitizeMode(digitizeMode === 'VEG' ? 'NONE' : 'VEG')}
                                         className={clsx(
                                             "px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-2",
-                                            digitizeMode === 'VEG' ? "bg-[#56ccf2] text-[#050814]" : "text-[#9ba2c0] hover:text-white"
+                                            digitizeMode === 'VEG' ? "bg-primary text-app shadow-sm" : "text-text-muted hover:text-text-main"
                                         )}
                                     >
                                         <Plus className="w-3 h-3" /> Herb
@@ -281,7 +281,7 @@ export const PlotVisualizerPage: React.FC = () => {
 
                             {/* Canvas Area */}
                             <div
-                                className="flex-1 relative overflow-hidden bg-[#050814]"
+                                className="flex-1 relative overflow-hidden bg-app"
                                 ref={containerRef}
                                 onClick={() => setPanelFocus('map')}
                                 style={{ minHeight: '200px' }}
@@ -300,7 +300,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                     />
                                 )}
                                 {activeTab === 'LIST' && (
-                                    <div className="p-8 text-[#9ba2c0] text-center">
+                                    <div className="p-8 text-text-muted text-center">
                                         List View Coming Soon
                                     </div>
                                 )}
@@ -310,7 +310,7 @@ export const PlotVisualizerPage: React.FC = () => {
                         {/* Right Panel / Bottom Sheet Area - Overlay on Desktop, Bottom sheet on Mobile */}
                         <div
                             className={clsx(
-                                "bg-[#0b1020] border-[#1d2440] shadow-2xl transition-all duration-300 overflow-y-auto",
+                                "bg-panel border-border shadow-2xl transition-all duration-300 overflow-y-auto",
                                 // Mobile: bottom sheet
                                 "fixed bottom-0 left-0 right-0 border-t md:border-t-0",
                                 // Desktop: right sidebar overlay - wider for better content display
@@ -372,7 +372,7 @@ export const PlotVisualizerPage: React.FC = () => {
 
             {/* Full-screen forms rendered separately to ensure they overlay everything properly */}
             {plot && !plotLoading && isAddingTree && selectedUnitId && (
-                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-[#050814]">
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-app">
                     <TreeEntryForm
                         key={`${selectedUnitId}-${initialPosition?.x ?? 'manual'}-${initialPosition?.y ?? 'manual'}`}
                         projectId={projectId}
@@ -390,7 +390,7 @@ export const PlotVisualizerPage: React.FC = () => {
             )}
 
             {plot && !plotLoading && isAddingVeg && selectedUnitId && (
-                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-[#050814]">
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-app">
                     <VegetationEntryForm
                         key={`${selectedUnitId}-${initialPosition?.x ?? 'manual'}-${initialPosition?.y ?? 'manual'}`}
                         projectId={projectId}

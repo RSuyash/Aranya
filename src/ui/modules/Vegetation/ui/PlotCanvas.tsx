@@ -188,21 +188,21 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
     if (dataLoading || !vizModel) {
         return (
             <div className="w-full h-full flex items-center justify-center">
-                <div className="text-[#9ba2c0]">Loading map...</div>
+                <div className="text-text-muted">Loading map...</div>
             </div>
         );
     }
 
     return (
         <div
-            className={`relative w-full h-full bg-[#050814] ${digitizationMode ? 'cursor-crosshair' : ''}`}
+            className={`relative w-full h-full bg-app ${digitizationMode ? 'cursor-crosshair' : ''}`}
             style={{ width: viewportWidth, height: viewportHeight }}
             onMouseMove={handleMouseMove}
             onMouseLeave={() => setMousePos(null)}
             onClick={handleClick}
         >
             {/* Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0b1020] to-[#050814]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-panel to-app" />
 
             {/* Layers */}
             <UnitsLayer
@@ -233,28 +233,28 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
                         transform: 'translate(-50%, -50%)'
                     }}
                 >
-                    <div className="w-4 h-4 rounded-full border-2 border-[#52d273] bg-[#52d273]/30 shadow-[0_0_10px_rgba(82,210,115,0.5)]" />
+                    <div className="w-4 h-4 rounded-full border-2 border-success bg-success/30 shadow-[0_0_10px_rgba(82,210,115,0.5)]" />
 
                     {/* Smart Label */}
-                    <div className="mt-2 px-2 py-1 bg-[#0b1020]/95 border border-[#52d273]/50 rounded-md shadow-xl text-left whitespace-nowrap">
-                        <div className="text-[10px] text-[#9ba2c0] uppercase tracking-wider font-bold">
+                    <div className="mt-2 px-2 py-1 bg-panel/95 border border-success/50 rounded-md shadow-xl text-left whitespace-nowrap">
+                        <div className="text-[10px] text-text-muted uppercase tracking-wider font-bold">
                             {hoveredContext ? `TARGET: ${hoveredContext.label}` : 'TARGET LOCATION'}
                         </div>
                         {hoveredContext ? (
                             <>
-                                <div className="text-xs text-[#52d273] font-mono font-bold">
+                                <div className="text-xs text-success font-mono font-bold">
                                     X: {hoveredContext.localX.toFixed(2)}m (Local)
                                 </div>
-                                <div className="text-xs text-[#52d273] font-mono font-bold">
+                                <div className="text-xs text-success font-mono font-bold">
                                     Y: {hoveredContext.localY.toFixed(2)}m (Local)
                                 </div>
                             </>
                         ) : (
                             <>
-                                <div className="text-xs text-[#52d273] font-mono font-bold">
+                                <div className="text-xs text-success font-mono font-bold">
                                     X: {snappedPos.metersX.toFixed(2)}m
                                 </div>
-                                <div className="text-xs text-[#52d273] font-mono font-bold">
+                                <div className="text-xs text-success font-mono font-bold">
                                     Y: {snappedPos.metersY.toFixed(2)}m
                                 </div>
                             </>

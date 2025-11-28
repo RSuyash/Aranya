@@ -100,11 +100,11 @@ function computeBounds(nodes: PlotNodeInstance[]) {
 function getStatusColor(status: 'NOT_STARTED' | 'IN_PROGRESS' | 'DONE'): { fill: string; stroke: string } {
     switch (status) {
         case 'DONE':
-            return { fill: 'rgba(82, 210, 115, 0.15)', stroke: '#52d273' };
+            return { fill: 'color-mix(in srgb, var(--success) 15%, transparent)', stroke: 'var(--success)' };
         case 'IN_PROGRESS':
-            return { fill: 'rgba(86, 204, 242, 0.15)', stroke: '#56ccf2' };
+            return { fill: 'color-mix(in srgb, var(--primary) 15%, transparent)', stroke: 'var(--primary)' };
         default:
-            return { fill: 'rgba(155, 162, 192, 0.08)', stroke: '#555b75' };
+            return { fill: 'color-mix(in srgb, var(--text-muted) 8%, transparent)', stroke: 'var(--text-muted)' };
     }
 }
 

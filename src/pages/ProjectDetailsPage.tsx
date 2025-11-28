@@ -31,8 +31,8 @@ export const ProjectDetailsPage: React.FC = () => {
             isLoading: !project,
             moduleColor: 'emerald',
             status: (
-                <span className="flex items-center gap-2 text-[#56ccf2]">
-                    <span className="w-2 h-2 rounded-full bg-[#56ccf2] animate-pulse" />
+                <span className="flex items-center gap-2 text-primary">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     <span className="font-mono">Active</span>
                 </span>
             ),
@@ -55,15 +55,15 @@ export const ProjectDetailsPage: React.FC = () => {
     }
 
     return (
-        <div className="h-full flex flex-col bg-[#050814]">
+        <div className="h-full flex flex-col bg-app">
             {/* Page Toolbar / Tabs */}
-            <div className="h-14 border-b border-[#1d2440] bg-[#0b1020]/50 flex items-center justify-between px-6 flex-shrink-0 z-10">
-                <div className="flex items-center gap-1 bg-[#11182b] p-1 rounded-lg border border-[#1d2440]">
+            <div className="h-14 border-b border-border bg-panel/50 flex items-center justify-between px-6 flex-shrink-0 z-10">
+                <div className="flex items-center gap-1 bg-panel-soft p-1 rounded-lg border border-border">
                     <button
                         onClick={() => setActiveTab('OVERVIEW')}
                         className={clsx(
                             "px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2",
-                            activeTab === 'OVERVIEW' ? "bg-[#1d2440] text-white shadow-sm" : "text-[#9ba2c0] hover:text-white"
+                            activeTab === 'OVERVIEW' ? "bg-border text-white shadow-sm" : "text-text-muted hover:text-white"
                         )}
                     >
                         <MapTrifold size={16} />
@@ -73,7 +73,7 @@ export const ProjectDetailsPage: React.FC = () => {
                         onClick={() => setActiveTab('DATA')}
                         className={clsx(
                             "px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2",
-                            activeTab === 'DATA' ? "bg-[#1d2440] text-white shadow-sm" : "text-[#9ba2c0] hover:text-white"
+                            activeTab === 'DATA' ? "bg-border text-white shadow-sm" : "text-text-muted hover:text-white"
                         )}
                     >
                         <Table size={16} />
@@ -83,7 +83,7 @@ export const ProjectDetailsPage: React.FC = () => {
                         onClick={() => setActiveTab('ANALYSIS')}
                         className={clsx(
                             "px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2",
-                            activeTab === 'ANALYSIS' ? "bg-[#1d2440] text-white shadow-sm" : "text-[#9ba2c0] hover:text-white"
+                            activeTab === 'ANALYSIS' ? "bg-border text-white shadow-sm" : "text-text-muted hover:text-white"
                         )}
                     >
                         <ChartBar size={16} />
@@ -93,7 +93,7 @@ export const ProjectDetailsPage: React.FC = () => {
                         onClick={() => setActiveTab('MANAGE')}
                         className={clsx(
                             "px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2",
-                            activeTab === 'MANAGE' ? "bg-[#1d2440] text-white shadow-sm" : "text-[#9ba2c0] hover:text-white"
+                            activeTab === 'MANAGE' ? "bg-border text-white shadow-sm" : "text-text-muted hover:text-white"
                         )}
                     >
                         <Gear size={16} />
@@ -104,7 +104,7 @@ export const ProjectDetailsPage: React.FC = () => {
 
             {/* Content */}
             <div className={clsx(
-                "flex-1 bg-[#050814] relative",
+                "flex-1 bg-app relative",
                 activeTab === 'DATA' ? "overflow-hidden" : "overflow-y-auto p-6"
             )}>
                 {activeTab === 'DATA' ? (
@@ -112,10 +112,10 @@ export const ProjectDetailsPage: React.FC = () => {
                 ) : (
                     <div className="max-w-7xl mx-auto">
                         {activeTab === 'OVERVIEW' && <ProjectOverview projectId={projectId!} />}
-                        {activeTab === 'ANALYSIS' && <div className="text-center text-gray-500 mt-20">Analysis Module Coming Soon</div>}
+                        {activeTab === 'ANALYSIS' && <div className="text-center text-text-muted mt-20">Analysis Module Coming Soon</div>}
                         {activeTab === 'MANAGE' && <DataManagementPanel projectId={projectId!} />}
                         {activeTab === 'SETTINGS' && (
-                            <div className="text-center text-gray-500 mt-20">Settings Form Placeholder</div>
+                            <div className="text-center text-text-muted mt-20">Settings Form Placeholder</div>
                         )}
                     </div>
                 )}

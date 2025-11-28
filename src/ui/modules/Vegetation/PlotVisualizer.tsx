@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Map as MapIcon, Plus } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Map as MapIcon, Info, ArrowLeft, Plus } from 'lucide-react';
 import { UnitDetailPanel } from './UnitDetailPanel';
 import { PlotOverviewPanel } from './PlotOverviewPanel';
-import { TreeEntryForm } from './TreeEntryForm';
+import { TreeEntryForm } from './components/TreeEntryForm';
+import { TreeEditForm } from './TreeEditForm';
 import { VegetationEntryForm } from './VegetationEntryForm';
 import { normalizeProgress, summarizeObservations } from './plotVisualizerUtils';
 import { PlotCanvas } from './ui/PlotCanvas';
@@ -13,27 +15,16 @@ import { generateLayout } from '../../../core/plot-engine/generateLayout';
 import { generateDynamicLayout } from '../../../core/plot-engine/dynamicGenerator';
 import { clsx } from 'clsx';
 import type { PlotVisualizationSettings } from '../../../core/data-model/types';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../../core/data-model/dexie';
 
-interface PlotVisualizerProps {
-    projectId: string;
-    plotId?: string;
-}
+export const PlotVisualizerPage: React.FC = () => {
+    const { projectId, moduleId, plotId } = useParams<{ projectId: string; moduleId: string; plotId: string }>();
+    const navigate = useNavigate();
 
-export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotId: propPlotId }) => {
-    // Fetch all plots to handle selection and empty states correctly
-    const plots = useLiveQuery(() => db.plots.where('projectId').equals(projectId).toArray(), [projectId]);
-
-    // Determine active plot ID
-    // If propPlotId is provided, use it.
-    // Otherwise, use the first plot from the list.
-    const plotId = propPlotId || plots?.[0]?.id;
+    if (!projectId || !moduleId || !plotId) return <div>Invalid URL Parameters</div>;
 
     // Data
-    // We pass plotId || '' to hooks, but we handle the 'no plot' case below explicitly
-    const { plot, blueprint, isLoading: plotLoading, updateVisualizationSettings } = usePlotData(plotId || '');
-    const { trees, progress } = usePlotObservations(plotId || '');
+    const { plot, blueprint, isLoading: plotLoading, updateVisualizationSettings } = usePlotData(plotId);
+    const { trees, progress } = usePlotObservations(plotId);
 
     // Derived state
     const progressByUnit = React.useMemo(() => normalizeProgress(progress), [progress]);
@@ -43,73 +34,61 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
     const unitLabelMap = useMemo(() => {
         if (!plot) return new Map<string, string>();
 
-        // Use dynamic layout generation for plots that have configuration
         if (plot.configuration) {
-            const layout = generateDynamicLayout(plot.configuration, plotId!);
+            const layout = generateDynamicLayout(plot.configuration, plotId);
             const map = new Map<string, string>();
-
             const collectLabels = (node: any) => {
                 map.set(node.id, node.label);
                 node.children?.forEach(collectLabels);
             };
-
             collectLabels(layout);
             return map;
         } else if (blueprint) {
-            const layout = generateLayout(blueprint, undefined, plotId!);
+            const layout = generateLayout(blueprint, undefined, plotId);
             const map = new Map<string, string>();
-
             const collectLabels = (node: any) => {
                 map.set(node.id, node.label);
                 node.children?.forEach(collectLabels);
             };
-
             collectLabels(layout);
             return map;
         }
-
         return new Map<string, string>();
     }, [blueprint, plot, plotId]);
 
-    // Create sorted list of unit IDs for navigation
-    const sortedUnitIds = useMemo(() => {
-        return Array.from(unitLabelMap.keys()).sort();
-    }, [unitLabelMap]);
+    const sortedUnitIds = useMemo(() => Array.from(unitLabelMap.keys()).sort(), [unitLabelMap]);
 
     // UI State
     const [containerWidth, setContainerWidth] = useState<number>(0);
     const [containerHeight, setContainerHeight] = useState<number>(0);
     const containerRef = React.useRef<HTMLDivElement>(null);
     const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'MAP' | 'LIST'>('MAP');
     const [isAddingTree, setIsAddingTree] = useState(false);
     const [isAddingVeg, setIsAddingVeg] = useState(false);
+    const [editingTreeId, setEditingTreeId] = useState<string | null>(null);
 
     const [digitizeMode, setDigitizeMode] = useState<'NONE' | 'TREE' | 'VEG'>('NONE');
     const [initialPosition, setInitialPosition] = useState<{ x: number, y: number } | undefined>(undefined);
 
-    // Panel interaction state
     const [panelFocus, setPanelFocus] = useState<'map' | 'panel' | 'none'>('none');
-    const [panelHeight, setPanelHeight] = useState<number>(320); // 40vh on typical mobile
+    const [panelHeight, setPanelHeight] = useState<number>(320);
 
-    // Visualization Settings State
+    // Visualization Settings
     const defaultVizSettings: PlotVisualizationSettings = {
         showQuadrants: true,
         showSubplots: true,
         showQuadrantLines: false,
-        showTreeVisualization: true, // Trees should be visible by default
+        showTreeVisualization: true,
         showLabels: true,
         subplotOpacity: 0.9,
     };
 
     const [vizSettings, setVizSettings] = useState<PlotVisualizationSettings>(defaultVizSettings);
 
-    // Load visualization settings from plot metadata on mount
     useEffect(() => {
         if (plot?.visualizationSettings) {
-            setVizSettings({
-                ...defaultVizSettings,
-                ...plot.visualizationSettings
-            });
+            setVizSettings({ ...defaultVizSettings, ...plot.visualizationSettings });
         } else {
             setVizSettings(defaultVizSettings);
         }
@@ -118,8 +97,6 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
     // Resize Observer
     useEffect(() => {
         if (!containerRef.current) return;
-
-        // Immediate measurement
         const rect = containerRef.current.getBoundingClientRect();
         setContainerWidth(rect.width);
         setContainerHeight(rect.height);
@@ -134,7 +111,7 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
         return () => observer.disconnect();
     }, []);
 
-    // Adjust panel height based on focus
+    // Adjust panel height
     useEffect(() => {
         if (panelFocus === 'map') {
             setPanelHeight(200);
@@ -145,91 +122,93 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
         }
     }, [panelFocus]);
 
+    // Hide Footer
+    useEffect(() => {
+        document.body.classList.add('hide-footer');
+        return () => document.body.classList.remove('hide-footer');
+    }, []);
+
     // Handlers
     const handleSelectUnit = (unitId: string) => {
-        console.log('PlotVisualizer: Unit selected', unitId);
         setSelectedUnitId(unitId);
         setPanelFocus('none');
     };
 
     const handleStartSurvey = () => {
-        // Auto-select first unit
         if (progress.length > 0) {
             const firstNotStarted = progress.find(p => p.status === 'NOT_STARTED');
             const firstUnit = firstNotStarted || progress[0];
-            if (firstUnit) {
-                setSelectedUnitId(firstUnit.samplingUnitId);
-            }
+            if (firstUnit) setSelectedUnitId(firstUnit.samplingUnitId);
         }
     };
 
     const handleDigitizeClick = (unitId: string, x: number, y: number) => {
-        console.log(`📍 Digitizing in Unit ${unitId} at (${x}, ${y})`);
         setSelectedUnitId(unitId);
         setInitialPosition({ x, y });
-
-        if (digitizeMode === 'TREE') {
-            setIsAddingTree(true);
-        } else if (digitizeMode === 'VEG') {
-            setIsAddingVeg(true);
-        }
+        if (digitizeMode === 'TREE') setIsAddingTree(true);
+        else if (digitizeMode === 'VEG') setIsAddingVeg(true);
         setDigitizeMode('NONE');
     };
 
-    // Get actual unit label from layout
+    const handleEditTree = (treeId: string) => {
+        setEditingTreeId(treeId);
+    };
+
     const selectedUnitLabel = selectedUnitId ? (unitLabelMap.get(selectedUnitId) || "Unknown Unit") : "";
-
-    // Loading state for the plots list itself
-    if (!plots) {
-        return (
-            <div className="flex items-center justify-center h-full bg-[#050814]">
-                <div className="p-8 text-white">Loading Plots...</div>
-            </div>
-        );
-    }
-
-    if (!plotId) {
-        return (
-            <div className="flex items-center justify-center h-full text-[#9ba2c0]">
-                <div className="text-center">
-                    <MapIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                    <p>No plots found in this project.</p>
-                    <button className="mt-4 px-4 py-2 bg-[#52d273] text-[#050814] rounded-lg font-bold text-sm">
-                        Create First Plot
-                    </button>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <>
             {plotLoading || !plot ? (
-                <div className="absolute inset-0 z-20 bg-[#050814] flex items-center justify-center">
-                    <div className="p-8 text-white">Loading Plot...</div>
+                // UPDATED: Use bg-app instead of bg-[#050814]
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-20 bg-app flex items-center justify-center">
+                    <div className="p-8 text-text-muted">Loading Plot...</div>
                 </div>
             ) : (
-                <div className="absolute inset-0 z-20 bg-[#050814]">
-                    <div className="h-full flex flex-col bg-[#050814] overflow-hidden relative">
-                        {/* Main Content Area (Map/List) */}
+                // UPDATED: Use bg-app
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] z-20 bg-app">
+                    <div className="h-full flex flex-col bg-app overflow-hidden relative">
+                        {/* Main Content */}
                         <div className="flex-1 flex flex-col relative min-h-0">
-                            {/* Tabs / Toolbar */}
-                            <div className="h-12 border-b border-[#1d2440] flex items-center px-4 gap-4 bg-[#0b1020] z-10 flex-shrink-0 min-w-0">
+                            {/* Tabs / Toolbar: UPDATED Colors */}
+                            <div className="h-12 border-b border-border flex items-center px-4 md:pr-[496px] gap-4 bg-panel z-10 flex-shrink-0 min-w-0">
+                                {/* Back Button */}
+                                <button
+                                    onClick={() => navigate(`/project/${projectId}/module/${moduleId}`)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-main hover:bg-panel-soft transition"
+                                    title="Back to Project"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Back</span>
+                                </button>
 
-                                <div className="text-sm font-bold text-[#f5f7ff] mr-4">
-                                    {plot.name}
-                                </div>
+                                <div className="h-6 w-px bg-border" />
 
-                                {/* Vertical Divider */}
-                                <div className="h-6 w-px bg-[#1d2440]" />
+                                <button
+                                    onClick={() => setActiveTab('MAP')}
+                                    className={clsx(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
+                                        activeTab === 'MAP' ? "bg-panel-soft text-primary" : "text-text-muted hover:text-text-main"
+                                    )}
+                                >
+                                    <MapIcon className="w-4 h-4" /> Map
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('LIST')}
+                                    className={clsx(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition",
+                                        activeTab === 'LIST' ? "bg-panel-soft text-primary" : "text-text-muted hover:text-text-main"
+                                    )}
+                                >
+                                    <Info className="w-4 h-4" /> List
+                                </button>
 
                                 {/* Digitize Toggle Group */}
-                                <div className="flex bg-[#1d2440] rounded-lg p-1 gap-1">
+                                <div className="flex bg-panel-soft rounded-lg p-1 gap-1 border border-border">
                                     <button
                                         onClick={() => setDigitizeMode(digitizeMode === 'TREE' ? 'NONE' : 'TREE')}
                                         className={clsx(
                                             "px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-2",
-                                            digitizeMode === 'TREE' ? "bg-[#52d273] text-[#050814]" : "text-[#9ba2c0] hover:text-white"
+                                            digitizeMode === 'TREE' ? "bg-success text-app shadow-sm" : "text-text-muted hover:text-text-main"
                                         )}
                                     >
                                         <Plus className="w-3 h-3" /> Tree
@@ -238,17 +217,16 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
                                         onClick={() => setDigitizeMode(digitizeMode === 'VEG' ? 'NONE' : 'VEG')}
                                         className={clsx(
                                             "px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-2",
-                                            digitizeMode === 'VEG' ? "bg-[#56ccf2] text-[#050814]" : "text-[#9ba2c0] hover:text-white"
+                                            digitizeMode === 'VEG' ? "bg-primary text-app shadow-sm" : "text-text-muted hover:text-text-main"
                                         )}
                                     >
                                         <Plus className="w-3 h-3" /> Herb
                                     </button>
                                 </div>
 
-                                {/* Spacer */}
                                 <div className="flex-1" />
 
-                                {/* Visualization Settings Menu */}
+                                {/* Settings Menu */}
                                 <PlotSettingsMenu
                                     settings={vizSettings}
                                     onSettingsChange={(newSettings) => {
@@ -258,48 +236,52 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
                                 />
                             </div>
 
-                            {/* Canvas Area */}
+                            {/* Canvas Area: UPDATED Background */}
                             <div
-                                className="flex-1 relative overflow-hidden bg-[#050814]"
+                                className="flex-1 relative overflow-hidden bg-app"
                                 ref={containerRef}
                                 onClick={() => setPanelFocus('map')}
                                 style={{ minHeight: '200px' }}
                             >
-                                <PlotCanvas
-                                    plotId={plotId}
-                                    viewportWidth={containerWidth || (containerRef.current?.getBoundingClientRect().width || 400)}
-                                    viewportHeight={containerHeight || (containerRef.current?.getBoundingClientRect().height || 400)}
-                                    selectedUnitId={selectedUnitId || undefined}
-                                    onSelectUnit={handleSelectUnit}
-                                    visualizationSettings={vizSettings}
-                                    digitizationMode={digitizeMode !== 'NONE'}
-                                    onDigitizeTree={handleDigitizeClick}
-                                />
+                                {activeTab === 'MAP' && (
+                                    <PlotCanvas
+                                        plotId={plotId}
+                                        viewportWidth={containerWidth || 400}
+                                        viewportHeight={containerHeight || 400}
+                                        selectedUnitId={selectedUnitId || undefined}
+                                        onSelectUnit={handleSelectUnit}
+                                        visualizationSettings={vizSettings}
+                                        digitizationMode={digitizeMode !== 'NONE'}
+                                        onDigitizeTree={handleDigitizeClick}
+                                        onEditTree={handleEditTree}
+                                    />
+                                )}
+                                {activeTab === 'LIST' && (
+                                    <div className="p-8 text-text-muted text-center">
+                                        List View Coming Soon
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* Right Panel / Bottom Sheet Area */}
+                        {/* Right Panel: UPDATED Colors */}
                         <div
                             className={clsx(
-                                "bg-[#0b1020] border-[#1d2440] shadow-2xl transition-all duration-300 overflow-y-auto",
+                                "bg-panel border-border shadow-2xl transition-all duration-300 overflow-y-auto",
                                 "fixed bottom-0 left-0 right-0 border-t md:border-t-0",
-                                // Adjusted positioning to be relative to this container if possible, 
-                                // but fixed is safer for z-index. 
-                                // We might need to adjust "top" if we are inside a tab.
-                                // For now, let's keep it fixed but adjust top to be below the header.
-                                "md:absolute md:top-0 md:right-0 md:bottom-0 md:left-auto md:w-[480px] md:border-l md:p-6",
+                                "md:fixed md:top-[64px] md:right-0 md:bottom-0 md:left-auto md:w-[480px] md:border-l md:p-6",
                                 (isAddingTree || isAddingVeg) && "hidden",
                                 "z-20"
                             )}
                             style={{
-                                height: (window.innerWidth >= 768 ? '100%' : `${panelHeight}px`),
+                                height: (window.innerWidth >= 768 ? 'calc(100vh - 64px)' : `${panelHeight}px`),
                             }}
                             onClick={() => setPanelFocus('panel')}
                         >
                             {selectedUnitId ? (
                                 <UnitDetailPanel
                                     projectId={projectId}
-                                    moduleId={plot.moduleId}
+                                    moduleId={moduleId}
                                     plotId={plotId}
                                     unitId={selectedUnitId}
                                     unitLabel={selectedUnitLabel}
@@ -328,6 +310,7 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
                                         return undefined;
                                     })()}
                                     plot={plot}
+                                    onEditTree={handleEditTree}
                                 />
                             ) : (
                                 <PlotOverviewPanel
@@ -342,13 +325,13 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
                 </div>
             )}
 
-            {/* Full-screen forms */}
+            {/* Forms: UPDATED Backgrounds */}
             {plot && !plotLoading && isAddingTree && selectedUnitId && (
-                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-[#050814]">
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-app">
                     <TreeEntryForm
                         key={`${selectedUnitId}-${initialPosition?.x ?? 'manual'}-${initialPosition?.y ?? 'manual'}`}
                         projectId={projectId}
-                        moduleId={plot.moduleId}
+                        moduleId={moduleId}
                         plotId={plotId}
                         unitId={selectedUnitId}
                         unitLabel={selectedUnitLabel}
@@ -360,11 +343,11 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
             )}
 
             {plot && !plotLoading && isAddingVeg && selectedUnitId && (
-                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-[#050814]">
+                <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-app">
                     <VegetationEntryForm
                         key={`${selectedUnitId}-${initialPosition?.x ?? 'manual'}-${initialPosition?.y ?? 'manual'}`}
                         projectId={projectId}
-                        moduleId={plot.moduleId}
+                        moduleId={moduleId}
                         plotId={plotId}
                         unitId={selectedUnitId}
                         unitLabel={selectedUnitLabel}
@@ -372,6 +355,14 @@ export const PlotVisualizer: React.FC<PlotVisualizerProps> = ({ projectId, plotI
                         onSaveSuccess={() => { }}
                     />
                 </div>
+            )}
+
+            {editingTreeId && (
+                <TreeEditForm
+                    treeId={editingTreeId}
+                    onClose={() => setEditingTreeId(null)}
+                    onSaveSuccess={() => { }}
+                />
             )}
         </>
     );

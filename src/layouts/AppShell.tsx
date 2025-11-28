@@ -17,7 +17,7 @@ export const AppShell: React.FC = () => {
 
     return (
         // The background is handled by body in index.css, ensuring seamless gradient
-        <div className="flex h-screen w-full overflow-hidden text-[#f5f7ff]">
+        <div className="flex h-screen w-full overflow-hidden text-text-main">
 
             {/* Mobile Sidebar Overlay */}
             <div

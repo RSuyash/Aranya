@@ -1,6 +1,9 @@
 import { db } from '../../core/data-model/dexie';
 import type { SurveyTrack, TrackPoint } from '../../core/data-model/types';
 import { v4 as uuidv4 } from 'uuid';
+import { Geolocation } from '@capacitor/geolocation';
+import { KeepAwake } from '@capacitor-community/keep-awake';
+import { Capacitor } from '@capacitor/core';
 
 type GPSMode = 'IDLE' | 'TRACKING' | 'MEASURING';
 
@@ -13,7 +16,7 @@ interface AveragingResult {
 }
 
 class GPSManager {
-    private watchId: number | null = null;
+    private watchId: number | string | null = null;
     private subscribers: Set<(state: any) => void> = new Set();
 
     // State Machine
@@ -64,8 +67,7 @@ class GPSManager {
      * 1. Pauses track logging (prevents "starfish")
      * 2. Starts high-frequency buffering for averaging
      */
-    // 1. SIMPLER & FASTER: Use Native Watch API
-    public startMeasuring() {
+    public async startMeasuring() {
         if (this.mode === 'MEASURING') return;
 
         console.log('🛰️ GPS: Switching to MEASURING mode');
@@ -74,22 +76,48 @@ class GPSManager {
         this.measurementSamples = []; // Reset buffer
 
         // Clear any existing watchers first
-        if (this.watchId !== null) {
-            navigator.geolocation.clearWatch(this.watchId);
-        }
+        await this.clearWatch();
 
-        // THE CRITICAL CHANGE: 
-        // Use watchPosition instead of a loop. 
-        // The OS pushes data to us the millisecond it is available.
-        this.watchId = navigator.geolocation.watchPosition(
-            (pos) => this.handleGPSUpdate(pos),
-            (err) => console.warn("GPS Error", err),
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0   // Force fresh data, no cache
+        // Start High Accuracy Watch
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const perm = await Geolocation.checkPermissions();
+                if (perm.location !== 'granted') {
+                    await Geolocation.requestPermissions();
+                }
+
+                this.watchId = await Geolocation.watchPosition(
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
+                    (position, err) => {
+                        if (position) {
+                            // Normalize Capacitor position to standard GeolocationPosition
+                            const stdPos = {
+                                coords: {
+                                    latitude: position.coords.latitude,
+                                    longitude: position.coords.longitude,
+                                    accuracy: position.coords.accuracy,
+                                    altitude: position.coords.altitude,
+                                    altitudeAccuracy: position.coords.altitudeAccuracy,
+                                    heading: position.coords.heading,
+                                    speed: position.coords.speed,
+                                },
+                                timestamp: position.timestamp
+                            } as GeolocationPosition;
+                            this.handleGPSUpdate(stdPos);
+                        }
+                        if (err) console.warn("Native GPS Error", err);
+                    }
+                );
+            } catch (e) {
+                console.error("Native GPS Setup Failed", e);
             }
-        );
+        } else {
+            this.watchId = navigator.geolocation.watchPosition(
+                (pos) => this.handleGPSUpdate(pos),
+                (err) => console.warn("GPS Error", err),
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        }
 
         this.notify();
     }
@@ -100,7 +128,7 @@ class GPSManager {
      * 2. Injects that result into the track log (continuity).
      * 3. Resumes previous mode.
      */
-    public stopMeasuring(): AveragingResult | null {
+    public async stopMeasuring(): Promise<AveragingResult | null> {
         console.log('🛰️ GPS: Exiting MEASURING mode');
 
         // 1. Calculate Final Result
@@ -123,8 +151,15 @@ class GPSManager {
 
         // 4. Battery Optimization: If we were IDLE before, shut down radio
         if (this.mode === 'IDLE') {
-            this.stopGPS();
+            await this.stopGPS();
         } else {
+            // If resuming tracking, ensure we are watching again (if we switched watchers)
+            // Ideally we keep the watcher running but just change how we handle data.
+            // But for now, let's just ensure we are in a good state.
+            if (this.watchId === null) {
+                // Restart tracking watcher if it was cleared
+                this.startGPSInternal();
+            }
             this.notify();
         }
 
@@ -241,7 +276,12 @@ class GPSManager {
         };
         await db.surveyTracks.add(newTrack);
 
-        this.startGPS(this.handleGPSUpdate.bind(this));
+        // --- HYBRID FIX: PREVENT SLEEP ---
+        if (Capacitor.isNativePlatform()) {
+            try { await KeepAwake.keepAwake(); } catch (e) { console.warn("KeepAwake failed", e); }
+        }
+
+        this.startGPSInternal();
     }
 
     private async persistTrackChunk() {
@@ -269,30 +309,73 @@ class GPSManager {
     }
 
     public async stopGPS() {
-        if (this.watchId !== null) {
-            navigator.geolocation.clearWatch(this.watchId);
-            this.watchId = null;
-        }
+        await this.clearWatch();
 
         if (this.mode === 'TRACKING') {
             await this.persistTrackChunk(); // Final save
+
+            // --- HYBRID FIX: ALLOW SLEEP ---
+            if (Capacitor.isNativePlatform()) {
+                try { await KeepAwake.allowSleep(); } catch (e) { }
+            }
         }
 
         this.mode = 'IDLE';
         this.notify();
     }
 
-    private startGPS(callback: (pos: GeolocationPosition) => void) {
-        // Clear existing watch if any
+    private async clearWatch() {
         if (this.watchId !== null) {
-            navigator.geolocation.clearWatch(this.watchId);
+            if (Capacitor.isNativePlatform()) {
+                await Geolocation.clearWatch({ id: this.watchId as string });
+            } else {
+                navigator.geolocation.clearWatch(this.watchId as number);
+            }
+            this.watchId = null;
         }
+    }
 
-        this.watchId = navigator.geolocation.watchPosition(
-            callback,
-            (err) => console.warn("GPS Error", err),
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
+    private async startGPSInternal() {
+        await this.clearWatch();
+
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const perm = await Geolocation.checkPermissions();
+                if (perm.location !== 'granted') {
+                    await Geolocation.requestPermissions();
+                }
+
+                this.watchId = await Geolocation.watchPosition(
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+                    (position, err) => {
+                        if (position) {
+                            const stdPos = {
+                                coords: {
+                                    latitude: position.coords.latitude,
+                                    longitude: position.coords.longitude,
+                                    accuracy: position.coords.accuracy,
+                                    altitude: position.coords.altitude,
+                                    altitudeAccuracy: position.coords.altitudeAccuracy,
+                                    heading: position.coords.heading,
+                                    speed: position.coords.speed,
+                                },
+                                timestamp: position.timestamp
+                            } as GeolocationPosition;
+                            this.handleGPSUpdate(stdPos);
+                        }
+                        if (err) console.warn("Native GPS Error", err);
+                    }
+                );
+            } catch (e) {
+                console.error("Native GPS Error", e);
+            }
+        } else {
+            this.watchId = navigator.geolocation.watchPosition(
+                (pos) => this.handleGPSUpdate(pos),
+                (err) => console.warn("GPS Error", err),
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+        }
     }
 
     public getCurrentState() {

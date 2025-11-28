@@ -31,9 +31,9 @@ export const GPSAveragingModal: React.FC<GPSAveragingModalProps> = ({ onClose, o
         };
     }, []);
 
-    const handleAccept = () => {
+    const handleAccept = async () => {
         // Stop measuring and get final result
-        const result = gpsManager.stopMeasuring();
+        const result = await gpsManager.stopMeasuring();
 
         if (result) {
             onSave(result);

@@ -98,25 +98,25 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* General Config */}
             <section className="space-y-4">
-                <h3 className="text-sm font-medium text-[#9ba2c0] uppercase tracking-wider border-b border-[#1d2440] pb-2">
+                <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider border-b border-border pb-2">
                     Survey Configuration
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-sm text-[#f5f7ff]">Default Plot Layout</label>
+                        <label className="text-sm text-text-main">Default Plot Layout</label>
                         <Select
                             value={formData.defaultBlueprintId}
                             onChange={(e) => setFormData({ ...formData, defaultBlueprintId: e.target.value })}
                             options={blueprints.map(bp => ({ label: bp.name, value: bp.id }))}
                         />
-                        <p className="text-xs text-[#9ba2c0]">
+                        <p className="text-xs text-text-muted">
                             New plots will use this layout by default.
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm text-[#f5f7ff]">Sampling Method</label>
+                        <label className="text-sm text-text-main">Sampling Method</label>
                         <Select
                             value={formData.samplingMethod}
                             onChange={(e) => setFormData({ ...formData, samplingMethod: e.target.value as any })}
@@ -132,7 +132,7 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
 
             {/* Strata Rules */}
             <section className="space-y-4">
-                <h3 className="text-sm font-medium text-[#9ba2c0] uppercase tracking-wider border-b border-[#1d2440] pb-2">
+                <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider border-b border-border pb-2">
                     Biological Definitions
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -153,7 +153,7 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
 
             {/* Data Quality */}
             <section className="space-y-4">
-                <h3 className="text-sm font-medium text-[#9ba2c0] uppercase tracking-wider border-b border-[#1d2440] pb-2">
+                <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider border-b border-border pb-2">
                     Data Quality & Validation
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -170,9 +170,9 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
                             id="mandatoryPhotos"
                             checked={formData.validationSettings?.mandatoryPhotos}
                             onChange={(e) => updateValidation('mandatoryPhotos', e.target.checked)}
-                            className="w-5 h-5 rounded border-[#1d2440] bg-[#050814] text-[#56ccf2]"
+                            className="w-5 h-5 rounded border-border bg-app text-primary"
                         />
-                        <label htmlFor="mandatoryPhotos" className="text-sm text-[#f5f7ff]">
+                        <label htmlFor="mandatoryPhotos" className="text-sm text-text-main">
                             Require photos for every tree/observation
                         </label>
                     </div>
@@ -181,16 +181,16 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
 
             {/* Biometrics & Carbon Models */}
             <section className="space-y-4">
-                <div className="flex items-center gap-2 text-[#f2c94c] border-b border-[#1d2440] pb-2">
+                <div className="flex items-center gap-2 text-warning border-b border-border pb-2">
                     <h3 className="text-sm font-medium uppercase tracking-wider">
                         Biometrics & Carbon Models
                     </h3>
                 </div>
 
-                <div className="bg-[#161b22] border border-[#1d2440] rounded-xl p-4 space-y-6">
+                <div className="bg-panel-soft border border-border rounded-xl p-4 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm text-[#f5f7ff]">Biomass Model</label>
+                            <label className="text-sm text-text-main">Biomass Model</label>
                             <Select
                                 value={formData.analysisSettings?.biomassModel}
                                 onChange={(e) => setFormData(prev => ({
@@ -205,7 +205,7 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm text-[#f5f7ff]">Wood Density Strategy</label>
+                            <label className="text-sm text-text-main">Wood Density Strategy</label>
                             <Select
                                 value={formData.analysisSettings?.woodDensityStrategy}
                                 onChange={(e) => setFormData(prev => ({
@@ -246,17 +246,17 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
 
             {/* Taxonomy */}
             <section className="space-y-4">
-                <h3 className="text-sm font-medium text-[#9ba2c0] uppercase tracking-wider border-b border-[#1d2440] pb-2">
+                <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider border-b border-border pb-2">
                     Taxonomy Master List
                 </h3>
 
-                <div className="bg-[#050814] border border-[#1d2440] rounded-xl p-4">
+                <div className="bg-panel border border-border rounded-xl p-4">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <div className="text-sm font-medium text-[#f5f7ff]">
+                            <div className="text-sm font-medium text-text-main">
                                 {formData.predefinedSpeciesList?.length || 0} Species Loaded
                             </div>
-                            <div className="text-xs text-[#9ba2c0]">
+                            <div className="text-xs text-text-muted">
                                 Scientific Name, Common Name, Type
                             </div>
                         </div>
@@ -266,7 +266,7 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
                                 size="sm"
                                 onClick={() => setFormData({ ...formData, predefinedSpeciesList: [] })}
                                 leftIcon={<Trash2 size={14} />}
-                                className="text-[#ff7e67] hover:text-[#ff7e67] hover:bg-[#ff7e67]/10"
+                                className="text-danger hover:text-danger hover:bg-danger/10"
                             >
                                 Clear List
                             </Button>
@@ -275,9 +275,9 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
 
                     <div className="flex items-center gap-4">
                         <label className="flex-1 cursor-pointer group">
-                            <div className="border-2 border-dashed border-[#1d2440] group-hover:border-[#56ccf2] rounded-lg p-6 flex flex-col items-center justify-center transition bg-[#11182b]/50">
-                                <Upload className="w-6 h-6 text-[#9ba2c0] group-hover:text-[#56ccf2] mb-2" />
-                                <span className="text-sm text-[#9ba2c0] group-hover:text-[#f5f7ff]">
+                            <div className="border-2 border-dashed border-border group-hover:border-primary rounded-lg p-6 flex flex-col items-center justify-center transition bg-panel-soft/50">
+                                <Upload className="w-6 h-6 text-text-muted group-hover:text-primary mb-2" />
+                                <span className="text-sm text-text-muted group-hover:text-text-main">
                                     {speciesFile ? speciesFile.name : "Upload CSV Species List"}
                                 </span>
                                 <input
@@ -289,11 +289,11 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
                             </div>
                         </label>
 
-                        <div className="w-px h-16 bg-[#1d2440]" />
+                        <div className="w-px h-16 bg-border" />
 
-                        <div className="w-1/3 text-xs text-[#9ba2c0] space-y-1">
-                            <p className="font-medium text-[#f5f7ff]">CSV Format:</p>
-                            <code className="block bg-[#11182b] p-2 rounded border border-[#1d2440]">
+                        <div className="w-1/3 text-xs text-text-muted space-y-1">
+                            <p className="font-medium text-text-main">CSV Format:</p>
+                            <code className="block bg-panel-soft p-2 rounded border border-border">
                                 Scientific Name, Common Name, Type<br />
                                 Tectona grandis, Teak, TREE
                             </code>
@@ -302,7 +302,7 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
                 </div>
             </section>
 
-            <div className="pt-6 border-t border-[#1d2440] flex justify-end">
+            <div className="pt-6 border-t border-border flex justify-end">
                 <Button
                     onClick={handleSave}
                     isLoading={isSaving}

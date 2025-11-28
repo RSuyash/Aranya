@@ -4,6 +4,7 @@ import { useRepositories } from '../hooks/useRepositories';
 import { TreePine, Map, ArrowRight, BarChart3, Database, Upload, Download } from 'lucide-react';
 import { ImportWizardModal } from '../components/import-wizard/ImportWizardModal';
 import { DataManagementModal } from '../ui/modules/DataManagement/DataManagementModal';
+import { Capacitor } from '@capacitor/core';
 
 const AranyaDashboard: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -12,6 +13,8 @@ const AranyaDashboard: React.FC = () => {
     const [showImport, setShowImport] = useState(false);
     const [showDataManagement, setShowDataManagement] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    const isNative = Capacitor.isNativePlatform();
 
     React.useEffect(() => {
         const handler = (e: any) => {
@@ -38,7 +41,7 @@ const AranyaDashboard: React.FC = () => {
 
     if (!project) {
         return (
-            <div className="min-h-screen bg-[#050814] flex items-center justify-center">
+            <div className="min-h-screen bg-app flex items-center justify-center">
                 <div className="text-white text-lg">Loading project...</div>
             </div>
         );
@@ -58,21 +61,21 @@ const AranyaDashboard: React.FC = () => {
             {/* Page Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#f5f7ff]">{project.name}</h1>
-                    <p className="text-sm text-[#9ba2c0] mt-1">{project.description}</p>
+                    <h1 className="text-2xl font-bold text-text-main">{project.name}</h1>
+                    <p className="text-sm text-text-muted mt-1">{project.description}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setShowImport(true)}
-                        className="flex items-center gap-2 bg-[#1d2440] hover:bg-[#2a3454] text-[#f2c94c] border border-[#f2c94c]/30 px-4 py-2 rounded-lg transition-all text-sm font-medium"
+                        className="flex items-center gap-2 bg-panel-soft hover:bg-panel text-warning border border-warning/30 px-4 py-2 rounded-lg transition-all text-sm font-medium"
                     >
                         <Upload className="w-4 h-4" />
                         Import CSV
                     </button>
-                    {deferredPrompt && (
+                    {!isNative && deferredPrompt && (
                         <button
                             onClick={handleInstallClick}
-                            className="flex items-center gap-2 bg-[#56ccf2] text-[#050814] px-4 py-2 rounded-lg font-medium hover:bg-[#4ab8de] transition shadow-lg shadow-[#56ccf2]/20"
+                            className="flex items-center gap-2 bg-primary text-app px-4 py-2 rounded-lg font-medium hover:bg-primary/80 transition shadow-lg shadow-primary/20"
                         >
                             <Download className="w-4 h-4" />
                             Install App
@@ -80,7 +83,7 @@ const AranyaDashboard: React.FC = () => {
                     )}
                     <button
                         onClick={() => navigate(`/projects/${projectId}/settings`)}
-                        className="px-4 py-2 bg-[#56ccf2] text-[#050814] rounded-lg font-medium hover:bg-[#4ab8de] transition shadow-lg shadow-[#56ccf2]/20"
+                        className="px-4 py-2 bg-primary text-app rounded-lg font-medium hover:bg-primary/80 transition shadow-lg shadow-primary/20"
                     >
                         Project Settings
                     </button>
@@ -116,17 +119,17 @@ const AranyaDashboard: React.FC = () => {
                 {/* Modules Section */}
                 <section className="mb-8">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-semibold text-[#f5f7ff]">Active Modules</h2>
+                        <h2 className="text-xl font-semibold text-text-main">Active Modules</h2>
                     </div>
 
                     {modules.length === 0 ? (
-                        <div className="bg-[#0b1020] border border-[#1d2440] rounded-2xl p-8 text-center">
-                            <TreePine className="w-12 h-12 mx-auto mb-4 text-[#56ccf2]" />
+                        <div className="bg-panel border border-border rounded-2xl p-8 text-center">
+                            <TreePine className="w-12 h-12 mx-auto mb-4 text-primary" />
                             <h3 className="text-lg font-medium mb-2">No modules enabled</h3>
-                            <p className="text-[#9ba2c0] mb-4">Enable modules in Project Settings to start collecting data</p>
+                            <p className="text-text-muted mb-4">Enable modules in Project Settings to start collecting data</p>
                             <button
                                 onClick={() => navigate(`/projects/${projectId}/settings`)}
-                                className="px-4 py-2 bg-[#56ccf2] text-[#050814] rounded-lg font-medium hover:bg-[#4ab8de] transition"
+                                className="px-4 py-2 bg-primary text-app rounded-lg font-medium hover:bg-primary/80 transition"
                             >
                                 Go to Settings
                             </button>
@@ -141,38 +144,38 @@ const AranyaDashboard: React.FC = () => {
                                 return (
                                     <div
                                         key={module.id}
-                                        className="bg-[#0b1020] border border-[#1d2440] rounded-2xl p-6 hover:border-[#56ccf2] transition cursor-pointer"
+                                        className="bg-panel border border-border rounded-2xl p-6 hover:border-primary transition cursor-pointer"
                                         onClick={() => navigate(`/project/${projectId}/module/${module.id}`)}
                                     >
                                         <div className="flex items-start justify-between mb-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-[#56ccf2]/20 rounded-xl flex items-center justify-center">
-                                                    <TreePine className="w-5 h-5 text-[#56ccf2]" />
+                                                <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                                                    <TreePine className="w-5 h-5 text-primary" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-semibold text-[#f5f7ff]">{module.name}</h3>
-                                                    <p className="text-xs text-[#9ba2c0]">{module.type}</p>
+                                                    <h3 className="font-semibold text-text-main">{module.name}</h3>
+                                                    <p className="text-xs text-text-muted">{module.type}</p>
                                                 </div>
                                             </div>
-                                            <ArrowRight className="w-5 h-5 text-[#9ba2c0]" />
+                                            <ArrowRight className="w-5 h-5 text-text-muted" />
                                         </div>
 
                                         {/* Progress */}
                                         <div className="mb-3">
-                                            <div className="flex items-center justify-between text-xs text-[#9ba2c0] mb-1">
+                                            <div className="flex items-center justify-between text-xs text-text-muted mb-1">
                                                 <span>Field Completion</span>
                                                 <span>{progress}%</span>
                                             </div>
-                                            <div className="h-2 bg-[#050814] rounded-full overflow-hidden">
+                                            <div className="h-2 bg-app rounded-full overflow-hidden">
                                                 <div
-                                                    className="h-full bg-gradient-to-r from-[#56ccf2] to-[#52d273] transition-all"
+                                                    className="h-full bg-gradient-to-r from-primary to-success transition-all"
                                                     style={{ width: `${progress}%` }}
                                                 />
                                             </div>
                                         </div>
 
                                         {/* Stats */}
-                                        <div className="flex items-center gap-4 text-xs text-[#9ba2c0]">
+                                        <div className="flex items-center gap-4 text-xs text-text-muted">
                                             <span>{modulePlots.length} plots</span>
                                             <span>·</span>
                                             <span>{moduleCompleted} completed</span>
@@ -186,7 +189,7 @@ const AranyaDashboard: React.FC = () => {
 
                 {/* Quick Actions */}
                 <section>
-                    <h2 className="text-xl font-semibold text-[#f5f7ff] mb-4">Quick Actions</h2>
+                    <h2 className="text-xl font-semibold text-text-main mb-4">Quick Actions</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <ActionCard
                             icon={<Map className="w-6 h-6" />}
@@ -215,9 +218,9 @@ const AranyaDashboard: React.FC = () => {
 
 // Stat Card Component
 const StatCard: React.FC<{ label: string; value: number }> = ({ label, value }) => (
-    <div className="bg-[#0b1020] border border-[#1d2440] rounded-2xl p-4">
-        <div className="text-xs uppercase tracking-wider text-[#9ba2c0] mb-1">{label}</div>
-        <div className="text-2xl font-bold text-[#f5f7ff]">{value}</div>
+    <div className="bg-panel border border-border rounded-2xl p-4">
+        <div className="text-xs uppercase tracking-wider text-text-muted mb-1">{label}</div>
+        <div className="text-2xl font-bold text-text-main">{value}</div>
     </div>
 );
 
@@ -230,13 +233,13 @@ const ActionCard: React.FC<{
 }> = ({ icon, title, description, onClick }) => (
     <button
         onClick={onClick}
-        className="bg-[#0b1020] border border-[#1d2440] rounded-2xl p-6 text-left hover:border-[#56ccf2] transition"
+        className="bg-panel border border-border rounded-2xl p-6 text-left hover:border-primary transition"
     >
-        <div className="w-12 h-12 bg-[#56ccf2]/20 rounded-xl flex items-center justify-center mb-4 text-[#56ccf2]">
+        <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center mb-4 text-primary">
             {icon}
         </div>
-        <h3 className="font-semibold text-[#f5f7ff] mb-1">{title}</h3>
-        <p className="text-sm text-[#9ba2c0]">{description}</p>
+        <h3 className="font-semibold text-text-main mb-1">{title}</h3>
+        <p className="text-sm text-text-muted">{description}</p>
     </button>
 );
 

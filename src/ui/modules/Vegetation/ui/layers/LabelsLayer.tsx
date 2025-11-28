@@ -28,22 +28,22 @@ export const LabelsLayer: React.FC<LabelsLayerProps> = ({ units, visible = true 
                         >
                             {/* Label Card - Different style for Subplots */}
                             {unit.role === 'SUBPLOT' ? (
-                                <div className="text-[#52d273] font-bold text-sm tracking-widest opacity-80 select-none">
+                                <div className="text-success font-bold text-sm tracking-widest opacity-80 select-none">
                                     {unit.label}
                                 </div>
                             ) : (
-                                <div className="backdrop-blur-sm bg-[#0b1020]/90 px-4 py-2 rounded-lg border border-[#1d2440] shadow-xl">
+                                <div className="backdrop-blur-sm bg-panel/90 px-4 py-2 rounded-lg border border-border shadow-xl">
                                     <div className="text-center">
                                         {/* Unit Name */}
-                                        <div className="text-[#f5f7ff] font-semibold text-lg tracking-wide">
+                                        <div className="text-text-main font-semibold text-lg tracking-wide">
                                             {unit.label}
                                         </div>
 
                                         {/* Tree Count Badge */}
                                         {unit.treeCount > 0 && (
                                             <div className="flex items-center justify-center gap-1.5 mt-1">
-                                                <div className="w-2 h-2 rounded-full bg-[#52d273] shadow-sm shadow-[#52d273]/50"></div>
-                                                <span className="text-[#52d273] text-xs font-medium">
+                                                <div className="w-2 h-2 rounded-full bg-success shadow-sm shadow-success/50"></div>
+                                                <span className="text-success text-xs font-medium">
                                                     {unit.treeCount} {unit.treeCount === 1 ? 'tree' : 'trees'}
                                                 </span>
                                             </div>

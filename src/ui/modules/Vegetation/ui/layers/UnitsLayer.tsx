@@ -19,36 +19,30 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
     });
     const sortedUnits = [...filteredUnits].sort((a, b) => a.zIndex - b.zIndex);
 
-    // Debug logging
-    console.log('UnitsLayer: Rendering', units.length, 'units');
-    const subplots = units.filter(u => u.role === 'SUBPLOT');
-    console.log('UnitsLayer: Found', subplots.length, 'subplots:', subplots.map(s => s.label));
-    console.log('UnitsLayer: All units:', units.map(u => ({ id: u.id, label: u.label, role: u.role, type: u.type })));
-
     return (
         <svg
             className="absolute inset-0 pointer-events-none"
             style={{ width: '100%', height: '100%' }}
         >
             <defs>
-                {/* Gradient definitions for modern look */}
+                {/* Gradient definitions using CSS Variables for Theme Support */}
                 <linearGradient id="quadrant-gradient-not-started" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#1a2332', stopOpacity: 0.8 }} />
-                    <stop offset="100%" style={{ stopColor: '#0f1419', stopOpacity: 0.9 }} />
+                    <stop offset="0%" style={{ stopColor: 'var(--bg-panel)', stopOpacity: 0.8 }} />
+                    <stop offset="100%" style={{ stopColor: 'var(--bg-app)', stopOpacity: 0.9 }} />
                 </linearGradient>
                 <linearGradient id="quadrant-gradient-in-progress" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#1e3a5f', stopOpacity: 0.85 }} />
-                    <stop offset="100%" style={{ stopColor: '#0f1e33', stopOpacity: 0.95 }} />
+                    <stop offset="0%" style={{ stopColor: 'var(--primary)', stopOpacity: 0.1 }} />
+                    <stop offset="100%" style={{ stopColor: 'var(--primary)', stopOpacity: 0.2 }} />
                 </linearGradient>
                 <linearGradient id="quadrant-gradient-done" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#1a3d2e', stopOpacity: 0.85 }} />
-                    <stop offset="100%" style={{ stopColor: '#0d2419', stopOpacity: 0.95 }} />
+                    <stop offset="0%" style={{ stopColor: 'var(--success)', stopOpacity: 0.1 }} />
+                    <stop offset="100%" style={{ stopColor: 'var(--success)', stopOpacity: 0.2 }} />
                 </linearGradient>
 
-                {/* Subplot-specific gradient - GREEN for visibility */}
+                {/* Subplot-specific gradient */}
                 <linearGradient id="subplot-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#1a3d2e', stopOpacity: 0.9 }} />
-                    <stop offset="100%" style={{ stopColor: '#0d2419', stopOpacity: 0.95 }} />
+                    <stop offset="0%" style={{ stopColor: 'var(--success)', stopOpacity: 0.15 }} />
+                    <stop offset="100%" style={{ stopColor: 'var(--success)', stopOpacity: 0.25 }} />
                 </linearGradient>
 
                 {/* Glow filter for selection */}
@@ -77,7 +71,7 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                             y1={centerY}
                             x2={mainPlot.screenX + mainPlot.screenWidth}
                             y2={centerY}
-                            stroke="#52d273"
+                            stroke="var(--success)"
                             strokeWidth={2}
                             strokeDasharray="8 4"
                         />
@@ -87,7 +81,7 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                             y1={mainPlot.screenY}
                             x2={centerX}
                             y2={mainPlot.screenY + mainPlot.screenHeight}
-                            stroke="#52d273"
+                            stroke="var(--success)"
                             strokeWidth={2}
                             strokeDasharray="8 4"
                         />
@@ -116,8 +110,8 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                             y={unit.screenY}
                             width={unit.screenWidth}
                             height={unit.screenHeight}
-                            fill={unit.role === 'MAIN_PLOT' ? unit.fillColor : `url(#${gradientId})`}
-                            stroke={isSubplot ? '#52d273' : unit.strokeColor}
+                            fill={unit.role === 'MAIN_PLOT' ? 'none' : `url(#${gradientId})`}
+                            stroke={isSubplot ? 'var(--success)' : 'var(--border)'}
                             strokeWidth={isSubplot ? 2 : (isSelected ? 3 : 1.5)}
                             strokeDasharray={undefined}
                             opacity={unit.role === 'MAIN_PLOT' ? 0.3 : (isSubplot ? 1.0 : 0.95)}
@@ -135,7 +129,8 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                                 width={unit.screenWidth - 4}
                                 height={unit.screenHeight - 4}
                                 fill="none"
-                                stroke={isSubplot ? "rgba(82, 210, 115, 0.3)" : "rgba(255, 255, 255, 0.1)"}
+                                stroke={isSubplot ? "var(--success)" : "var(--border)"}
+                                strokeOpacity={0.3}
                                 strokeWidth={1}
                                 rx={isSubplot ? 3 : 1}
                                 className="pointer-events-none"
@@ -151,7 +146,7 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                                     width={unit.screenWidth + 8}
                                     height={unit.screenHeight + 8}
                                     fill="none"
-                                    stroke="#56ccf2"
+                                    stroke="var(--primary)"
                                     strokeWidth={2.5}
                                     rx={unit.role === 'SUBPLOT' ? 6 : 3}
                                     className="pointer-events-none"
@@ -170,7 +165,7 @@ export const UnitsLayer: React.FC<UnitsLayerProps> = ({ units, selectedUnitId, o
                                     width={unit.screenWidth + 12}
                                     height={unit.screenHeight + 12}
                                     fill="none"
-                                    stroke="#56ccf2"
+                                    stroke="var(--primary)"
                                     strokeWidth={1}
                                     rx={unit.role === 'SUBPLOT' ? 7 : 4}
                                     className="pointer-events-none"

@@ -28,7 +28,7 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
     const clipId = React.useId();
 
     // Crosshair state
-    const [hoveredPoint, setHoveredPoint] = useState<{x: number; y: number; seriesId: string; pointIndex: number} | null>(null);
+    const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; seriesId: string; pointIndex: number } | null>(null);
 
     // --- Helpers to map data to pixels ---
     const getX = (val: number | string) => {
@@ -176,7 +176,7 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
                 <g clipPath={`url(#${clipId})`}>
                     {series.map(s => {
                         const axisId = s.yAxisId || 'left';
-                        const color = s.color || '#56ccf2';
+                        const color = s.color || 'var(--primary)';
 
                         if (s.type === 'bar') {
                             // Bar Width Logic
@@ -279,13 +279,12 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
                                                 cy={getY(pt.y, axisId)!}
                                                 r={4}
                                                 fill={color}
-                                                stroke="#050814"
+                                                stroke="var(--bg-app)"
                                                 strokeWidth={1}
                                                 opacity={0.7} // More visible to enhance interaction
                                             >
-                                                <title>{`${s.name}: ${pt.y}${
-                                                    pt.meta?.sd !== undefined && typeof pt.meta.sd === 'number' ? ` (±${(1.96 * pt.meta.sd).toFixed(2)} CI)` : ''
-                                                }`}</title>
+                                                <title>{`${s.name}: ${pt.y}${pt.meta?.sd !== undefined && typeof pt.meta.sd === 'number' ? ` (±${(1.96 * pt.meta.sd).toFixed(2)} CI)` : ''
+                                                    }`}</title>
                                             </circle>
                                         );
                                     })}
@@ -305,7 +304,7 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
                                                 cy={getY(pt.y, axisId)!}
                                                 r={4}
                                                 fill={color}
-                                                stroke="#050814"
+                                                stroke="var(--bg-app)"
                                                 strokeWidth={1}
                                             >
                                                 <title>{`${s.name}: ${pt.y}`}</title>
@@ -330,7 +329,7 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
                             y1={0}
                             x2={hoveredPoint.x}
                             y2={innerHeight}
-                            stroke="#ffffff"
+                            stroke="var(--text-main)"
                             strokeWidth={1}
                             strokeDasharray="4,4"
                             opacity={0.7}
@@ -341,7 +340,7 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
                             y1={hoveredPoint.y}
                             x2={innerWidth}
                             y2={hoveredPoint.y}
-                            stroke="#ffffff"
+                            stroke="var(--text-main)"
                             strokeWidth={1}
                             strokeDasharray="4,4"
                             opacity={0.7}
@@ -352,7 +351,7 @@ export const ChartCanvas: React.FC<ChartCanvasProps> = ({
                             cy={hoveredPoint.y}
                             r={6}
                             fill="none"
-                            stroke="#ffffff"
+                            stroke="var(--text-main)"
                             strokeWidth={2}
                             opacity={0.9}
                         />
