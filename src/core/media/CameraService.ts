@@ -9,7 +9,7 @@ class CameraService {
 
     /**
      * Captures an image and persists it immediately to IndexedDB.
-     * Returns the MediaItem metadata.
+     * Returns the MediaItem metadata..
      */
     public async captureAndSave(parentId: string, type: string): Promise<MediaItem> {
         try {
