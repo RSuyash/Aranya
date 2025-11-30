@@ -13,9 +13,12 @@ export default defineConfig({
       manifest: {
         name: 'Terra Ecological Platform',
         short_name: 'Terra',
+        description: 'Advanced ecological data collection and analysis platform.',
+        categories: ['productivity', 'education', 'science'],
         theme_color: '#050814',
         background_color: '#050814',
         display: 'standalone',
+        orientation: 'any',
         icons: [
           {
             src: '/icons/icon-192.png',
