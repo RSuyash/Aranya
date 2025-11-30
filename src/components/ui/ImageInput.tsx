@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Camera, Trash2, Loader2, Scan, Maximize2 } from 'lucide-react';
+import { Camera, Trash2, Loader2, Scan } from 'lucide-react';
 import { clsx } from 'clsx';
 import { cameraService } from '../../core/media/CameraService';
 import { db } from '../../core/data-model/dexie';
@@ -46,10 +46,10 @@ export const ImageInput: React.FC<ImageInputProps> = ({ parentId, type, label, o
             }
             await cameraService.captureAndSave(parentId, type);
             if (onCapture) onCapture();
-            Haptics.notification({ type: 'success' });
+            Haptics.notification({ type: 'success' as any });
         } catch (e) {
             console.error(e);
-            Haptics.notification({ type: 'error' });
+            Haptics.notification({ type: 'error' as any });
         } finally {
             setIsCapturing(false);
         }

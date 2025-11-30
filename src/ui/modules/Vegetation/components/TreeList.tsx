@@ -5,8 +5,8 @@ import { useResponsive } from '../../../../hooks/useResponsive';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../../core/data-model/dexie';
 import {
-    Sprout, AlertTriangle, CheckCircle2, MoreVertical,
-    MapPin, Image as ImageIcon, Database, Scan
+    MoreVertical,
+    Image as ImageIcon, Database, Scan
 } from 'lucide-react';
 import { clsx } from 'clsx';
 

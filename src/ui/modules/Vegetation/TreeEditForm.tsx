@@ -29,7 +29,8 @@ export const TreeEditForm: React.FC<TreeEditFormProps> = ({
     const [stems, setStems] = useState<Array<{ id: string; gbh: string }>>([]);
     const [height, setHeight] = useState('');
     const [remarks, setRemarks] = useState('');
-    const [isDirty, setIsDirty] = useState(false);
+    // const [isDirty, setIsDirty] = useState(false); // unused, keeping for future use
+    const [_, setIsDirty] = useState(false); // using underscore to indicate unused variable
 
     useEffect(() => {
         if (tree) {
