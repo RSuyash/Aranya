@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.terra.platform"
+    namespace "com.aaranya.platform"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.terra.platform"
+        applicationId "com.aaranya.platform"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -51,4 +51,15 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+android {
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            def appName = "Aaranya"
+            def versionName = variant.versionName
+            def buildType = variant.buildType.name
+            outputFileName = appName + "-v${versionName}-${buildType}.apk"
+        }
+    }
 }
