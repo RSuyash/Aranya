@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db, type MediaItem } from '../data-model/dexie';
 
+export type CaptureSource = 'CAMERA' | 'PHOTOS' | 'PROMPT';
+
 /**
  * Dr. Thorne's Imaging Pipeline
  * Handles platform-specific capture, compression, and atomic storage.
@@ -9,18 +11,24 @@ class CameraService {
 
     /**
      * Captures an image and persists it immediately to IndexedDB.
-     * Returns the MediaItem metadata..
+     * Returns the MediaItem metadata.
+     * [Lumina Upgrade]: Now accepts explicit source to bypass ugly native prompts.
      */
-    public async captureAndSave(parentId: string, type: string): Promise<MediaItem> {
+    public async captureAndSave(parentId: string, type: string, sourceMode: CaptureSource = 'PROMPT'): Promise<MediaItem> {
         try {
             // Load Capacitor modules dynamically at runtime
             const { Camera, CameraResultType, CameraSource } = await this.loadCapacitorModules();
+
+            // Map string command to Enum
+            let source = CameraSource.Prompt;
+            if (sourceMode === 'CAMERA') source = CameraSource.Camera;
+            if (sourceMode === 'PHOTOS') source = CameraSource.Photos;
 
             const image = await Camera.getPhoto({
                 quality: 80, // High enough for science, low enough for storage
                 allowEditing: false,
                 resultType: CameraResultType.Uri,
-                source: CameraSource.Prompt, // User choice: Camera or Photos
+                source: source,
                 width: 1920, // Max dimension (Full HD)
                 height: 1920,
                 correctOrientation: true
@@ -50,13 +58,16 @@ class CameraService {
             return mediaItem;
 
         } catch (error) {
+            // User cancellation is not an error in the UI flow, but we log it.
+            if (error instanceof Error && error.message.includes('cancelled')) {
+                throw new Error("Capture cancelled");
+            }
+
             console.error("Imaging Protocol Failed:", error);
-            // If it's a permission error, make it more specific
             if (error instanceof Error && (error.message.includes("permission") || error.message.includes("denied"))) {
                 throw new Error("Camera permission denied. Please enable camera access in your device settings.");
             }
-            // For other errors, provide a more user-friendly message
-            throw new Error("Failed to capture image. Please ensure camera permissions are enabled in your device settings.");
+            throw new Error("Failed to capture image.");
         }
     }
 
@@ -83,7 +94,7 @@ class CameraService {
                 CameraSource: camera.CameraSource
             };
         } catch (error) {
-            throw new Error("Camera plugin not available. Install @capacitor/camera and @capacitor/core for native camera functionality.");
+            throw new Error("Camera plugin not available.");
         }
     }
 

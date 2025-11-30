@@ -169,8 +169,9 @@ export const DashboardPage: React.FC = () => {
                         </span>
                         <span className="text-[10px] font-bold text-success tracking-[0.2em] uppercase">System Online</span>
                     </div>
+                    {/* [THORNE] Branding Update */}
                     <h1 className="text-6xl font-black text-text-main tracking-tighter leading-none -ml-1">
-                        Terra<span className="font-light text-text-muted">OS</span>
+                        Aaranya<span className="font-light text-text-muted">OS</span>
                     </h1>
                 </div>
 

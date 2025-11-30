@@ -164,7 +164,8 @@ export const Header: React.FC<HeaderProps> = ({
                             <Breadcrumbs items={breadcrumbs} isLoading={isLoading} accentColor={theme.accent} />
                         ) : (
                             <h2 className="text-sm font-bold text-text-main tracking-wide uppercase animate-in fade-in slide-in-from-left-2">
-                                {title}
+                                {/* [THORNE] Hardcoded safe default if context is empty */}
+                                {title || 'AARANYA'}
                             </h2>
                         )}
                     </div>

@@ -145,7 +145,14 @@ export const ProjectCreationWizard: React.FC<ProjectCreationWizardProps> = ({
                             : "bg-panel-soft/50 border-white/10 hover:bg-panel hover:border-success/50"
                     )}
                 >
-                    <input ref={fileInputRef} type="file" className="hidden" accept=".terx,.zip,.json" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+                    {/* [THORNE FIX] Expanded MIME types to allow .fldx on Android */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept=".fldx,.terx,.zip,.json,application/zip,application/json,application/octet-stream"
+                        onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+                    />
 
                     {/* Hover Glow */}
                     <div className="absolute -right-10 -top-10 w-32 h-32 bg-success/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />

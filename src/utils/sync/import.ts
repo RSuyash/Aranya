@@ -7,26 +7,11 @@ import { generateDynamicLayout } from '../../core/plot-engine/dynamicGenerator';
 import { BlueprintRegistry, STD_10x10_QUADRANTS } from '../../core/plot-engine/blueprints';
 import type { PlotNodeInstance } from '../../core/plot-engine/types';
 import type { Plot } from '../../core/data-model/types';
+import { parseUniversalImport } from './terraImport'; // Use the universal import function
 
 // Helper to parse file without saving immediately
 export const parseImportFile = async (file: File): Promise<ProjectExportData> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const json = e.target?.result as string;
-                const data: ProjectExportData = JSON.parse(json);
-                if (!data.version || !data.project || !data.project.id) {
-                    throw new Error('Invalid Project File Format');
-                }
-                resolve(data);
-            } catch (error) {
-                reject(error);
-            }
-        };
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsText(file);
-    });
+    return parseUniversalImport(file); // Delegate to universal import that handles both JSON and ZIP (.fldx)
 };
 
 // Helper to check if project exists

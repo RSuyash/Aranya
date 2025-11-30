@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.terra.platform',
-  appName: 'Terra',
+  appId: 'com.aaranya.platform',
+  appName: 'Aaranya',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

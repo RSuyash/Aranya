@@ -138,7 +138,8 @@ export const ImportWizardModal: React.FC<Props> = ({ onClose, currentUserId }) =
                         <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-2xl bg-panel-soft/30 hover:bg-panel-soft/60 transition-colors group cursor-pointer relative">
                             <input
                                 type="file"
-                                accept=".csv,.terx,.zip"
+                                // [THORNE FIX] Allow CSV, JSON, ZIP, FLDX, and binary streams
+                                accept=".csv,.fldx,.terx,.zip,.json,text/csv,application/zip,application/json,application/octet-stream"
                                 onChange={handleFileUpload}
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                             />
@@ -146,7 +147,7 @@ export const ImportWizardModal: React.FC<Props> = ({ onClose, currentUserId }) =
                                 <Upload className="w-8 h-8 text-primary" />
                             </div>
                             <p className="text-text-main font-bold text-lg mb-1">Upload Source Data</p>
-                            <p className="text-text-muted text-sm">Supports .csv (Max 5MB)</p>
+                            <p className="text-text-muted text-sm">Supports .csv & .fldx backups</p>
                         </div>
                     )}
 
