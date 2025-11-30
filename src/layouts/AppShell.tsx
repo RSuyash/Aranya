@@ -37,7 +37,6 @@ export const AppShell: React.FC = () => {
             )}>
                 <Sidebar
                     collapsed={isDesktopCollapsed}
-                    onToggleCollapse={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
                     mobile={isMobileMenuOpen} // Only true on mobile drawer
                 />
             </div>

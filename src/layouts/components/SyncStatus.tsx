@@ -1,5 +1,5 @@
 import React from 'react';
-import { CloudCheck, WarningOctagon, ArrowsClockwise } from 'phosphor-react';
+import { Cloud, CloudOff, RefreshCw, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
 
 type SyncState = 'SYNCED' | 'SYNCING' | 'OFFLINE' | 'ERROR';
@@ -7,20 +7,21 @@ type SyncState = 'SYNCED' | 'SYNCING' | 'OFFLINE' | 'ERROR';
 export const SyncStatus: React.FC<{ status?: SyncState }> = ({ status = 'SYNCED' }) => {
     return (
         <div className={clsx(
-            "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300 backdrop-blur-md",
-            status === 'SYNCED' && "bg-[#0b2214]/50 border-[#21452b] text-[#52d273]",
-            status === 'SYNCING' && "bg-[#071824]/50 border-[#15324b] text-[#56ccf2]",
-            status === 'OFFLINE' && "bg-[#1d2440]/50 border-[#1d2440] text-[#9ba2c0]",
-            status === 'ERROR' && "bg-[#2a1215]/50 border-[#4a1d21] text-[#ff7e67]"
+            "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-500 backdrop-blur-md",
+            status === 'SYNCED' && "bg-success/10 border-success/20 text-success",
+            status === 'SYNCING' && "bg-primary/10 border-primary/20 text-primary",
+            status === 'OFFLINE' && "bg-panel-soft border-border text-text-muted",
+            status === 'ERROR' && "bg-danger/10 border-danger/20 text-danger"
         )}>
-            {status === 'SYNCED' && <CloudCheck size={14} weight="fill" />}
-            {status === 'SYNCING' && <ArrowsClockwise size={14} className="animate-spin" />}
-            {status === 'OFFLINE' && <WarningOctagon size={14} weight="fill" />}
+            {status === 'SYNCED' && <Cloud size={14} strokeWidth={2.5} />}
+            {status === 'SYNCING' && <RefreshCw size={14} className="animate-spin" />}
+            {status === 'OFFLINE' && <CloudOff size={14} />}
+            {status === 'ERROR' && <AlertTriangle size={14} />}
 
-            <span className="text-[10px] font-bold uppercase tracking-wider">
+            <span className="text-[9px] font-bold uppercase tracking-widest">
                 {status === 'SYNCED' && "Synced"}
                 {status === 'SYNCING' && "Syncing..."}
-                {status === 'OFFLINE' && "Offline Mode"}
+                {status === 'OFFLINE' && "Offline"}
                 {status === 'ERROR' && "Sync Error"}
             </span>
         </div>

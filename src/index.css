@@ -1,189 +1,141 @@
 @import "tailwindcss";
 
+/* * SYSTEM: TERRA // LUMINA CONFIGURATION
+ * STATUS: OPTICALLY CALIBRATED
+ */
+
 :root {
-  /* --- DARK MODE: ORBITAL DEEP (High Legibility) --- */
+  /* --- DARK MODE: ORBITAL DEEP --- 
+   * Logic: OKLCH(Lightness, Chroma, Hue)
+   * We anchor the theme in Hue 260 (Deep Space Indigo).
+   */
 
-  /* Backgrounds */
-  --bg-app: 2, 4, 8;
-  /* #020408 - Pitch Black */
-  --bg-panel: 13, 18, 30;
-  /* #0d121e - Deep Navy */
-  --bg-panel-soft: 23, 29, 45;
-  /* #171d2d - Lighter Card Surface */
+  /* Backgrounds: The "Void" Gradient */
+  --bg-app: oklch(12% 0.01 260);
+  /* Deepest Void - Not Black */
+  --bg-panel: oklch(16% 0.02 260);
+  /* Interactive Surface */
+  --bg-panel-soft: oklch(22% 0.03 260);
+  /* Elevated Surface */
 
-  /* Text - High Contrast Tuning */
-  --text-main: 255, 255, 255;
-  /* Pure White */
-  --text-muted: 226, 232, 240;
-  /* Slate-200 - Very Bright Grey (was darker) */
+  /* Text: High Legibility, Low Halation */
+  --text-main: oklch(96% 0.01 260);
+  /* Soft White */
+  --text-muted: oklch(70% 0.04 260);
+  /* Subdued, not dead grey */
 
-  /* Borders */
-  --border: 255, 255, 255;
-  --border-opacity: 0.15;
-  /* Stronger borders */
+  /* Borders: Subtle definition */
+  --border: oklch(35% 0.05 260);
+  --border-opacity: 0.4;
 
-  /* Accents */
-  --primary: 56, 189, 248;
-  /* Sky 400 */
-  --success: 52, 211, 153;
-  /* Emerald 400 */
-  --warning: 251, 191, 36;
-  /* Amber 400 */
-  --danger: 248, 113, 113;
-  /* Red 400 */
+  /* --- SEMANTIC SPECTRUM --- 
+   * High Chroma for attention, calibrated lightness for parity.
+   */
+  --primary: oklch(65% 0.18 240);
+  /* Electric Sky - Focus */
+  --success: oklch(68% 0.16 150);
+  /* Biosphere Green - Safety */
+  --warning: oklch(75% 0.16 80);
+  /* Solar Flare - Caution */
+  --danger: oklch(65% 0.18 25);
+  /* Critical Red - Alert */
+
+  /* Geometry: The Superellipse Approximation */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 32px;
 }
 
 :root[data-theme="light"] {
-  /* --- LIGHT MODE: SHARP LAB (High Legibility) --- */
+  /* --- LIGHT MODE: SHARP LAB --- 
+   * High lightness, extremely low chroma neutral background.
+   */
+  --bg-app: oklch(99% 0.005 260);
+  /* Paper White */
+  --bg-panel: oklch(97% 0.01 260);
+  /* Layered Card */
+  --bg-panel-soft: oklch(94% 0.02 260);
+  /* Input Surface */
 
-  /* Backgrounds */
-  --bg-app: 255, 255, 255;
-  /* Pure White */
-  --bg-panel: 255, 255, 255;
-  /* Pure White */
-  --bg-panel-soft: 241, 245, 249;
-  /* Slate-100 - Distinct Light Grey */
+  --text-main: oklch(20% 0.04 260);
+  /* Deep Ink */
+  --text-muted: oklch(55% 0.06 260);
+  /* Graphite */
 
-  /* Text - High Contrast Tuning */
-  --text-main: 2, 6, 23;
-  /* Slate-950 - Ink Black */
-  --text-muted: 71, 85, 105;
-  /* Slate-600 - Dark Grey (was too light before) */
-
-  /* Borders */
-  --border: 203, 213, 225;
-  /* Slate-300 - Crisp Grey */
+  --border: oklch(88% 0.02 260);
   --border-opacity: 1;
 
-  /* Accents */
-  --primary: 2, 132, 199;
-  /* Sky 600 - Deep Blue */
-  --success: 21, 128, 61;
-  /* Green 700 - Deep Green */
-  --warning: 180, 83, 9;
-  /* Amber 700 */
-  --danger: 185, 28, 28;
-  /* Red 700 */
+  /* Adjusted Chroma for Light Mode legibility */
+  --primary: oklch(55% 0.18 240);
+  --success: oklch(58% 0.16 150);
+  --warning: oklch(65% 0.16 80);
+  --danger: oklch(55% 0.18 25);
 }
 
-/* --- UTILITY MAPPINGS --- */
+/* --- UTILITY MAPPINGS (Backward Compatibility) --- 
+ * We map the OKLCH variables to the classes your components already use.
+ */
 
 .bg-app {
-  background-color: rgb(var(--bg-app));
+  background-color: var(--bg-app);
 }
 
 .bg-panel {
-  background-color: rgb(var(--bg-panel));
+  background-color: var(--bg-panel);
 }
 
 .bg-panel-soft {
-  background-color: rgb(var(--bg-panel-soft));
+  background-color: var(--bg-panel-soft);
 }
 
 .text-text-main {
-  color: rgb(var(--text-main));
+  color: var(--text-main);
 }
 
 .text-text-muted {
-  color: rgb(var(--text-muted));
+  color: var(--text-muted);
 }
 
 .border-border {
-  border-color: rgba(var(--border), var(--border-opacity));
+  border-color: var(--border);
 }
 
-/* Accents */
 .text-primary {
-  color: rgb(var(--primary));
+  color: var(--primary);
 }
 
 .bg-primary {
-  background-color: rgb(var(--primary));
+  background-color: var(--primary);
 }
 
 .border-primary {
-  border-color: rgb(var(--primary));
+  border-color: var(--primary);
 }
 
 .text-success {
-  color: rgb(var(--success));
+  color: var(--success);
 }
 
 .bg-success {
-  background-color: rgb(var(--success));
+  background-color: var(--success);
 }
 
-.text-warning {
-  color: rgb(var(--warning));
-}
+/* --- OPTICAL REFINEMENTS --- */
 
-.bg-warning {
-  background-color: rgb(var(--warning));
-}
-
-.text-danger {
-  color: rgb(var(--danger));
-}
-
-.bg-danger {
-  background-color: rgb(var(--danger));
-}
-
-/* Global Reset */
+/* Smooth out the "jank" of transitions */
 body {
-  background-color: rgb(var(--bg-app));
-  color: rgb(var(--text-main));
-  transition: background-color 0.1s ease, color 0.1s ease;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  transition: background-color 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* FIX: Force placeholders to be visible */
-input::placeholder,
-textarea::placeholder {
-  color: rgb(var(--text-muted));
-  opacity: 0.7;
-  /* Increased from 0.4 */
-}
-
-
-
-@keyframes sway-wind {
-
-  0%,
-  100% {
-    transform: rotate(-2deg);
-  }
-
-  50% {
-    transform: rotate(2deg);
-  }
-}
-
-@keyframes rustle {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  25% {
-    transform: scale(1.02) rotate(1deg);
-  }
-
-  75% {
-    transform: scale(0.98) rotate(-1deg);
-  }
-}
-
-@keyframes squish {
-  0% {
-    transform: scale(1);
-  }
-
-  40% {
-    transform: scale(1.2, 0.8);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+/* Force rounding to mimic Superellipse (Squircle) on Webkit */
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl {
+  -webkit-corner-smoothing: 100%;
+  /* The Apple smoothness hack */
 }

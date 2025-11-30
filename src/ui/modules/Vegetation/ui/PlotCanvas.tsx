@@ -1,16 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { usePlotData } from '../data/usePlotData';
 import { usePlotObservations } from '../data/usePlotObservations';
 import { generateLayout } from '../../../../core/plot-engine/generateLayout';
 import { generateDynamicLayout } from '../../../../core/plot-engine/dynamicGenerator';
 import { buildPlotVizModel } from '../viz/buildPlotVizModel';
 import { EnvironmentLayer } from './layers/EnvironmentLayer';
-import { BioMarker } from './layers/BioMarker';
 import type { PlotVisualizationSettings } from '../../../../core/data-model/types';
 import { clsx } from 'clsx';
-import { Target } from 'lucide-react';
+import { Target, Search } from 'lucide-react'; // Added Search icon for Empty State
 
 import { TelemetryHUD } from './TelemetryHUD';
+
+// --- VANCE UTILS: CHROMATIC TAXONOMY ---
+// Deterministic color generation based on string hash
+const getSpeciesColor = (species: string) => {
+    let hash = 0;
+    for (let i = 0; i < species.length; i++) {
+        hash = species.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    // High saturation (60-80%), Medium lightness (40-60%) for visibility on dark/light
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 70%, 50%)`;
+};
 
 interface PlotCanvasProps {
     plotId: string;
@@ -22,6 +33,9 @@ interface PlotCanvasProps {
     onDigitizeTree?: (unitId: string, x: number, y: number) => void;
     visualizationSettings?: PlotVisualizationSettings;
     onEditTree?: (treeId: string) => void;
+
+    // [Vance Injection: The Lens]
+    searchQuery?: string;
 }
 
 export const PlotCanvas: React.FC<PlotCanvasProps> = ({
@@ -34,10 +48,16 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
     digitizationMode = false,
     onDigitizeTree,
     onEditTree,
+    searchQuery = ''
 }) => {
     const { plot, blueprint, isLoading } = usePlotData(plotId);
     const { trees, veg, progress } = usePlotObservations(plotId);
     const [mousePos, setMousePos] = useState<{ x: number, y: number } | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    // Animation State
+    const frameRef = useRef<number>(0);
+    const timeRef = useRef<number>(0);
 
     // 1. Resolve Layout Engine
     const rootInstance = useMemo(() => {
@@ -52,8 +72,6 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
     }, [blueprint, plot, plotId]);
 
     // 2. Build Visualization Model
-    // We pass NO filtering settings here. The model contains EVERYTHING.
-    // Visibility is handled by the Layer components.
     const vizModel = useMemo(() => {
         if (!rootInstance || viewportWidth === 0 || viewportHeight === 0) {
             return null;
@@ -66,7 +84,6 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
             progress,
             viewportWidth,
             viewportHeight,
-            // Pass settings for physics config (spacing rules) but NOT for filtering
             visualizationSettings: {
                 ...visualizationSettings,
                 showQuadrants: true,
@@ -76,7 +93,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         });
     }, [rootInstance, trees, veg, progress, viewportWidth, viewportHeight, visualizationSettings, plot]);
 
-    // 3. Grid Snapping
+    // 3. Grid Snapping (Logic Unchanged)
     const snappedPos = useMemo(() => {
         if (!mousePos || !vizModel || !plot?.configuration) return null;
         const mainPlot = vizModel.units.find(u => u.role === 'MAIN_PLOT');
@@ -89,7 +106,6 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         const metersX = relX / scaleX;
         const metersY = plot.configuration.dimensions.length - (relY / scaleY);
 
-        // Clamp
         const clampedX = Math.max(0, Math.min(plot.configuration.dimensions.width, metersX));
         const clampedY = Math.max(0, Math.min(plot.configuration.dimensions.length, metersY));
 
@@ -99,9 +115,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         return { screenX, screenY, metersX: clampedX, metersY: clampedY };
     }, [mousePos, vizModel, plot]);
 
-    // 4. Hit Testing (for Digitization only)
-    // The interactive clicks for selection are handled directly by the SVG elements in the layers
-    // via pointer-events-auto. This hook is mainly for the "Digitization" reticle context.
+    // 4. Hit Testing (Logic Unchanged)
     const resolveContext = () => {
         if (!snappedPos || !vizModel) return null;
         const units = vizModel.units.filter(u =>
@@ -131,12 +145,139 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     };
 
-    // Global click handler for digitization
-    const handleClick = () => {
+    const handleClick = (e: React.MouseEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
         if (digitizationMode && hoveredContext && onDigitizeTree) {
             onDigitizeTree(hoveredContext.unitId, hoveredContext.localX, hoveredContext.localY);
+            return;
+        }
+
+        if (!digitizationMode && vizModel && visualizationSettings?.showTreeVisualization) {
+            for (let i = vizModel.trees.length - 1; i >= 0; i--) {
+                const tree = vizModel.trees[i];
+                const dx = clickX - tree.screenX;
+                const dy = clickY - tree.screenY;
+                const hitRadius = Math.max(tree.radius, 20);
+
+                if (dx * dx + dy * dy <= hitRadius * hitRadius) {
+                    if (onEditTree) {
+                        onEditTree(tree.id);
+                        e.stopPropagation();
+                    }
+                    return;
+                }
+            }
+        }
+
+        if (!digitizationMode && onSelectUnit && hoveredContext) {
+            onSelectUnit(hoveredContext.unitId);
         }
     };
+
+    // --- 5. THE VANCE RENDER LOOP ---
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || !vizModel || !visualizationSettings?.showTreeVisualization) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Handle High-DPI
+        const dpr = window.devicePixelRatio || 1;
+        if (canvas.width !== viewportWidth * dpr) {
+            canvas.width = viewportWidth * dpr;
+            canvas.height = viewportHeight * dpr;
+            canvas.style.width = `${viewportWidth}px`;
+            canvas.style.height = `${viewportHeight}px`;
+            ctx.scale(dpr, dpr);
+        }
+
+        const cleanQuery = searchQuery.toLowerCase().trim();
+
+        // Animation Loop
+        const render = () => {
+            timeRef.current += 0.05; // Time tick
+            ctx.clearRect(0, 0, viewportWidth, viewportHeight);
+
+            // Clipping
+            const mainPlot = vizModel.units.find(u => u.role === 'MAIN_PLOT');
+            if (mainPlot) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(mainPlot.screenX, mainPlot.screenY, mainPlot.screenWidth, mainPlot.screenHeight);
+                ctx.clip();
+            }
+
+            // --- RENDER TREES ---
+            vizModel.trees.forEach((tree, i) => {
+                // Filter Logic: "The Lens"
+                let isMatch = true;
+                let opacity = 1.0;
+
+                if (cleanQuery) {
+                    const matchText = `${tree.speciesName} ${tree.id}`.toLowerCase();
+                    isMatch = matchText.includes(cleanQuery);
+                    opacity = isMatch ? 1.0 : 0.1; // Dim non-matches
+                }
+
+                // Physics: "The Breath"
+                // Unique phase for each tree based on position so they don't sway in unison
+                const phase = tree.screenX * 0.1 + tree.screenY * 0.1;
+                // Only sway matches or if no search is active
+                const sway = isMatch ? Math.sin(timeRef.current + phase) * (tree.radius * 0.15) : 0;
+
+                const radius = tree.radius;
+                const drawX = tree.screenX + sway;
+                const drawY = tree.screenY;
+
+                ctx.globalAlpha = opacity;
+
+                // Draw Tree
+                ctx.beginPath();
+                ctx.arc(drawX, drawY, radius, 0, 2 * Math.PI);
+
+                // Color Logic: "Chromatic Taxonomy"
+                ctx.fillStyle = getSpeciesColor(tree.speciesName);
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.lineWidth = 1;
+
+                // Selection / Match Glow
+                if (cleanQuery && isMatch) {
+                    ctx.shadowColor = 'rgba(255,255,255,0.8)';
+                    ctx.shadowBlur = 10;
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                } else {
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                    ctx.shadowBlur = 2;
+                    ctx.shadowOffsetY = 1;
+                }
+
+                ctx.fill();
+                ctx.stroke();
+
+                // Reset shadow
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+            });
+
+            if (mainPlot) {
+                ctx.restore();
+            }
+
+            // Continue loop
+            frameRef.current = requestAnimationFrame(render);
+        };
+
+        render();
+
+        return () => cancelAnimationFrame(frameRef.current);
+
+    }, [vizModel, viewportWidth, viewportHeight, visualizationSettings?.showTreeVisualization, searchQuery]);
+
 
     if (isLoading || !vizModel) {
         return (
@@ -158,50 +299,30 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
             onMouseLeave={() => setMousePos(null)}
             onClick={handleClick}
         >
-            {/* --- 0. GLOBAL ANIMATION STYLES --- */}
-            <style>{`
-                @keyframes sway {
-                    0%, 100% { transform: rotate(-3deg); }
-                    50% { transform: rotate(3deg); }
-                }
-            `}</style>
-
-            {/* Parent SVG must allow pointer events to pass through to children where 'pointer-events-auto' is set */}
+            {/* 1. Environment Layer (SVG) - Grid, Labels, Floor */}
             <svg width="100%" height="100%" className="absolute inset-0 pointer-events-none" style={{ overflow: 'visible' }}>
-
-                {/* 1. Environment (Floor, Grid, Labels) */}
                 <EnvironmentLayer
                     units={vizModel.units}
                     selectedUnitId={selectedUnitId}
-                    onSelectUnit={!digitizationMode ? onSelectUnit : undefined}
+                    onSelectUnit={undefined}
                     showQuadrants={visualizationSettings?.showQuadrants ?? true}
                     showSubplots={visualizationSettings?.showSubplots ?? true}
                 />
-
-                {/* 2. Organisms (Trees) */}
-                {visualizationSettings?.showTreeVisualization && vizModel.trees.map((tree, i) => (
-                    <BioMarker
-                        key={tree.id}
-                        x={tree.screenX}
-                        y={tree.screenY}
-                        radius={tree.radius * 2} // Use scaled visual radius
-                        species={tree.speciesName}
-                        delay={i * 50} // Stagger animation for organic feel
-                        onClick={!digitizationMode && onEditTree ? (e) => {
-                            e.stopPropagation();
-                            onEditTree(tree.id);
-                        } : undefined}
-                    />
-                ))}
-
             </svg>
 
-            {/* 3. Reticle (Interactive Overlay) - Only visible during Digitization */}
+            {/* 2. Trees Layer (Canvas) - Animated & Filtered */}
+            <canvas
+                ref={canvasRef}
+                className="absolute inset-0"
+            />
+
+            {/* 3. Reticle (Digitization) */}
             {digitizationMode && snappedPos && (
                 <div
                     className="absolute pointer-events-none z-50 transition-transform duration-75 ease-out"
                     style={{ transform: `translate(${snappedPos.screenX}px, ${snappedPos.screenY}px)` }}
                 >
+                    {/* ... (Existing Reticle Code) ... */}
                     <div className="absolute -translate-x-1/2 -translate-y-1/2">
                         <div className={clsx("w-px h-10 transition-colors duration-200", hoveredContext ? "bg-success" : "bg-warning")} />
                         <div className={clsx("h-px w-10 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-200", hoveredContext ? "bg-success" : "bg-warning")} />

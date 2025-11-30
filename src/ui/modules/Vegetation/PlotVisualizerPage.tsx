@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Map as MapIcon, Info, ArrowLeft, Plus } from 'lucide-react';
+import { Map as MapIcon, Info, ArrowLeft, Plus, Search } from 'lucide-react';
 import { UnitDetailPanel } from './UnitDetailPanel';
 import { PlotOverviewPanel } from './PlotOverviewPanel';
 import { TreeEntryForm } from './components/TreeEntryForm';
+import { TreeList } from './components/TreeList';
 import { TreeEditForm } from './TreeEditForm';
 import { VegetationEntryForm } from './VegetationEntryForm';
 import { normalizeProgress, summarizeObservations } from './plotVisualizerUtils';
@@ -14,6 +15,7 @@ import { usePlotObservations } from './data/usePlotObservations';
 import { clsx } from 'clsx';
 import type { PlotVisualizationSettings } from '../../../core/data-model/types';
 import { useResponsive } from '../../../hooks/useResponsive';
+
 
 export const PlotVisualizerPage: React.FC = () => {
     const { projectId, moduleId, plotId } = useParams<{ projectId: string; moduleId: string; plotId: string }>();
@@ -46,6 +48,9 @@ export const PlotVisualizerPage: React.FC = () => {
 
     const [digitizeMode, setDigitizeMode] = useState<'NONE' | 'TREE' | 'VEG'>('NONE');
     const [initialPosition, setInitialPosition] = useState<{ x: number, y: number } | undefined>(undefined);
+
+    // [Vance Injection: Search State]
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Panel interaction state
     const [panelFocus, setPanelFocus] = useState<'map' | 'panel' | 'none'>('none');
@@ -212,8 +217,19 @@ export const PlotVisualizerPage: React.FC = () => {
                                     </button>
                                 </div>
 
-                                {/* Spacer */}
-                                <div className="flex-1" />
+                                {/* [Vance Injection: The Search Field] */}
+                                <div className="flex-1 max-w-xs relative group">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-primary transition-colors">
+                                        <Search size={14} />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Filter species, tag..."
+                                        className="w-full bg-panel-soft border border-border rounded-lg pl-9 pr-3 py-1.5 text-xs text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                    />
+                                </div>
 
                                 {/* Visualization Settings Menu */}
                                 <PlotSettingsMenu
@@ -243,12 +259,15 @@ export const PlotVisualizerPage: React.FC = () => {
                                         digitizationMode={digitizeMode !== 'NONE'}
                                         onDigitizeTree={handleDigitizeClick}
                                         onEditTree={handleEditTree}
+                                        searchQuery={searchQuery} // <--- Pass it down
                                     />
                                 )}
                                 {activeTab === 'LIST' && (
-                                    <div className="p-8 text-text-muted text-center">
-                                        List View Coming Soon
-                                    </div>
+                                    <TreeList
+                                        trees={trees}
+                                        onEditTree={handleEditTree}
+                                        searchQuery={searchQuery}
+                                    />
                                 )}
                             </div>
                         </div>

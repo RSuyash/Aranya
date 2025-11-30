@@ -1,8 +1,17 @@
 import React from 'react';
-import { List, SidebarSimple, MagnifyingGlass, Bell, User, WifiHigh } from 'phosphor-react';
+import {
+    Menu,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Search,
+    Bell,
+    User,
+    Wifi,
+    ChevronRight
+} from 'lucide-react'; // Switched to Lucide for System Unity
 import clsx from 'clsx';
-import { useHeader } from '../context/HeaderContext';
-import { Breadcrumbs } from './ui/Breadcrumbs';
+import { useHeader, type BreadcrumbItem } from '../context/HeaderContext';
+import { Link } from 'react-router-dom';
 import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
@@ -11,56 +20,91 @@ interface HeaderProps {
     collapsed?: boolean;
 }
 
-// Visual Themes: Mapped to the CSS Variables and specific glow effects
-const MODULE_THEMES = {
+// --- OPTICAL BREADCRUMBS ---
+// We extract this to keep the main component clean and chemically pure.
+const Breadcrumbs: React.FC<{ items: BreadcrumbItem[], accentColor: string, isLoading: boolean }> = ({
+    items, accentColor, isLoading
+}) => {
+    if (isLoading) {
+        return (
+            <div className="flex items-center gap-2 animate-pulse">
+                <div className="h-4 w-12 bg-panel-soft rounded-md" />
+                <ChevronRight size={12} className="text-border" />
+                <div className="h-4 w-24 bg-panel-soft rounded-md" />
+            </div>
+        );
+    }
+
+    if (items.length === 0) return null;
+
+    return (
+        <nav className="flex items-center gap-2 text-sm font-medium whitespace-nowrap overflow-hidden mask-linear-fade animate-in fade-in slide-in-from-left-2 duration-300">
+            {items.map((crumb, index) => {
+                const isLast = index === items.length - 1;
+                return (
+                    <React.Fragment key={index}>
+                        {index > 0 && (
+                            <ChevronRight size={14} className="text-text-muted/50 flex-shrink-0" strokeWidth={1.5} />
+                        )}
+                        {crumb.path && !isLast ? (
+                            <Link
+                                to={crumb.path}
+                                className="text-text-muted hover:text-text-main transition-colors decoration-transparent hover:decoration-primary/30 underline-offset-4"
+                            >
+                                {crumb.label}
+                            </Link>
+                        ) : (
+                            <span className={clsx(
+                                "transition-all duration-500 font-bold tracking-wide",
+                                isLast ? accentColor : "text-text-muted"
+                            )}>
+                                {crumb.label}
+                            </span>
+                        )}
+                    </React.Fragment>
+                );
+            })}
+        </nav>
+    );
+};
+
+// --- THEME ENGINE ---
+// Maps internal module context to our new OKLCH semantics
+const MODULE_THEMES: Record<string, { accent: string, border: string, glow: string, indicator: string }> = {
     default: {
         accent: 'text-primary',
-        border: 'border-border',
+        border: 'border-primary/20',
         glow: 'shadow-primary/5',
-        gradient: 'from-primary/0 via-primary/30 to-primary/0'
+        indicator: 'bg-primary'
     },
     emerald: {
         accent: 'text-success',
         border: 'border-success/20',
-        glow: 'shadow-success/10',
-        gradient: 'from-success/0 via-success/30 to-success/0'
+        glow: 'shadow-success/5',
+        indicator: 'bg-success'
     },
     cyan: {
-        accent: 'text-[#56ccf2]',
+        accent: 'text-[#56ccf2]', // Keep spec until variable migration
         border: 'border-[#56ccf2]/20',
-        glow: 'shadow-[#56ccf2]/10',
-        gradient: 'from-[#56ccf2]/0 via-[#56ccf2]/30 to-[#56ccf2]/0'
+        glow: 'shadow-[#56ccf2]/5',
+        indicator: 'bg-[#56ccf2]'
     },
     amber: {
         accent: 'text-warning',
         border: 'border-warning/20',
-        glow: 'shadow-warning/10',
-        gradient: 'from-warning/0 via-warning/30 to-warning/0'
+        glow: 'shadow-warning/5',
+        indicator: 'bg-warning'
     },
     rose: {
         accent: 'text-danger',
         border: 'border-danger/20',
-        glow: 'shadow-danger/10',
-        gradient: 'from-danger/0 via-danger/30 to-danger/0'
+        glow: 'shadow-danger/5',
+        indicator: 'bg-danger'
     },
-    blue: {
-        accent: 'text-blue-500',
-        border: 'border-blue-500/20',
-        glow: 'shadow-blue-500/10',
-        gradient: 'from-blue-500/0 via-blue-500/30 to-blue-500/0'
-    },
-    indigo: {
-        accent: 'text-indigo-500',
-        border: 'border-indigo-500/20',
-        glow: 'shadow-indigo-500/10',
-        gradient: 'from-indigo-500/0 via-indigo-500/30 to-indigo-500/0'
-    },
-    violet: {
-        accent: 'text-violet-500',
-        border: 'border-violet-500/20',
-        glow: 'shadow-violet-500/10',
-        gradient: 'from-violet-500/0 via-violet-500/30 to-violet-500/0'
-    },
+    // Fallbacks map to Primary to maintain "Void" consistency
+    blue: { accent: 'text-primary', border: 'border-primary/20', glow: 'shadow-primary/5', indicator: 'bg-primary' },
+    indigo: { accent: 'text-primary', border: 'border-primary/20', glow: 'shadow-primary/5', indicator: 'bg-primary' },
+    violet: { accent: 'text-primary', border: 'border-primary/20', glow: 'shadow-primary/5', indicator: 'bg-primary' },
 };
 
 export const Header: React.FC<HeaderProps> = ({
@@ -74,44 +118,47 @@ export const Header: React.FC<HeaderProps> = ({
     return (
         <header className="sticky top-0 z-40 w-full">
 
-            {/* 1. Ambient Glow Line (Top Border) */}
-            <div className={clsx("absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r opacity-50", theme.gradient)} />
+            {/* 1. The "Halo" - Top ambient light strip */}
+            <div className={clsx(
+                "absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-current to-transparent opacity-30",
+                theme.accent
+            )} />
 
-            {/* 2. Glass Container */}
+            {/* 2. Glass Structure */}
             <div className={clsx(
                 "h-16 px-4 md:px-6 flex items-center justify-between gap-4 transition-all duration-300",
-                "bg-app/80 backdrop-blur-xl border-b border-white/5",
-                theme.glow // Subtle colored shadow based on module
+                "bg-app/80 backdrop-blur-2xl border-b border-border",
+                theme.glow // Subtle colored atmospheric scatter
             )}>
 
                 {/* --- LEFT: NAVIGATION & CONTEXT --- */}
                 <div className="flex items-center gap-4 min-w-0 flex-1">
 
-                    {/* Sidebar Toggles (Tactile Buttons) */}
+                    {/* Tactile Sidebar Controls */}
                     <div className="flex items-center gap-1">
                         <button
                             onClick={onMobileMenuToggle}
-                            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-main hover:bg-white/5 transition-colors"
+                            className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl text-text-muted hover:text-text-main hover:bg-panel-soft transition-all active:scale-95"
                         >
-                            <List size={20} />
+                            <Menu size={20} />
                         </button>
                         <button
                             onClick={onToggleSidebar}
                             className={clsx(
-                                "hidden md:flex w-8 h-8 items-center justify-center rounded-lg transition-colors",
-                                "text-text-muted hover:text-text-main hover:bg-white/5",
+                                "hidden md:flex w-9 h-9 items-center justify-center rounded-xl transition-all active:scale-95",
+                                "text-text-muted hover:text-text-main hover:bg-panel-soft",
                                 collapsed && "text-primary bg-primary/10"
                             )}
                             title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                         >
-                            <SidebarSimple size={20} weight={collapsed ? "fill" : "regular"} />
+                            {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
                         </button>
                     </div>
 
-                    {/* Separator */}
-                    <div className="h-6 w-px bg-white/10 hidden md:block" />
+                    {/* Divider - Vertical Rhythm */}
+                    <div className="h-5 w-px bg-border/50 hidden md:block" />
 
-                    {/* Breadcrumbs / Title Area */}
+                    {/* Context Awareness */}
                     <div className="flex flex-col justify-center min-w-0">
                         {breadcrumbs.length > 0 ? (
                             <Breadcrumbs items={breadcrumbs} isLoading={isLoading} accentColor={theme.accent} />
@@ -123,72 +170,68 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                 </div>
 
-                {/* --- CENTER: STATUS MONITOR (Optional) --- */}
+                {/* --- CENTER: STATUS MONITOR --- */}
                 {status && (
                     <div className="hidden lg:flex items-center justify-center animate-in fade-in zoom-in duration-300">
                         <div className={clsx(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-full border bg-panel/50 backdrop-blur-md",
+                            "flex items-center gap-2 px-3 py-1.5 rounded-full border bg-panel/50 backdrop-blur-md shadow-sm",
                             theme.border
                         )}>
-                            {/* Blinking Status Dot */}
-                            <span className={clsx("relative flex h-2 w-2")}>
-                                <span className={clsx("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", theme.accent.replace('text-', 'bg-'))}></span>
-                                <span className={clsx("relative inline-flex rounded-full h-2 w-2", theme.accent.replace('text-', 'bg-'))}></span>
+                            {/* The "Pulse" of the system */}
+                            <span className="relative flex h-2 w-2">
+                                <span className={clsx("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", theme.indicator)}></span>
+                                <span className={clsx("relative inline-flex rounded-full h-2 w-2", theme.indicator)}></span>
                             </span>
-                            <span className={clsx("text-[10px] font-bold uppercase tracking-wider", theme.accent)}>
+
+                            {/* We clone the status element to inject our class logic if it's a simple string, 
+                                otherwise we trust the component passed */}
+                            <div className={clsx("text-[10px] font-bold uppercase tracking-wider", theme.accent)}>
                                 {status}
-                            </span>
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* --- RIGHT: ACTIONS & TOOLS --- */}
+                {/* --- RIGHT: TOOLBELT --- */}
                 <div className="flex items-center justify-end gap-3 flex-1">
 
-                    {/* Injected Page Actions */}
+                    {/* Action Injection Slot (Contextual Buttons) */}
                     {actions && (
                         <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-4">
                             {actions}
                         </div>
                     )}
 
-                    {/* Control Cluster: Theme & Search */}
-                    <div className="flex items-center gap-1 bg-white/5 rounded-full p-1 border border-white/5">
+                    {/* System Controls */}
+                    <div className="flex items-center gap-1 bg-panel border border-border rounded-full p-1 shadow-sm">
                         <ThemeToggle />
 
-                        <button className="w-8 h-8 flex items-center justify-center rounded-full text-text-muted hover:text-text-main hover:bg-white/5 transition-colors" title="Search (Cmd+K)">
-                            <MagnifyingGlass size={18} />
+                        <button className="w-8 h-8 flex items-center justify-center rounded-full text-text-muted hover:text-primary hover:bg-panel-soft transition-colors" title="Global Search (Cmd+K)">
+                            <Search size={16} strokeWidth={2} />
                         </button>
                     </div>
 
-                    {/* Notifications */}
-                    <button className="relative w-9 h-9 flex items-center justify-center rounded-full border border-white/5 hover:bg-white/5 transition-colors group">
-                        <Bell size={18} className="text-text-muted group-hover:text-text-main" />
-                        <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-danger rounded-full ring-2 ring-app" />
+                    {/* Notifications (The "Alert" Node) */}
+                    <button className="relative w-10 h-10 flex items-center justify-center rounded-xl border border-transparent hover:border-border hover:bg-panel-soft transition-all group">
+                        <Bell size={20} className="text-text-muted group-hover:text-text-main transition-colors" />
+                        <span className="absolute top-2.5 right-3 w-2 h-2 bg-danger rounded-full ring-2 ring-bg-app animate-pulse" />
                     </button>
 
-                    {/* Separator */}
-                    <div className="h-6 w-px bg-white/10" />
-
-                    {/* User Profile Badge */}
-                    <div className="flex items-center gap-3 pl-1 cursor-pointer group">
-                        <div className="text-right hidden xl:block">
-                            <div className="text-xs font-bold text-text-main group-hover:text-primary transition-colors">Jane Doe</div>
+                    {/* User Node */}
+                    <div className="flex items-center gap-3 pl-2 border-l border-border/50">
+                        <div className="text-right hidden xl:block leading-tight">
+                            <div className="text-xs font-bold text-text-main">Operative</div>
                             <div className="text-[9px] text-text-muted font-mono uppercase tracking-wider flex items-center justify-end gap-1">
-                                <WifiHigh size={10} className="text-success" /> Online
+                                <Wifi size={10} className="text-success" strokeWidth={3} /> Signal Strong
                             </div>
                         </div>
 
                         <div className={clsx(
-                            "relative w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-300",
-                            "bg-gradient-to-b from-white/10 to-white/5",
-                            "border-white/10 group-hover:border-primary/50 group-hover:shadow-[0_0_15px_rgba(56,189,248,0.3)]"
+                            "relative w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-300 overflow-hidden cursor-pointer",
+                            "bg-gradient-to-br from-panel to-panel-soft",
+                            "border-border group-hover:border-primary/50"
                         )}>
-                            <User size={18} weight="duotone" className="text-text-main group-hover:text-primary transition-colors" />
-                            {/* Online Status Dot */}
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-app rounded-full flex items-center justify-center">
-                                <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                            </div>
+                            <User size={18} className="text-text-main group-hover:text-primary transition-colors" strokeWidth={2} />
                         </div>
                     </div>
 

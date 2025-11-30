@@ -10,7 +10,8 @@ interface BioMarkerProps {
     delay: number; // For staggered animation
 }
 
-export const BioMarker: React.FC<BioMarkerProps> = ({ x, y, radius, species, onClick, delay }) => {
+// Wrap in React.memo to prevent re-renders when parent state (mouse pos) changes
+export const BioMarker = React.memo<BioMarkerProps>(({ x, y, radius, species, onClick, delay }) => {
     // Generate deterministic "personality"
     const seed = (x + y) * radius;
 
@@ -107,4 +108,7 @@ export const BioMarker: React.FC<BioMarkerProps> = ({ x, y, radius, species, onC
             <circle cx={0} cy={-radius} r={radius * 1.8} fill="transparent" />
         </g>
     );
-};
+}, (prev, next) => {
+    // Custom comparison to ensure strict equality on coordinates
+    return prev.x === next.x && prev.y === next.y && prev.radius === next.radius && prev.species === next.species && prev.onClick === next.onClick && prev.delay === next.delay;
+});

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Sidebar } from '../components/Sidebar';
+import { Sidebar } from '../components/Sidebar'; // Using the Lucide/Lyra Sidebar
 import { Header } from '../components/Header';
-import { MobileNav } from './parts/MobileNav';
+import { MobileNav } from './parts/MobileNav'; // Using our upgraded MobileNav
 import { HeaderProvider, useHeader } from '../context/HeaderContext';
 import clsx from 'clsx';
 
@@ -17,15 +17,14 @@ const AppContent: React.FC = () => {
     }, [location.pathname]);
 
     return (
-        // FIX: Use h-[100dvh] instead of h-screen. 
-        // This accounts for mobile browser address bars shrinking/expanding.
+        // Global Container: Semantic Background
         <div className="flex h-[100dvh] w-full bg-app text-text-main overflow-hidden selection:bg-primary/30 selection:text-primary">
 
             {/* Desktop Sidebar */}
             {!isFullScreen && (
                 <div
                     className={clsx(
-                        "hidden md:block h-full flex-shrink-0 z-40 transition-[width] duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                        "hidden md:block h-full flex-shrink-0 z-40 transition-[width] duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
                         isDesktopCollapsed ? "w-20" : "w-64"
                     )}
                 >
@@ -33,7 +32,7 @@ const AppContent: React.FC = () => {
                 </div>
             )}
 
-            {/* Mobile Drawer */}
+            {/* Mobile Drawer (Overlay) */}
             <div
                 className={clsx(
                     "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm md:hidden transition-opacity duration-300",
@@ -43,7 +42,7 @@ const AppContent: React.FC = () => {
             >
                 <div
                     className={clsx(
-                        "absolute inset-y-0 left-0 w-72 transform transition-transform duration-300 ease-out bg-panel border-r border-border",
+                        "absolute inset-y-0 left-0 w-72 transform transition-transform duration-300 ease-out bg-panel border-r border-border shadow-2xl",
                         isMobileDrawerOpen ? "translate-x-0" : "-translate-x-full"
                     )}
                     onClick={e => e.stopPropagation()}
@@ -52,8 +51,7 @@ const AppContent: React.FC = () => {
                 </div>
             </div>
 
-            {/* Main Content */}
-            {/* FIX: Added min-w-0 to prevent flex blowout */}
+            {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 min-h-0 relative transition-all duration-300">
 
                 {!isFullScreen && (
@@ -64,9 +62,9 @@ const AppContent: React.FC = () => {
                     />
                 )}
 
-                {/* FIX: Added min-h-0 to ensure this container shrinks to fit, enabling scroll */}
+                {/* Scrollable Viewport */}
                 <main className={clsx(
-                    "flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10",
+                    "flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-smooth custom-scrollbar",
                     !isFullScreen && "pb-24 md:pb-8"
                 )}>
                     <div className={clsx(

@@ -7,6 +7,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
 import { Save, Upload, Trash2 } from 'lucide-react';
+import { parseSpeciesCSV } from '../../../utils/parsers/speciesListParser';
 
 interface VegetationSettingsFormProps {
     moduleId: string;
@@ -48,23 +49,16 @@ export const VegetationSettingsForm: React.FC<VegetationSettingsFormProps> = ({ 
                 updatedAt: Date.now()
             };
 
-            // If we have a species file, process it (Simple CSV parser for now)
-            // Format: Scientific Name, Common Name, Type (TREE|SHRUB|HERB)
+            // If we have a species file, process it using the dedicated parser
             if (speciesFile) {
-                const text = await speciesFile.text();
-                const lines = text.split('\n').slice(1); // Skip header
-                const speciesList = lines.map(line => {
-                    const [sci, com, type] = line.split(',').map(s => s.trim());
-                    if (!sci) return null;
-                    return {
-                        id: sci.toLowerCase().replace(/\s+/g, '-'),
-                        scientificName: sci,
-                        commonName: com || '',
-                        type: (type as any) || 'ALL'
-                    };
-                }).filter(Boolean) as VegetationModule['predefinedSpeciesList'];
-
-                updates.predefinedSpeciesList = speciesList;
+                try {
+                    const speciesList = await parseSpeciesCSV(speciesFile);
+                    updates.predefinedSpeciesList = speciesList;
+                } catch (e) {
+                    alert("Error parsing CSV: " + (e as Error).message);
+                    setIsSaving(false);
+                    return;
+                }
             }
 
             await db.modules.update(moduleId, updates);

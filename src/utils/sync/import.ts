@@ -2,6 +2,7 @@ import { db } from '../../core/data-model/dexie';
 import type { ProjectExportData } from './export';
 import { v4 as uuidv4 } from 'uuid';
 import { generateLayout } from '../../core/plot-engine/generateLayout';
+import { generateDynamicLayout } from '../../core/plot-engine/dynamicGenerator';
 import { BlueprintRegistry, STD_10x10_QUADRANTS } from '../../core/plot-engine/blueprints';
 import type { PlotNodeInstance } from '../../core/plot-engine/types';
 import type { Plot } from '../../core/data-model/types';
@@ -97,15 +98,19 @@ export const commitImport = async (data: ProjectExportData, mode: 'REPLACE' | 'C
             const newPlotId = uuidv4();
             plotMap.set(p.id, newPlotId);
 
-            // CRITICAL: Re-calculate Sampling Unit IDs
-            // The visualizer relies on stable IDs generated from (Blueprint + PlotID).
-            // Since PlotID changed, we must map Old_SU_ID -> Path -> New_SU_ID.
+            // [THORNE FIX] Dynamic Layout Resolution
+            let oldLayout, newLayout;
 
-            const blueprint = BlueprintRegistry.get(p.blueprintId) || STD_10x10_QUADRANTS;
-
-            // Generate layouts to build the map
-            const oldLayout = generateLayout(blueprint, undefined, p.id); // Using OLD ID
-            const newLayout = generateLayout(blueprint, undefined, newPlotId); // Using NEW ID
+            if (p.blueprintId === 'dynamic' && p.configuration) {
+                // Handle Dynamic Configs
+                oldLayout = generateDynamicLayout(p.configuration, p.id);
+                newLayout = generateDynamicLayout(p.configuration, newPlotId);
+            } else {
+                // Handle Static Blueprints
+                const blueprint = BlueprintRegistry.get(p.blueprintId) || STD_10x10_QUADRANTS;
+                oldLayout = generateLayout(blueprint, undefined, p.id);
+                newLayout = generateLayout(blueprint, undefined, newPlotId);
+            }
 
             // Traverse both trees simultaneously to map IDs
             const mapNodes = (oldNode: PlotNodeInstance, newNode: PlotNodeInstance) => {

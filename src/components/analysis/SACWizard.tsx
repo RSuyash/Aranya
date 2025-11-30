@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { X, Check, MagnifyingGlass, Funnel, ArrowRight, ChartBar } from 'phosphor-react';
+import {
+    X, Check, Search, Filter,
+    ArrowRight, LineChart, Layers,
+    CheckCircle2, Circle
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import type { Plot } from '../../core/data-model/types';
 
@@ -37,54 +41,67 @@ export const SACWizard: React.FC<SACWizardProps> = ({ plots, onRun, onClose }) =
         setSelectedIds(newSet);
     };
 
-    return (
-        // Overlay: Use black with opacity for focus
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            {/* Modal: Use semantic colors (bg-panel, border-border) */}
-            <div className="bg-panel border border-border rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh] transition-colors duration-300">
+    const selectionCount = selectedIds.size;
+    const canRun = selectionCount >= 2;
 
-                {/* Header */}
-                <div className="px-6 py-5 border-b border-border bg-panel-soft/50 rounded-t-2xl flex justify-between items-center">
+    return (
+        // SURFACE: High-grade Glassmorphism overlay
+        <div className="fixed inset-0 z-[100] bg-app/80 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-200">
+
+            <div className="bg-panel border border-border rounded-3xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh] transition-all duration-300 relative overflow-hidden">
+
+                {/* Decorative gradients */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-blue-500 to-transparent" />
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
+                {/* --- HEADER --- */}
+                <div className="px-8 py-6 border-b border-border bg-panel/50 backdrop-blur-md relative z-10 flex justify-between items-start">
                     <div>
-                        <h2 className="text-xl font-bold text-text-main flex items-center gap-2">
-                            <ChartBar className="w-6 h-6 text-warning" size={24} weight="duotone" />
-                            SAC Configuration
+                        <div className="flex items-center gap-2 text-primary mb-1">
+                            <LineChart size={18} />
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Analytics Engine</span>
+                        </div>
+                        <h2 className="text-2xl font-black text-text-main tracking-tight">
+                            Species Accumulation
                         </h2>
-                        <p className="text-sm text-text-muted mt-1">
-                            Select plots to include in the Species Accumulation Curve.
+                        <p className="text-sm text-text-muted mt-2 max-w-sm">
+                            Select sample units to generate the rarefaction curve. Minimum 2 plots required for variance calculation.
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 text-text-muted hover:text-text-main transition">
-                        <X className="w-6 h-6" size={24} />
+                    <button
+                        onClick={onClose}
+                        className="p-2 rounded-full text-text-muted hover:text-text-main hover:bg-white/5 transition-all"
+                    >
+                        <X size={20} />
                     </button>
                 </div>
 
-                {/* Toolbar */}
-                <div className="p-4 border-b border-border bg-panel flex gap-4 items-center">
-                    <div className="relative flex-1">
-                        <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" size={16} />
-                        {/* Input: Semantic Backgrounds */}
+                {/* --- TOOLBAR --- */}
+                <div className="p-4 border-b border-border bg-panel-soft/30 flex gap-3 items-center">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
-                            placeholder="Filter by name, code, or habitat..."
+                            placeholder="Filter by code or habitat..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-panel-soft border border-border rounded-lg pl-10 pr-4 py-2 text-sm text-text-main focus:border-primary outline-none transition-colors"
+                            className="w-full bg-panel border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-main focus:border-primary outline-none transition-all shadow-sm"
                         />
                     </div>
                     <button
                         onClick={toggleAllVisible}
-                        className="px-3 py-2 text-xs font-medium text-text-muted hover:text-text-main border border-border rounded-lg hover:bg-panel-soft transition"
+                        className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-text-main border border-border rounded-xl hover:bg-panel transition-all"
                     >
-                        {filteredPlots.every(p => selectedIds.has(p.id)) ? 'Deselect All' : 'Select All'}
+                        {filteredPlots.every(p => selectedIds.has(p.id)) ? 'Select None' : 'Select All'}
                     </button>
                 </div>
 
-                {/* Plot List */}
-                <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                {/* --- DATASET SELECTION --- */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar bg-app/50">
                     {filteredPlots.length === 0 ? (
-                        <div className="text-center py-12 text-text-muted">
-                            No plots match your search.
+                        <div className="flex flex-col items-center justify-center py-16 text-text-muted border-2 border-dashed border-border rounded-2xl">
+                            <Filter size={32} className="mb-3 opacity-20" />
+                            <p className="text-sm">No plots matching criteria.</p>
                         </div>
                     ) : (
                         filteredPlots.map(plot => {
@@ -94,56 +111,82 @@ export const SACWizard: React.FC<SACWizardProps> = ({ plots, onRun, onClose }) =
                                     key={plot.id}
                                     onClick={() => togglePlot(plot.id)}
                                     className={clsx(
-                                        "flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer group",
+                                        "flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer group relative overflow-hidden",
                                         isSelected
-                                            // Selected state uses Primary/Warning colors with opacity
-                                            ? "bg-warning/10 border-warning/30"
-                                            : "bg-transparent border-transparent hover:bg-panel-soft hover:border-border"
+                                            ? "bg-panel border-primary/50 shadow-lg shadow-primary/5"
+                                            : "bg-panel/30 border-transparent hover:border-border hover:bg-panel"
                                     )}
                                 >
+                                    {/* Selection State Indicator */}
                                     <div className={clsx(
-                                        "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                                        "w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300",
                                         isSelected
-                                            ? "bg-warning border-warning text-app" // text-app creates contrast on the checkmark
-                                            : "border-text-muted group-hover:border-text-muted/80"
+                                            ? "bg-primary text-app scale-110"
+                                            : "bg-panel-soft border border-border text-transparent group-hover:border-text-muted"
                                     )}>
-                                        {isSelected && <Check className="w-3.5 h-3.5" weight="bold" size={14} />}
+                                        <Check size={14} strokeWidth={4} />
                                     </div>
 
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-0.5">
+                                    {/* Content */}
+                                    <div className="flex-1 z-10">
+                                        <div className="flex items-center gap-3 mb-1">
                                             <span className={clsx(
-                                                "font-mono text-sm font-bold",
-                                                isSelected ? "text-warning" : "text-text-main"
+                                                "font-mono text-sm font-bold px-1.5 rounded",
+                                                isSelected ? "bg-primary/10 text-primary" : "bg-panel-soft text-text-muted"
                                             )}>
                                                 {plot.code}
                                             </span>
-                                            <span className="text-sm text-text-muted">{plot.name}</span>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-xs text-text-muted">
-                                            <span className="flex items-center gap-1">
-                                                <Funnel className="w-3 h-3" size={12} />
-                                                {plot.habitatType || 'Unspecified Habitat'}
+                                            <span className={clsx(
+                                                "text-sm font-medium transition-colors",
+                                                isSelected ? "text-text-main" : "text-text-muted"
+                                            )}>
+                                                {plot.name}
                                             </span>
                                         </div>
+                                        <div className="flex items-center gap-2 text-xs text-text-muted">
+                                            <Layers size={12} />
+                                            <span>{plot.habitatType || 'Unclassified Habitat'}</span>
+                                        </div>
                                     </div>
+
+                                    {/* Active "Glow" Bar on Right */}
+                                    <div className={clsx(
+                                        "absolute right-0 top-0 bottom-0 w-1 transition-all duration-300",
+                                        isSelected ? "bg-primary" : "bg-transparent"
+                                    )} />
                                 </div>
                             );
                         })
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="p-4 border-t border-border bg-panel-soft/30 rounded-b-2xl flex justify-between items-center">
-                    <div className="text-sm text-text-muted">
-                        <span className="text-text-main font-bold">{selectedIds.size}</span> plots selected
+                {/* --- FOOTER (Execute) --- */}
+                <div className="p-6 border-t border-border bg-panel flex justify-between items-center relative z-20">
+                    <div className="flex items-center gap-2">
+                        {canRun ? (
+                            <CheckCircle2 size={18} className="text-success" />
+                        ) : (
+                            <Circle size={18} className="text-text-muted opacity-50" />
+                        )}
+                        <div className="text-sm text-text-muted">
+                            <span className={clsx("font-bold", canRun ? "text-text-main" : "text-text-muted")}>
+                                {selectionCount}
+                            </span> plots queued
+                        </div>
                     </div>
+
                     <button
                         onClick={() => onRun(Array.from(selectedIds))}
-                        disabled={selectedIds.size < 2}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-warning text-app rounded-xl font-bold hover:bg-warning/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!canRun}
+                        className={clsx(
+                            "flex items-center gap-3 px-8 py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-[0.98]",
+                            canRun
+                                ? "bg-primary text-app hover:bg-primary/90 shadow-primary/25"
+                                : "bg-panel-soft border border-border text-text-muted cursor-not-allowed opacity-50"
+                        )}
                     >
-                        Generate Curve <ArrowRight className="w-5 h-5" size={20} />
+                        <span>Initialize Model</span>
+                        <ArrowRight size={16} strokeWidth={3} />
                     </button>
                 </div>
             </div>

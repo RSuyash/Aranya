@@ -14,6 +14,7 @@ import { MetricsStep } from './components/MetricsStep';
 import { PhotosStep } from './components/PhotosStep';
 import { ReviewStep } from './components/ReviewStep';
 import { clsx } from 'clsx';
+import { Haptics, ImpactStyle } from '@capacitor/haptics'; // [Vance Fix: Haptics]
 
 export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     projectId,
@@ -127,6 +128,13 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     }, [plotId]);
 
     const handleSave = async (addAnother: boolean) => {
+        // [Vance Fix: The "Thud"]
+        try {
+            await Haptics.impact({ style: ImpactStyle.Heavy });
+        } catch (e) {
+            // Fallback
+        }
+
         const isTagUnique = await validateTagUniqueness();
         if (!isTagUnique) {
             alert(`Tag "${tagNumber.trim().toUpperCase()}" already exists.`);
@@ -212,8 +220,8 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const progressPercent = ((currentStepIdx + 1) / stepOrder.length) * 100;
 
     return (
-        // OVERLAY: High Z-Index to cover Mobile Nav
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+        // [Vance Fix: Z-Index Adjusted to 100]
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
 
             {/* MAIN CARD CONTAINER */}
             <div className="w-full h-full md:h-auto md:max-h-[85vh] md:max-w-3xl bg-app md:bg-panel border-0 md:border md:border-border md:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative">

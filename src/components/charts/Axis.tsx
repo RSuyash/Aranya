@@ -4,8 +4,8 @@ import type { ScaleResult } from './core/types';
 interface AxisProps {
     scale: ScaleResult;
     orientation: 'left' | 'right' | 'bottom';
-    width: number;  // Viewport width (for gridlines)
-    height: number; // Viewport height
+    width: number;
+    height: number;
     showGrid?: boolean;
     label?: string;
 }
@@ -21,52 +21,46 @@ export const Axis: React.FC<AxisProps> = ({
     const isHorizontal = orientation === 'bottom';
     const isRight = orientation === 'right';
 
-    // Helper to position category ticks in center of band
     const getPos = (val: number | string, idx: number) => {
         if (scale.type === 'category') {
             const step = isHorizontal ? width / scale.max : height / scale.max;
             return (idx * step) + (step / 2);
         }
-
-        // Linear/Time projection
         const range = scale.max - scale.min;
         const normalized = (Number(val) - scale.min) / range;
 
-        if (isHorizontal) {
-            return normalized * width;
-        } else {
-            // Y-axis usually goes Bottom-Up in charts (0 at height), 
-            // but SVG y=0 is top. So we invert.
-            return height - (normalized * height);
-        }
+        if (isHorizontal) return normalized * width;
+        return height - (normalized * height);
     };
+
+    // Semantic Classes for "HUD" look
+    const gridClass = "stroke-border opacity-20";
+    const axisClass = "stroke-border opacity-50";
+    const textClass = "fill-text-muted text-[10px] font-mono font-medium tracking-tight";
+    const labelClass = "fill-text-muted text-[10px] font-bold uppercase tracking-[0.2em] opacity-70";
 
     return (
         <g className="axis" transform={isRight ? `translate(${width}, 0)` : ''}>
-            {/* Grid Lines */}
+            {/* Grid Lines: Subtle, contextual guidance */}
             {showGrid && scale.ticks.map((tick, i) => {
                 const pos = getPos(tick, i);
-                if (isHorizontal) {
-                    return (
-                        <line key={`grid-${i}`} x1={pos} y1={0} x2={pos} y2={-height}
-                            stroke="#1d2440" strokeDasharray="4 4" />
-                    );
-                } else {
-                    return (
-                        <line key={`grid-${i}`} x1={0} y1={pos} x2={width} y2={pos}
-                            stroke="#1d2440" strokeDasharray="4 4" />
-                    );
-                }
+                return isHorizontal ? (
+                    <line key={`grid-${i}`} x1={pos} y1={0} x2={pos} y2={-height}
+                        className={gridClass} strokeDasharray="4 4" />
+                ) : (
+                    <line key={`grid-${i}`} x1={0} y1={pos} x2={width} y2={pos}
+                        className={gridClass} strokeDasharray="4 4" />
+                );
             })}
 
-            {/* Axis Line */}
+            {/* Main Axis Line */}
             {isHorizontal ? (
-                <line x1={0} y1={0} x2={width} y2={0} stroke="#555b75" />
+                <line x1={0} y1={0} x2={width} y2={0} className={axisClass} />
             ) : (
-                <line x1={0} y1={0} x2={0} y2={height} stroke="#555b75" />
+                <line x1={0} y1={0} x2={0} y2={height} className={axisClass} />
             )}
 
-            {/* Ticks & Labels */}
+            {/* Ticks & Values */}
             {scale.ticks.map((tick, i) => {
                 const pos = getPos(tick, i);
                 const text = scale.formatter(tick);
@@ -74,21 +68,19 @@ export const Axis: React.FC<AxisProps> = ({
                 if (isHorizontal) {
                     return (
                         <g key={i} transform={`translate(${pos}, 0)`}>
-                            <line y2={5} stroke="#555b75" />
-                            <text y={18} textAnchor="middle" className="text-[10px] fill-[#9ba2c0] font-mono">
-                                {text}
-                            </text>
+                            <line y2={4} className={axisClass} />
+                            <text y={16} textAnchor="middle" className={textClass}>{text}</text>
                         </g>
                     );
                 } else {
                     return (
                         <g key={i} transform={`translate(0, ${pos})`}>
-                            <line x2={isRight ? 5 : -5} stroke="#555b75" />
+                            <line x2={isRight ? 4 : -4} className={axisClass} />
                             <text
                                 x={isRight ? 8 : -8}
                                 dy={4}
                                 textAnchor={isRight ? "start" : "end"}
-                                className="text-[10px] fill-[#9ba2c0] font-mono"
+                                className={textClass}
                             >
                                 {text}
                             </text>
@@ -97,14 +89,14 @@ export const Axis: React.FC<AxisProps> = ({
                 }
             })}
 
-            {/* Axis Label */}
+            {/* Axis Title */}
             {label && (
                 <text
                     x={isHorizontal ? width / 2 : -height / 2}
-                    y={isHorizontal ? 35 : (isRight ? 40 : -40)}
+                    y={isHorizontal ? 36 : (isRight ? 40 : -40)}
                     transform={isHorizontal ? '' : 'rotate(-90)'}
                     textAnchor="middle"
-                    className="text-xs fill-[#f5f7ff] font-medium uppercase tracking-wider"
+                    className={labelClass}
                 >
                     {label}
                 </text>

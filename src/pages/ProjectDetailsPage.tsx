@@ -64,14 +64,14 @@ export const ProjectDetailsPage: React.FC = () => {
     if (!project) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] text-text-muted animate-in fade-in zoom-in duration-500">
-                <div className="w-24 h-24 rounded-full bg-panel border border-white/5 flex items-center justify-center mb-6 shadow-2xl">
+                <div className="w-24 h-24 rounded-full bg-panel border border-border flex items-center justify-center mb-6 shadow-2xl">
                     <Activity className="w-10 h-10 text-text-muted opacity-50" />
                 </div>
                 <h3 className="text-xl font-bold text-text-main mb-2">Signal Lost</h3>
                 <p className="text-sm text-text-muted mb-8">Project data could not be retrieved.</p>
                 <button
                     onClick={() => navigate('/projects')}
-                    className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-text-main font-medium transition-all"
+                    className="px-6 py-2 bg-panel-soft hover:bg-panel border border-border rounded-lg text-text-main font-medium transition-all"
                 >
                     Return to Archives
                 </button>
@@ -89,8 +89,8 @@ export const ProjectDetailsPage: React.FC = () => {
                 className={clsx(
                     "relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group overflow-hidden",
                     isActive
-                        ? "text-primary shadow-[0_0_20px_-5px_rgba(56,189,248,0.3)]"
-                        : "text-text-muted hover:text-text-main hover:bg-white/5"
+                        ? "text-primary shadow-[0_0_20px_-5px_rgba(var(--primary),0.3)]"
+                        : "text-text-muted hover:text-text-main hover:bg-panel-soft"
                 )}
             >
                 {/* Active Background Mesh */}
@@ -111,20 +111,20 @@ export const ProjectDetailsPage: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col bg-app relative overflow-hidden">
-            {/* Ambient Background */}
+            {/* Ambient Background - Gradient uses CSS var for theme safety */}
             <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
 
             {/* --- COMMAND STRIP (Navigation) --- */}
             <div className="flex-shrink-0 z-20 px-4 md:px-8 pt-4 pb-2">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-1.5 bg-panel/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-1.5 bg-panel/80 backdrop-blur-xl border border-border rounded-2xl shadow-xl">
 
                     {/* Tabs Group */}
                     <div className="flex items-center gap-1 w-full md:w-auto overflow-x-auto scrollbar-none">
                         <TabButton id="OVERVIEW" label="Overview" icon={LayoutDashboard} />
-                        <div className="w-px h-6 bg-white/10 mx-1" />
+                        <div className="w-px h-6 bg-border mx-1" />
                         <TabButton id="DATA" label="Field Data" icon={Database} />
                         <TabButton id="ANALYSIS" label="Analytics" icon={LineChart} />
-                        <div className="w-px h-6 bg-white/10 mx-1" />
+                        <div className="w-px h-6 bg-border mx-1" />
                         <TabButton id="MANAGE" label="Systems" icon={HardDrive} />
                         <TabButton id="SETTINGS" label="Config" icon={Settings} />
                     </div>
@@ -137,7 +137,7 @@ export const ProjectDetailsPage: React.FC = () => {
                                 <HardDrive size={10} /> Local
                             </span>
                         </div>
-                        <div className="w-px h-8 bg-white/10" />
+                        <div className="w-px h-8 bg-border" />
                         <div className="flex flex-col items-end">
                             <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Sync</span>
                             <span className="text-xs font-mono text-success flex items-center gap-1">
@@ -163,19 +163,19 @@ export const ProjectDetailsPage: React.FC = () => {
                         {activeTab === 'OVERVIEW' && <ProjectOverview projectId={projectId!} />}
 
                         {activeTab === 'ANALYSIS' && (
-                            <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-white/5 rounded-3xl bg-white/[0.01]">
-                                <div className="w-20 h-20 bg-panel border border-white/5 rounded-full flex items-center justify-center mb-6 shadow-2xl animate-pulse">
+                            <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border rounded-3xl bg-panel-soft/30">
+                                <div className="w-20 h-20 bg-panel border border-border rounded-full flex items-center justify-center mb-6 shadow-2xl">
                                     <LineChart className="w-10 h-10 text-primary" />
                                 </div>
                                 <h3 className="text-xl font-bold text-text-main">Analytics Module</h3>
                                 <p className="text-text-muted mt-2 max-w-sm text-center">
-                                    Advanced ecological analysis tools are being initialized. Please check back in the next update.
+                                    Advanced ecological analysis tools are online. Calculate species diversity, abundance, and biomass distribution.
                                 </p>
                                 <button
                                     onClick={() => navigate(`/projects/${projectId}/analysis`)}
-                                    className="mt-8 px-6 py-3 rounded-xl bg-primary/10 border border-primary/30 text-primary font-bold hover:bg-primary hover:text-app transition-all"
+                                    className="mt-8 px-6 py-3 rounded-xl bg-primary text-app font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
                                 >
-                                    Launch Analysis Console
+                                    <Activity size={18} /> Launch Console
                                 </button>
                             </div>
                         )}
@@ -187,7 +187,7 @@ export const ProjectDetailsPage: React.FC = () => {
                                 {/* Configuration Deck Entry */}
                                 <button
                                     onClick={() => navigate(`/projects/${projectId}/settings`)}
-                                    className="group relative overflow-hidden rounded-[32px] bg-panel border border-white/5 p-8 text-left transition-all hover:border-primary/50 hover:shadow-2xl"
+                                    className="group relative overflow-hidden rounded-[32px] bg-panel border border-border p-8 text-left transition-all hover:border-primary/50 hover:shadow-2xl"
                                 >
                                     <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -206,17 +206,17 @@ export const ProjectDetailsPage: React.FC = () => {
                                 </button>
 
                                 {/* Diagnostics Entry */}
-                                <div className="rounded-[32px] bg-panel/30 border border-white/5 p-8 flex flex-col justify-center items-start">
+                                <div className="rounded-[32px] bg-panel-soft/50 border border-border p-8 flex flex-col justify-center items-start">
                                     <div className="flex items-center gap-3 mb-4 text-warning">
                                         <Activity size={24} />
                                         <span className="font-bold uppercase tracking-wider text-sm">System Health</span>
                                     </div>
                                     <div className="space-y-4 w-full">
-                                        <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                                        <div className="flex justify-between items-center p-3 bg-panel border border-border rounded-xl">
                                             <span className="text-sm text-text-muted">Database Integrity</span>
                                             <span className="text-xs font-bold text-success bg-success/10 px-2 py-1 rounded">GOOD</span>
                                         </div>
-                                        <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                                        <div className="flex justify-between items-center p-3 bg-panel border border-border rounded-xl">
                                             <span className="text-sm text-text-muted">Module Status</span>
                                             <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">ONLINE</span>
                                         </div>

@@ -3,6 +3,7 @@ import { ChartBar, ChartLine, ChartScatter, Eye, Crosshair } from 'lucide-react'
 import { SmartChart } from './SmartChart';
 import type { SACPoint } from '../../analysis/sac';
 import type { ChartDataSeries } from './core/types';
+import { clsx } from 'clsx'; // Ensure clsx is installed or use template literals carefully
 
 export interface SACChartProps {
     data: SACPoint[];
@@ -23,11 +24,12 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
 }) => {
     const [chartType, setChartType] = useState<ChartType>(defaultChartType);
 
-    // NEW: View Controls State
+    // View Controls State
     const [showCI, setShowCI] = useState(true);
     const [showCrosshair, setShowCrosshair] = useState(true);
 
     // Adapter: Transform SAC Points into SmartChart Series
+    // NOTE: passing CSS var string directly to the chart engine
     const series: ChartDataSeries[] = [
         {
             id: 'richness',
@@ -35,7 +37,7 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
             type: chartType,
             xAxisType: 'linear',
             yAxisType: 'linear',
-            color: '#56ccf2',
+            color: 'var(--primary)', // <--- THE FIX: CSS Variable
             data: data.map(pt => ({
                 x: pt.plotsSampled,
                 y: pt.richness,
@@ -62,13 +64,12 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowCI(!showCI)}
-                        className={`
-                            flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border
-                            ${showCI
-                                ? 'bg-[#56ccf2]/10 border-[#56ccf2]/30 text-[#56ccf2]'
-                                : 'bg-transparent border-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff]'
-                            }
-                        `}
+                        className={clsx(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
+                            showCI
+                                ? "bg-primary/10 border-primary/30 text-primary"
+                                : "bg-transparent border-border text-text-muted hover:text-text-main hover:bg-panel-soft"
+                        )}
                         title="Toggle 95% Confidence Interval"
                     >
                         <Eye size={14} />
@@ -77,13 +78,12 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
 
                     <button
                         onClick={() => setShowCrosshair(!showCrosshair)}
-                        className={`
-                            flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border
-                            ${showCrosshair
-                                ? 'bg-[#56ccf2]/10 border-[#56ccf2]/30 text-[#56ccf2]'
-                                : 'bg-transparent border-[#1d2440] text-[#9ba2c0] hover:text-[#f5f7ff]'
-                            }
-                        `}
+                        className={clsx(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
+                            showCrosshair
+                                ? "bg-primary/10 border-primary/30 text-primary"
+                                : "bg-transparent border-border text-text-muted hover:text-text-main hover:bg-panel-soft"
+                        )}
                         title="Toggle Crosshair Tool"
                     >
                         <Crosshair size={14} />
@@ -91,19 +91,18 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
                     </button>
                 </div>
 
-                {/* Right: Chart Type Switcher (Existing) */}
-                <div className="flex items-center gap-1 bg-[#0b1020] border border-[#1d2440] rounded-lg p-1">
+                {/* Right: Chart Type Switcher */}
+                <div className="flex items-center gap-1 bg-panel-soft border border-border rounded-lg p-1">
                     {chartOptions.map(option => (
                         <button
                             key={option.type}
                             onClick={() => setChartType(option.type)}
-                            className={`
-                                flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all
-                                ${chartType === option.type
-                                    ? 'bg-[#56ccf2] text-[#050814] shadow-lg shadow-[#56ccf2]/20'
-                                    : 'text-[#9ba2c0] hover:text-[#f5f7ff] hover:bg-[#1d2440]/50'
-                                }
-                            `}
+                            className={clsx(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all",
+                                chartType === option.type
+                                    ? "bg-primary text-white shadow-md"
+                                    : "text-text-muted hover:text-text-main hover:bg-white/5"
+                            )}
                             title={`Switch to ${option.label} chart`}
                         >
                             {option.icon}
@@ -122,8 +121,6 @@ export const SpeciesAreaCurveChart: React.FC<SACChartProps> = ({
                     showGrid: true,
                     height: height,
                     forceZeroBaseline: chartType === 'bar',
-
-                    // NEW: Pass state to config
                     showConfidenceInterval: showCI,
                     showCrosshair: showCrosshair
                 }}

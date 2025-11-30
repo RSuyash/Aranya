@@ -91,8 +91,11 @@ export function positionTrees({
         }
     });
 
-    // Helper: Logarithmic radius scaling for visuals
-    const getRadius = (gbh: number = 50) => Math.max(4, 3 + Math.log(Math.max(1, gbh)) * 2.5);
+    // Helper: Square-root scaling for more noticeable size differences
+    // GBH 10 -> ~2.5px, GBH 50 -> ~5.6px, GBH 100 -> ~8px, GBH 500 -> ~18px
+    const getRadius = (gbh: number = 50) => Math.max(2.5, Math.sqrt(Math.max(0, gbh)) * 0.8);
+
+    const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max);
 
     // --- 2. Place FIXED Trees (Absolute Priority) ---
     // These ignore collision logic because the user explicitly placed them there.
@@ -100,13 +103,23 @@ export function positionTrees({
         const unit = units.find(u => u.id === tree.samplingUnitId);
         if (!unit) return;
 
+        const radius = getRadius(tree.gbh);
+
         // Coordinate System: Cartesian (Bottom-Left) -> Screen (Top-Left)
         // Y = UnitTop + (UnitHeight - (TreeY * Scale))
         const unitHeightPx = unit.screenHeight;
-        const x = unit.screenX + (tree.localX! * scale);
-        const y = unit.screenY + (unitHeightPx - (tree.localY! * scale));
+        let x = unit.screenX + (tree.localX! * scale);
+        let y = unit.screenY + (unitHeightPx - (tree.localY! * scale));
 
-        const radius = getRadius(tree.gbh);
+        // RULE: Strictly clamp to unit boundaries (accounting for radius)
+        // This ensures trees never "bleed" out of their assigned quadrant/unit
+        const minX = unit.screenX + radius;
+        const maxX = unit.screenX + unit.screenWidth - radius;
+        const minY = unit.screenY + radius;
+        const maxY = unit.screenY + unit.screenHeight - radius;
+
+        x = clamp(x, minX, maxX);
+        y = clamp(y, minY, maxY);
 
         nodes.push({
             id: tree.id,
@@ -145,15 +158,19 @@ export function positionTrees({
 
         unitTrees.forEach(tree => {
             const radius = getRadius(tree.gbh);
-            const margin = radius + 4; // Keep away from edges
+            const margin = radius + 2; // Tight margin to maximize space
 
             let bestX = 0, bestY = 0, maxDist = -1;
             let found = false;
 
             // Attempt 12 positions, pick the one with best separation
             for (let i = 0; i < 12; i++) {
-                const cx = unit.screenX + margin + (rng() * (unit.screenWidth - 2 * margin));
-                const cy = unit.screenY + margin + (rng() * (unit.screenHeight - 2 * margin));
+                // Ensure random position is strictly within bounds + margin
+                const availableW = Math.max(0, unit.screenWidth - 2 * margin);
+                const availableH = Math.max(0, unit.screenHeight - 2 * margin);
+
+                const cx = unit.screenX + margin + (rng() * availableW);
+                const cy = unit.screenY + margin + (rng() * availableH);
 
                 // A. Check Exclusions
                 const inExclusion = exclusions.some(ex =>

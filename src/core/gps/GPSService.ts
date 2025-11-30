@@ -1,5 +1,6 @@
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
+import { Haptics, NotificationType } from '@capacitor/haptics';
 import type { GPSState, GPSLocation, GPSConfig } from './types';
 
 class GPSService {
@@ -150,9 +151,19 @@ class GPSService {
 
         // Determine if "Locked" based on accuracy threshold (e.g., < 20m)
         const isLocked = location.accuracy <= 20;
+        const newStatus = isLocked ? 'LOCKED' : 'SEARCHING';
+
+        // Haptic Feedback on Lock Acquisition
+        if (newStatus === 'LOCKED' && this.state.status !== 'LOCKED') {
+            try {
+                Haptics.notification({ type: NotificationType.Success });
+            } catch (e) {
+                // Ignore haptic errors
+            }
+        }
 
         this.setState({
-            status: isLocked ? 'LOCKED' : 'SEARCHING',
+            status: newStatus,
             location,
             error: null,
             // Simulate satellite count based on accuracy (inverse relationship)

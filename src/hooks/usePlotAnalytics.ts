@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../core/data-model/dexie';
 import { calcStandStructure, DEFAULT_SETTINGS } from '../analysis/biometrics';
-import type { Plot, TreeObservation, VegetationModule } from '../core/data-model/types';
+import type { Plot, TreeObservation, VegetationModule, SamplingUnitProgress } from '../core/data-model/types';
 // [NEW] Import Layout Engine
 import { generateLayout } from '../core/plot-engine/generateLayout';
 import { generateDynamicLayout } from '../core/plot-engine/dynamicGenerator';
@@ -20,6 +20,12 @@ export const usePlotAnalytics = (
         () => plot ? db.modules.get(plot.moduleId) as Promise<VegetationModule> : undefined,
         [plot?.moduleId]
     );
+
+    // [THORNE FIX] 1. Fetch Progress to determine true "Effort"
+    const progress = useLiveQuery(
+        () => plot ? db.samplingUnits.where('plotId').equals(plot.id).toArray() : [],
+        [plot?.id]
+    ) || [];
 
     const settings = module?.analysisSettings || DEFAULT_SETTINGS;
 
@@ -69,24 +75,31 @@ export const usePlotAnalytics = (
             areaM2 = Number(plot.customAttributes.areaM2);
         }
 
-        // [FIX] Calculate "Surveyed Area" based on units that have trees
+        // [FIX] Calculate "Surveyed Area" based on units that have trees OR are marked DONE
         // This prevents "Unit vs Plot" from showing huge diffs when only 1 unit is done
-        const uniqueUnitIds = new Set(trees.map(t => t.samplingUnitId).filter(Boolean));
+        // AND fixes "Survivorship Bias" where empty units were ignored
+        if (rootNode) {
+            const finishedUnitIds = new Set([
+                ...progress.filter(p => p.status === 'DONE').map(p => p.samplingUnitId),
+                ...trees.map(t => t.samplingUnitId).filter(Boolean)
+            ]);
 
-        if (uniqueUnitIds.size > 0 && rootNode) {
-            let surveyedArea = 0;
-            uniqueUnitIds.forEach(uid => {
-                const uArea = getNodeArea(rootNode, uid as string);
-                if (uArea) surveyedArea += uArea;
-            });
+            if (finishedUnitIds.size > 0) {
+                let surveyedArea = 0;
+                finishedUnitIds.forEach(uid => {
+                    const uArea = getNodeArea(rootNode, uid as string);
+                    if (uArea) surveyedArea += uArea;
+                });
 
-            if (surveyedArea > 0) {
-                areaM2 = surveyedArea;
+                // Only override if we have valid partial data
+                if (surveyedArea > 0) {
+                    areaM2 = surveyedArea;
+                }
             }
         }
 
         return calcStandStructure(trees, areaM2, settings);
-    }, [plot, trees, settings, rootNode]);
+    }, [plot, trees, settings, rootNode, progress]);
 
     // 4. Calculate Unit-Level Stats
     const unitStats = useMemo(() => {

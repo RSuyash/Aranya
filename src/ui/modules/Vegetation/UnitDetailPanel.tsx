@@ -7,7 +7,6 @@ import { v4 as uuidv4 } from 'uuid';
 import type { ObsSummaryByUnit, ProgressByUnit } from './plotVisualizerUtils';
 import { clsx } from 'clsx';
 import { usePlotAnalytics } from '../../../hooks/usePlotAnalytics';
-import { useState } from 'react';
 import { GINI_RANGES, getGiniInsight } from '../../../analysis/insights/gini';
 
 import { Tooltip } from '../../../components/ui/Tooltip';
