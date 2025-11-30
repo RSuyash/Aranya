@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CaretRight } from 'phosphor-react';
+import { ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import type { BreadcrumbItem } from '../../context/HeaderContext';
 
@@ -13,17 +13,15 @@ interface BreadcrumbsProps {
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
     items,
     isLoading = false,
-    accentColor = 'text-[#56ccf2]' // Default Cyan
+    accentColor = 'text-primary'
 }) => {
 
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 animate-pulse">
-                <div className="h-4 w-12 bg-white/10 rounded" />
-                <CaretRight size={12} className="text-[#555b75]" />
-                <div className="h-4 w-24 bg-white/10 rounded" />
-                <CaretRight size={12} className="text-[#555b75]" />
-                <div className="h-4 w-32 bg-white/10 rounded" />
+                <div className="h-4 w-12 bg-panel-soft rounded" />
+                <ChevronRight size={12} className="text-border" />
+                <div className="h-4 w-24 bg-panel-soft rounded" />
             </div>
         );
     }
@@ -38,19 +36,19 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
                 return (
                     <React.Fragment key={index}>
                         {index > 0 && (
-                            <CaretRight size={12} className="text-[#555b75] flex-shrink-0" />
+                            <ChevronRight size={14} className="text-text-muted/50 flex-shrink-0" strokeWidth={1.5} />
                         )}
                         {crumb.path && !isLast ? (
                             <Link
                                 to={crumb.path}
-                                className="text-[#9ba2c0] hover:text-[#f5f7ff] transition-colors hover:underline decoration-white/20 underline-offset-4"
+                                className="text-text-muted hover:text-text-main transition-colors hover:underline decoration-border underline-offset-4"
                             >
                                 {crumb.label}
                             </Link>
                         ) : (
                             <span className={clsx(
                                 "transition-all duration-500",
-                                isLast ? "text-[#f5f7ff] font-semibold" : "text-[#9ba2c0]",
+                                isLast ? "font-bold" : "text-text-muted",
                                 isLast && accentColor // Apply thematic color to current item
                             )}>
                                 {crumb.label}

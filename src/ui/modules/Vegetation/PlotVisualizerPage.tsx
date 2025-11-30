@@ -13,9 +13,8 @@ import { PlotSettingsMenu } from './ui/PlotSettingsMenu';
 import { usePlotData } from './data/usePlotData';
 import { usePlotObservations } from './data/usePlotObservations';
 import { clsx } from 'clsx';
-import type { PlotVisualizationSettings } from '../../../core/data-model/types';
 import { useResponsive } from '../../../hooks/useResponsive';
-
+import type { ExtendedVizSettings } from './ui/PlotSettingsMenu';
 
 export const PlotVisualizerPage: React.FC = () => {
     const { projectId, moduleId, plotId } = useParams<{ projectId: string; moduleId: string; plotId: string }>();
@@ -31,7 +30,6 @@ export const PlotVisualizerPage: React.FC = () => {
     const progressByUnit = React.useMemo(() => normalizeProgress(progress), [progress]);
     const obsSummaryByUnit = React.useMemo(() => summarizeObservations(trees), [trees]);
 
-    // Create sorted list of unit IDs for navigation
     const sortedUnitIds = useMemo(() => {
         return Array.from(unitLabelMap.keys()).sort();
     }, [unitLabelMap]);
@@ -52,52 +50,46 @@ export const PlotVisualizerPage: React.FC = () => {
     // [Vance Injection: Search State]
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Panel interaction state
     const [panelFocus, setPanelFocus] = useState<'map' | 'panel' | 'none'>('none');
-    const [panelHeight, setPanelHeight] = useState<number>(320); // 40vh on typical mobile
+    const [panelHeight, setPanelHeight] = useState<number>(320);
 
     // Visualization Settings State
-    const defaultVizSettings: PlotVisualizationSettings = {
+    // [Vance Fix] Use ExtendedVizSettings and set default colorMode
+    const defaultVizSettings: ExtendedVizSettings = {
         showQuadrants: true,
         showSubplots: true,
         showQuadrantLines: false,
-        showTreeVisualization: true, // Trees should be visible by default
+        showTreeVisualization: true,
         showLabels: true,
         subplotOpacity: 0.9,
+        colorMode: 'SPECIES' // Default Lens
     };
 
-    const [vizSettings, setVizSettings] = useState<PlotVisualizationSettings>(defaultVizSettings);
+    const [vizSettings, setVizSettings] = useState<ExtendedVizSettings>(defaultVizSettings);
 
-    // Load visualization settings from plot metadata on mount
     useEffect(() => {
         if (plot?.visualizationSettings) {
-            // Merge saved settings with defaults to ensure all properties exist
-            // This ensures that if a setting wasn't previously saved, the default is used
             setVizSettings({
-                ...defaultVizSettings, // Start with defaults
-                ...plot.visualizationSettings // Override with saved values where they exist
+                ...defaultVizSettings,
+                ...plot.visualizationSettings,
+                // Ensure colorMode is valid if loading old data
+                colorMode: (plot.visualizationSettings as any).colorMode || 'SPECIES'
             });
         } else {
-            // If no saved settings exist, use defaults (this resets to defaults when no plot settings exist)
             setVizSettings(defaultVizSettings);
         }
     }, [plot]);
 
-    // Adjust panel height based on focus
     useEffect(() => {
         if (panelFocus === 'map') {
-            // Lower panel to give more map space
             setPanelHeight(200);
         } else if (panelFocus === 'panel') {
-            // Raise panel for data entry
             setPanelHeight(Math.min(window.innerHeight * 0.6, 480));
         } else {
-            // Default height
             setPanelHeight(Math.min(window.innerHeight * 0.4, 320));
         }
     }, [panelFocus]);
 
-    // Hide AppShell footer on this page
     useEffect(() => {
         document.body.classList.add('hide-footer');
         return () => document.body.classList.remove('hide-footer');
@@ -105,18 +97,14 @@ export const PlotVisualizerPage: React.FC = () => {
 
     // Handlers
     const handleSelectUnit = (unitId: string) => {
-        console.log('PlotVisualizerPage: Unit selected', unitId);
         setSelectedUnitId(unitId);
         setPanelFocus('none');
     };
 
     const handleStartSurvey = () => {
-        console.log('PlotVisualizerPage: Start survey clicked', { progressCount: progress.length });
-        // Auto-select first unit
         if (progress.length > 0) {
             const firstNotStarted = progress.find(p => p.status === 'NOT_STARTED');
             const firstUnit = firstNotStarted || progress[0];
-            console.log('PlotVisualizerPage: Selecting first unit', firstUnit);
             if (firstUnit) {
                 setSelectedUnitId(firstUnit.samplingUnitId);
             }
@@ -124,22 +112,14 @@ export const PlotVisualizerPage: React.FC = () => {
     };
 
     const handleDigitizeClick = (unitId: string, x: number, y: number) => {
-        console.log(`📍 Digitizing in Unit ${unitId} at (${x}, ${y})`);
-
-        // 1. Select the Unit (Context Switching)
         setSelectedUnitId(unitId);
-
-        // 2. Set Coordinates for Form
         setInitialPosition({ x, y });
 
-        // 3. Open Correct Form
         if (digitizeMode === 'TREE') {
             setIsAddingTree(true);
         } else if (digitizeMode === 'VEG') {
             setIsAddingVeg(true);
         }
-
-        // 4. Reset Mode (Optional: keep on for rapid entry?)
         setDigitizeMode('NONE');
     };
 
@@ -147,7 +127,6 @@ export const PlotVisualizerPage: React.FC = () => {
         setEditingTreeId(treeId);
     };
 
-    // Get actual unit label from layout
     const selectedUnitLabel = selectedUnitId ? (unitLabelMap.get(selectedUnitId) || "Unknown Unit") : "";
 
     return (
@@ -259,7 +238,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                         digitizationMode={digitizeMode !== 'NONE'}
                                         onDigitizeTree={handleDigitizeClick}
                                         onEditTree={handleEditTree}
-                                        searchQuery={searchQuery} // <--- Pass it down
+                                        searchQuery={searchQuery}
                                     />
                                 )}
                                 {activeTab === 'LIST' && (
@@ -272,15 +251,13 @@ export const PlotVisualizerPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Right Panel / Bottom Sheet Area - Overlay on Desktop, Bottom sheet on Mobile */}
+                        {/* Right Panel */}
                         <div
                             className={clsx(
                                 "bg-panel border-border shadow-2xl transition-all duration-300 overflow-y-auto",
-                                // Mobile: bottom sheet
                                 "fixed bottom-0 left-0 right-0 border-t md:border-t-0",
-                                // Desktop: right sidebar overlay - wider for better content display
                                 "md:fixed md:top-[64px] md:right-0 md:bottom-0 md:left-auto md:w-[480px] md:border-l md:p-6",
-                                (isAddingTree || isAddingVeg) && "hidden", // Hide panel when forms are open
+                                (isAddingTree || isAddingVeg) && "hidden",
                                 "z-20"
                             )}
                             style={{
@@ -299,7 +276,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                     progress={progressByUnit[selectedUnitId]}
                                     obsSummary={obsSummaryByUnit[selectedUnitId]}
                                     onAddTree={() => {
-                                        setInitialPosition(undefined); // Reset position for manual add
+                                        setInitialPosition(undefined);
                                         setIsAddingTree(true);
                                     }}
                                     onAddVeg={() => setIsAddingVeg(true)}
@@ -335,7 +312,7 @@ export const PlotVisualizerPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Full-screen forms rendered separately to ensure they overlay everything properly */}
+            {/* Forms */}
             {plot && !plotLoading && isAddingTree && selectedUnitId && (
                 <div className="fixed inset-0 top-[64px] left-0 md:left-[256px] w-full h-[calc(100vh-64px)] md:w-[calc(100vw-256px)] z-50 bg-app">
                     <TreeEntryForm
@@ -347,9 +324,7 @@ export const PlotVisualizerPage: React.FC = () => {
                         unitLabel={selectedUnitLabel}
                         initialPosition={initialPosition}
                         onClose={() => setIsAddingTree(false)}
-                        onSaveSuccess={() => {
-                            // Refresh data handled by live query
-                        }}
+                        onSaveSuccess={() => { }}
                     />
                 </div>
             )}
@@ -364,24 +339,18 @@ export const PlotVisualizerPage: React.FC = () => {
                         unitId={selectedUnitId}
                         unitLabel={selectedUnitLabel}
                         onClose={() => setIsAddingVeg(false)}
-                        onSaveSuccess={() => {
-                            // Refresh data handled by live query
-                        }}
+                        onSaveSuccess={() => { }}
                     />
                 </div>
             )}
 
-            {/* Edit Tree Form */}
             {editingTreeId && (
                 <TreeEditForm
                     treeId={editingTreeId}
                     onClose={() => setEditingTreeId(null)}
-                    onSaveSuccess={() => {
-                        // Refresh handled by live query
-                    }}
+                    onSaveSuccess={() => { }}
                 />
             )}
         </>
     );
 };
-

@@ -4,22 +4,17 @@ import { useRepositories } from '../hooks/useRepositories';
 import { db } from '../core/data-model/dexie';
 import { useHeader } from '../context/HeaderContext';
 import { useLiveQuery } from 'dexie-react-hooks';
-
-// Visual Assets
 import {
     Search, FolderOpen,
     Clock, Trash2,
     Database, LayoutGrid, List as ListIcon,
     Plus, HardDrive, Cpu,
-    Activity, Signal
+    Signal, Activity
 } from 'lucide-react';
 import { clsx } from 'clsx';
-
-// Components
 import { ProjectCreationWizard } from '../components/projects/ProjectCreationWizard';
 
 // --- SUB-COMPONENT: PROCEDURAL VISUALS ---
-// Generates a unique "Frequency Bar" based on project ID for visual identity
 const IdentityBar = ({ id }: { id: string }) => {
     const seed = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const hue = seed % 360;
@@ -37,7 +32,6 @@ const IdentityBar = ({ id }: { id: string }) => {
 
 // --- SUB-COMPONENT: ADVANCED PROJECT CARD ---
 const DataCartridge = ({ project, viewMode, onClick, onDelete }: any) => {
-    // Live Density Query
     const stats = useLiveQuery(async () => {
         const plots = await db.plots.where('projectId').equals(project.id).count();
         const trees = await db.treeObservations.where('projectId').equals(project.id).count();
@@ -50,7 +44,7 @@ const DataCartridge = ({ project, viewMode, onClick, onDelete }: any) => {
         return (
             <div
                 onClick={onClick}
-                className="group relative flex items-center justify-between p-4 pl-6 bg-panel/60 backdrop-blur-md border border-white/5 hover:border-primary/30 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg"
+                className="group relative flex items-center justify-between p-4 pl-6 bg-panel border border-border hover:border-primary/30 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg"
             >
                 <IdentityBar id={project.id} />
 
@@ -64,7 +58,7 @@ const DataCartridge = ({ project, viewMode, onClick, onDelete }: any) => {
                                 <Clock size={12} />
                                 {new Date(project.updatedAt).toLocaleDateString()}
                             </span>
-                            <span className="w-1 h-1 rounded-full bg-white/20" />
+                            <span className="w-1 h-1 rounded-full bg-border" />
                             <span className="font-mono text-primary/80">
                                 {project.id.slice(0, 8).toUpperCase()}
                             </span>
@@ -73,7 +67,6 @@ const DataCartridge = ({ project, viewMode, onClick, onDelete }: any) => {
                 </div>
 
                 <div className="flex items-center gap-8">
-                    {/* Mini Stats */}
                     <div className="flex gap-6 text-xs">
                         <div className="text-right">
                             <div className="text-[9px] uppercase tracking-wider text-text-muted font-bold">Plots</div>
@@ -96,56 +89,49 @@ const DataCartridge = ({ project, viewMode, onClick, onDelete }: any) => {
         );
     }
 
-    // GRID MODE (The "Cartridge")
+    // GRID MODE
     return (
         <div
             onClick={onClick}
-            className="group relative flex flex-col h-[280px] rounded-[24px] bg-panel/40 backdrop-blur-xl border border-white/5 hover:border-primary/40 transition-all duration-500 cursor-pointer overflow-hidden hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] hover:-translate-y-1"
+            // UPGRADE: Fixed transparency issues
+            className="group relative flex flex-col h-[280px] rounded-[24px] bg-panel border border-border hover:border-primary/40 transition-all duration-500 cursor-pointer overflow-hidden hover:shadow-xl hover:-translate-y-1"
         >
-            {/* Identity Spine */}
             <IdentityBar id={project.id} />
 
-            {/* Ambient Lighting */}
-            <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
             <div className="relative z-10 flex flex-col h-full p-7 pl-8">
-
-                {/* Header */}
                 <div className="flex justify-between items-start mb-6">
-                    <div className="p-3 rounded-2xl bg-white/5 border border-white/5 text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-app transition-all duration-500 shadow-inner">
+                    <div className="p-3 rounded-2xl bg-panel-soft border border-border text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-app transition-all duration-500 shadow-sm">
                         <FolderOpen size={24} strokeWidth={2} />
                     </div>
 
-                    {/* Status Pill */}
                     <div className={clsx(
                         "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] font-bold uppercase tracking-widest",
                         isActive
                             ? "bg-success/10 border-success/20 text-success shadow-[0_0_10px_rgba(16,185,129,0.1)]"
-                            : "bg-text-muted/5 border-white/5 text-text-muted"
+                            : "bg-panel-soft border-border text-text-muted"
                     )}>
                         <div className={clsx("w-1.5 h-1.5 rounded-full", isActive ? "bg-success animate-pulse" : "bg-text-muted")} />
                         {isActive ? 'Online' : 'Archived'}
                     </div>
                 </div>
 
-                {/* Content */}
                 <div className="mb-auto">
                     <h3 className="text-xl font-bold text-text-main mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
                         {project.name}
                     </h3>
-                    <p className="text-xs text-text-muted line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-text-muted line-clamp-2 leading-relaxed h-8">
                         {project.description || "System archive. No additional metadata provided."}
                     </p>
                 </div>
 
-                {/* Data Viz / Footer */}
-                <div className="pt-5 border-t border-white/5">
-                    {/* Data Density Bar */}
+                <div className="pt-5 border-t border-border">
                     <div className="flex items-end justify-between mb-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
                         <span>Storage Density</span>
                         <span className="text-primary">{stats?.trees ? Math.min(stats.trees, 100) : 0}%</span>
                     </div>
-                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden mb-4">
+                    <div className="h-1 w-full bg-panel-soft rounded-full overflow-hidden mb-4">
                         <div
                             className="h-full bg-gradient-to-r from-primary to-blue-400 transition-all duration-1000 ease-out group-hover:brightness-125"
                             style={{ width: `${Math.min((stats?.trees || 0), 100)}%` }}
@@ -178,8 +164,8 @@ const DataCartridge = ({ project, viewMode, onClick, onDelete }: any) => {
 
 // --- SUB-COMPONENT: SYSTEM STATS ---
 const SystemStat = ({ label, value, icon: Icon, color }: any) => (
-    <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-panel-soft/50 border border-white/5 backdrop-blur-sm">
-        <div className={clsx("p-2 rounded-lg bg-white/5", color)}>
+    <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-panel border border-border backdrop-blur-sm shadow-sm">
+        <div className={clsx("p-2 rounded-lg bg-panel-soft", color)}>
             <Icon size={16} />
         </div>
         <div>
@@ -189,18 +175,14 @@ const SystemStat = ({ label, value, icon: Icon, color }: any) => (
     </div>
 );
 
-// --- MAIN PAGE ---
 export const ProjectsPage: React.FC = () => {
     const navigate = useNavigate();
     const { projects } = useRepositories();
     const { setHeader } = useHeader();
-
-    // State
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
     const [isWizardOpen, setIsWizardOpen] = useState(false);
 
-    // Header Setup
     React.useEffect(() => {
         setHeader({
             title: 'Project Archives',
@@ -210,14 +192,12 @@ export const ProjectsPage: React.FC = () => {
             ],
             moduleColor: 'violet',
             isLoading: false,
-            // We hide the default actions to use our custom Command Strip
             actions: null
         });
     }, [setHeader]);
 
     const filteredProjects = projects.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
-    // Delete Handler
     const handleDelete = async (e: React.MouseEvent, projectId: string) => {
         e.stopPropagation();
         if (window.confirm('CONFIRM DELETION: This will permanently erase the project and all local data.')) {
@@ -234,13 +214,10 @@ export const ProjectsPage: React.FC = () => {
 
     return (
         <div className="min-h-screen pb-24 relative animate-in fade-in duration-500">
-
-            {/* Background Texture */}
             <div className="fixed inset-0 opacity-[0.02] pointer-events-none"
                 style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, var(--text-main) 1px, transparent 0)', backgroundSize: '48px 48px' }}
             />
 
-            {/* --- SECTION 1: WORKSPACE HUD --- */}
             <div className="flex flex-col lg:flex-row items-end justify-between gap-8 mb-10 pt-4">
                 <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -254,11 +231,10 @@ export const ProjectsPage: React.FC = () => {
                         Project <span className="text-text-muted font-light">Archives</span>
                     </h1>
                     <p className="text-text-muted max-w-xl text-sm leading-relaxed">
-                        Central repository for environmental survey data. Access, manage, and synchronize your field campaigns from this secure terminal.
+                        Central repository for environmental survey data. Access, manage, and synchronize your field campaigns.
                     </p>
                 </div>
 
-                {/* Stats Row */}
                 <div className="flex flex-wrap gap-4">
                     <SystemStat label="Active Projects" value={projects.length.toString().padStart(2, '0')} icon={Cpu} color="text-primary" />
                     <SystemStat label="Storage Mode" value="Local" icon={HardDrive} color="text-warning" />
@@ -266,11 +242,8 @@ export const ProjectsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* --- SECTION 2: COMMAND STRIP (Sticky) --- */}
             <div className="sticky top-4 z-30 mb-8">
-                <div className="bg-panel/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 pl-4 flex flex-col md:flex-row gap-4 items-center shadow-2xl shadow-black/20">
-
-                    {/* Search Field */}
+                <div className="bg-panel/80 backdrop-blur-xl border border-border rounded-2xl p-2 pl-4 flex flex-col md:flex-row gap-4 items-center shadow-lg">
                     <div className="relative flex-1 w-full">
                         <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                         <input
@@ -278,15 +251,12 @@ export const ProjectsPage: React.FC = () => {
                             placeholder="Search archives by name, ID, or tag..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-transparent border-none py-3 pl-8 pr-4 text-text-main placeholder:text-text-muted/50 focus:ring-0 text-lg"
+                            className="w-full bg-transparent border-none py-3 pl-8 pr-4 text-text-main placeholder:text-text-muted/50 focus:ring-0 text-lg outline-none"
                         />
                     </div>
 
-                    {/* Controls Group */}
                     <div className="flex items-center gap-2 w-full md:w-auto p-1">
-
-                        {/* View Toggles */}
-                        <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
+                        <div className="flex bg-panel-soft rounded-xl p-1 border border-border">
                             <button
                                 onClick={() => setViewMode('GRID')}
                                 className={clsx("p-2.5 rounded-lg transition-all", viewMode === 'GRID' ? "bg-panel shadow-sm text-primary" : "text-text-muted hover:text-text-main")}
@@ -301,9 +271,8 @@ export const ProjectsPage: React.FC = () => {
                             </button>
                         </div>
 
-                        <div className="w-px h-8 bg-white/10 mx-2" />
+                        <div className="w-px h-8 bg-border mx-2" />
 
-                        {/* Primary Action */}
                         <button
                             onClick={() => setIsWizardOpen(true)}
                             className="flex-1 md:flex-none flex items-center gap-3 bg-primary hover:bg-primary/90 text-app px-6 py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_-5px_var(--primary)] hover:-translate-y-0.5 active:translate-y-0"
@@ -315,10 +284,9 @@ export const ProjectsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* --- SECTION 3: THE GRID --- */}
             {filteredProjects.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-white/5 rounded-[32px] bg-white/[0.01] mx-2">
-                    <div className="w-24 h-24 bg-panel/50 border border-white/5 rounded-full flex items-center justify-center mb-6 shadow-2xl animate-pulse">
+                <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-border rounded-[32px] bg-panel-soft/30 mx-2">
+                    <div className="w-24 h-24 bg-panel border border-border rounded-full flex items-center justify-center mb-6 shadow-xl animate-pulse">
                         <Database className="w-10 h-10 text-text-muted opacity-50" />
                     </div>
                     <h3 className="text-2xl font-bold text-text-main mb-2">System Empty</h3>
@@ -350,7 +318,6 @@ export const ProjectsPage: React.FC = () => {
                 </div>
             )}
 
-            {/* --- WIZARD INTEGRATION --- */}
             <ProjectCreationWizard
                 isOpen={isWizardOpen}
                 onClose={() => setIsWizardOpen(false)}

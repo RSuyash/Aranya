@@ -4,10 +4,6 @@ import type { PlotConfiguration } from '../../../../core/plot-engine/types';
 
 // --- MATH UTILS ---
 
-/**
- * Deterministic RNG (Mulberry32).
- * Guarantees that unmapped trees appear in the same spot every time for a given Unit ID.
- */
 const createRandom = (seed: number) => {
     return () => {
         let t = (seed += 0x6D2B79F5);
@@ -26,7 +22,7 @@ const hashString = (str: string): number => {
     return hash >>> 0;
 };
 
-// --- SPATIAL INDEX (For Collision Detection of Unmapped Trees) ---
+// --- SPATIAL INDEX ---
 class SpatialHash {
     private grid: Map<string, { x: number; y: number; r: number }[]> = new Map();
     private cellSize: number;
@@ -77,12 +73,10 @@ export function positionTrees({
     const minTreeDistPx = (config?.rules?.minInterTreeDistance || 0.5) * scale;
     const spatialIndex = new SpatialHash(100);
 
-    // --- 1. Separate Fixed vs Floating Trees ---
     const fixedTrees: TreeObservation[] = [];
     const floatingTrees: TreeObservation[] = [];
 
     trees.forEach(t => {
-        // Strict check: 0 is a valid coordinate
         const hasCoords = t.localX !== undefined && t.localY !== undefined && t.localX !== null && t.localY !== null;
         if (hasCoords) {
             fixedTrees.push(t);
@@ -91,28 +85,19 @@ export function positionTrees({
         }
     });
 
-    // Helper: Square-root scaling for more noticeable size differences
-    // GBH 10 -> ~2.5px, GBH 50 -> ~5.6px, GBH 100 -> ~8px, GBH 500 -> ~18px
     const getRadius = (gbh: number = 50) => Math.max(2.5, Math.sqrt(Math.max(0, gbh)) * 0.8);
-
     const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max);
 
-    // --- 2. Place FIXED Trees (Absolute Priority) ---
-    // These ignore collision logic because the user explicitly placed them there.
+    // --- Place FIXED Trees ---
     fixedTrees.forEach(tree => {
         const unit = units.find(u => u.id === tree.samplingUnitId);
         if (!unit) return;
 
         const radius = getRadius(tree.gbh);
-
-        // Coordinate System: Cartesian (Bottom-Left) -> Screen (Top-Left)
-        // Y = UnitTop + (UnitHeight - (TreeY * Scale))
         const unitHeightPx = unit.screenHeight;
         let x = unit.screenX + (tree.localX! * scale);
         let y = unit.screenY + (unitHeightPx - (tree.localY! * scale));
 
-        // RULE: Strictly clamp to unit boundaries (accounting for radius)
-        // This ensures trees never "bleed" out of their assigned quadrant/unit
         const minX = unit.screenX + radius;
         const maxX = unit.screenX + unit.screenWidth - radius;
         const minY = unit.screenY + radius;
@@ -126,17 +111,16 @@ export function positionTrees({
             unitId: tree.samplingUnitId,
             speciesName: tree.speciesName,
             gbh: tree.gbh,
+            condition: tree.condition, // [Vance Added] Passthrough
             screenX: x,
             screenY: y,
             radius,
         });
 
-        // Register in index so floating trees avoid them
         spatialIndex.insert(x, y, radius);
     });
 
-    // --- 3. Place FLOATING Trees (Physics / "Best Candidate" Algo) ---
-    // Group by unit so they spawn inside their container
+    // --- Place FLOATING Trees ---
     const floatingByUnit = new Map<string, TreeObservation[]>();
     floatingTrees.forEach(t => {
         if (!floatingByUnit.has(t.samplingUnitId)) floatingByUnit.set(t.samplingUnitId, []);
@@ -148,38 +132,31 @@ export function positionTrees({
         if (!unit) return;
 
         const rng = createRandom(hashString(unitId));
-
-        // Define exclusion zones (Subplots that forbid canopy)
         const exclusions = units.filter(u =>
             u.role === 'SUBPLOT' && u.excludesCanopy &&
-            // Simple overlap check
             u.screenX >= unit.screenX && u.screenX < unit.screenX + unit.screenWidth
         );
 
         unitTrees.forEach(tree => {
             const radius = getRadius(tree.gbh);
-            const margin = radius + 2; // Tight margin to maximize space
+            const margin = radius + 2;
 
             let bestX = 0, bestY = 0, maxDist = -1;
             let found = false;
 
-            // Attempt 12 positions, pick the one with best separation
             for (let i = 0; i < 12; i++) {
-                // Ensure random position is strictly within bounds + margin
                 const availableW = Math.max(0, unit.screenWidth - 2 * margin);
                 const availableH = Math.max(0, unit.screenHeight - 2 * margin);
 
                 const cx = unit.screenX + margin + (rng() * availableW);
                 const cy = unit.screenY + margin + (rng() * availableH);
 
-                // A. Check Exclusions
                 const inExclusion = exclusions.some(ex =>
                     cx >= ex.screenX && cx <= ex.screenX + ex.screenWidth &&
                     cy >= ex.screenY && cy <= ex.screenY + ex.screenHeight
                 );
                 if (inExclusion) continue;
 
-                // B. Check Neighbors (Spatial Hash)
                 const neighbors = spatialIndex.query(cx, cy, minTreeDistPx * 4);
                 let closest = Infinity;
 
@@ -196,7 +173,6 @@ export function positionTrees({
                 }
             }
 
-            // Fallback: If map is full, center it or use last guess
             if (!found) {
                 bestX = unit.screenX + unit.screenWidth / 2;
                 bestY = unit.screenY + unit.screenHeight / 2;
@@ -207,6 +183,7 @@ export function positionTrees({
                 unitId: tree.samplingUnitId,
                 speciesName: tree.speciesName,
                 gbh: tree.gbh,
+                condition: tree.condition, // [Vance Added] Passthrough
                 screenX: bestX,
                 screenY: bestY,
                 radius,
@@ -216,6 +193,5 @@ export function positionTrees({
         });
     });
 
-    // 4. Depth Sorting (Y-Sort) for 2.5D visual stacking
     return nodes.sort((a, b) => a.screenY - b.screenY);
 }

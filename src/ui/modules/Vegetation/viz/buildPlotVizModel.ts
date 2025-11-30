@@ -29,6 +29,7 @@ export interface TreeVizNode {
     unitId: string;
     speciesName: string;
     gbh?: number;
+    condition?: string; // [Vance Added] Critical for Vitality Lens
 
     screenX: number;
     screenY: number;
@@ -101,9 +102,9 @@ export function buildPlotVizModel({
     progress,
     viewportWidth,
     viewportHeight,
-    visualizationSettings, // Kept for reference but not filtering here anymore
+    visualizationSettings,
 }: BuildVizModelArgs): PlotVizModel {
-    const padding = 24; // Increased padding for aesthetics
+    const padding = 24;
     const allNodes = collectAllNodes(rootInstance);
     const bounds = computeBounds(allNodes);
 
@@ -111,7 +112,6 @@ export function buildPlotVizModel({
     const plotWidthMeters = bounds.maxX - bounds.minX;
     const plotHeightMeters = bounds.maxY - bounds.minY;
 
-    // Avoid division by zero
     const effectiveW = plotWidthMeters || 1;
     const effectiveH = plotHeightMeters || 1;
 
@@ -135,9 +135,6 @@ export function buildPlotVizModel({
         vegCountMap.set(v.samplingUnitId, (vegCountMap.get(v.samplingUnitId) || 0) + 1);
     });
 
-    // Map nodes to viz units
-    // CRITICAL CHANGE: We DO NOT filter nodes here based on settings.
-    // We generate the entire physics model, then the UI Layer decides what to draw.
     const units: UnitVizNode[] = allNodes.map(node => {
         const { width, height } = getNodeDimensions(node);
         // Transform Coordinates: Bottom-Left Origin (Cartesian) -> Top-Left Origin (SVG)
@@ -148,12 +145,11 @@ export function buildPlotVizModel({
 
         const status = progressMap.get(node.id) || 'NOT_STARTED';
 
-        // Determine z-index based on role and type
         let zIndex = 0;
         if (node.role === 'MAIN_PLOT') zIndex = 0;
         else if (node.role === 'QUADRANT') zIndex = 1;
         else if (node.type === 'SAMPLING_UNIT' && !node.role) zIndex = 1;
-        else if (node.role === 'SUBPLOT') zIndex = 2; // Subplots always on top
+        else if (node.role === 'SUBPLOT') zIndex = 2;
 
         return {
             id: node.id,

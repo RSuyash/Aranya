@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../core/data-model/dexie';
 import { calcStandStructure, DEFAULT_SETTINGS } from '../analysis/biometrics';
-import type { Plot, TreeObservation, VegetationModule, SamplingUnitProgress } from '../core/data-model/types';
+import type { Plot, TreeObservation, VegetationModule } from '../core/data-model/types';
 // [NEW] Import Layout Engine
 import { generateLayout } from '../core/plot-engine/generateLayout';
 import { generateDynamicLayout } from '../core/plot-engine/dynamicGenerator';

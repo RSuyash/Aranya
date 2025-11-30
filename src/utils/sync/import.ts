@@ -1,6 +1,7 @@
 import { db } from '../../core/data-model/dexie';
 import type { ProjectExportData } from './export';
 import { v4 as uuidv4 } from 'uuid';
+// [THORNE] Added Dynamic Generator Import
 import { generateLayout } from '../../core/plot-engine/generateLayout';
 import { generateDynamicLayout } from '../../core/plot-engine/dynamicGenerator';
 import { BlueprintRegistry, STD_10x10_QUADRANTS } from '../../core/plot-engine/blueprints';
@@ -98,15 +99,20 @@ export const commitImport = async (data: ProjectExportData, mode: 'REPLACE' | 'C
             const newPlotId = uuidv4();
             plotMap.set(p.id, newPlotId);
 
-            // [THORNE FIX] Dynamic Layout Resolution
-            let oldLayout, newLayout;
+            // CRITICAL: Re-calculate Sampling Unit IDs
+            // The visualizer relies on stable IDs generated from (Blueprint + PlotID).
+            // Since PlotID changed, we must map Old_SU_ID -> Path -> New_SU_ID.
+
+            // [THORNE FIX] Handle Dynamic Layouts vs Static Blueprints
+            let oldLayout: PlotNodeInstance;
+            let newLayout: PlotNodeInstance;
 
             if (p.blueprintId === 'dynamic' && p.configuration) {
-                // Handle Dynamic Configs
+                // Case A: Custom Plot
                 oldLayout = generateDynamicLayout(p.configuration, p.id);
                 newLayout = generateDynamicLayout(p.configuration, newPlotId);
             } else {
-                // Handle Static Blueprints
+                // Case B: Standard Blueprint
                 const blueprint = BlueprintRegistry.get(p.blueprintId) || STD_10x10_QUADRANTS;
                 oldLayout = generateLayout(blueprint, undefined, p.id);
                 newLayout = generateLayout(blueprint, undefined, newPlotId);
@@ -129,7 +135,7 @@ export const commitImport = async (data: ProjectExportData, mode: 'REPLACE' | 'C
                 ...p,
                 id: newPlotId,
                 projectId: newProjectId,
-                moduleId: moduleMap.get(p.moduleId) || p.moduleId, // Should always find map
+                moduleId: moduleMap.get(p.moduleId) || p.moduleId,
                 createdAt: now,
                 updatedAt: now,
                 syncStatus: 'LOCAL_ONLY' as const

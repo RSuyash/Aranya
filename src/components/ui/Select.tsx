@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { CaretDown } from 'phosphor-react';
+import { ChevronDown } from 'lucide-react';
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     label?: string;
@@ -25,11 +25,12 @@ export const Select: React.FC<SelectProps> = ({
                     {label}
                 </label>
             )}
-            <div className="relative">
+            <div className="relative group">
                 <select
                     id={selectId}
                     className={clsx(
-                        'w-full bg-panel border rounded-lg px-4 py-2.5 text-text-main appearance-none transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50',
+                        'w-full bg-panel border rounded-xl px-4 py-3 text-text-main appearance-none transition-all duration-200 outline-none',
+                        'hover:bg-panel-soft',
                         error
                             ? 'border-danger focus:border-danger'
                             : 'border-border focus:border-primary',
@@ -44,8 +45,8 @@ export const Select: React.FC<SelectProps> = ({
                         </option>
                     ))}
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
-                    <CaretDown size={16} />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none group-hover:text-primary transition-colors">
+                    <ChevronDown size={16} />
                 </div>
             </div>
             {error && <p className="mt-1 text-xs text-danger">{error}</p>}

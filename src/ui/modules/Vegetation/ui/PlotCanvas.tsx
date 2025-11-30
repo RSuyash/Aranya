@@ -5,20 +5,18 @@ import { generateLayout } from '../../../../core/plot-engine/generateLayout';
 import { generateDynamicLayout } from '../../../../core/plot-engine/dynamicGenerator';
 import { buildPlotVizModel } from '../viz/buildPlotVizModel';
 import { EnvironmentLayer } from './layers/EnvironmentLayer';
-import type { PlotVisualizationSettings } from '../../../../core/data-model/types';
 import { clsx } from 'clsx';
-import { Target, Search } from 'lucide-react'; // Added Search icon for Empty State
-
+import { Target } from 'lucide-react';
 import { TelemetryHUD } from './TelemetryHUD';
+// [Vance Fix] Import the Extended Type
+import type { ExtendedVizSettings } from './PlotSettingsMenu';
 
 // --- VANCE UTILS: CHROMATIC TAXONOMY ---
-// Deterministic color generation based on string hash
 const getSpeciesColor = (species: string) => {
     let hash = 0;
     for (let i = 0; i < species.length; i++) {
         hash = species.charCodeAt(i) + ((hash << 5) - hash);
     }
-    // High saturation (60-80%), Medium lightness (40-60%) for visibility on dark/light
     const hue = Math.abs(hash % 360);
     return `hsl(${hue}, 70%, 50%)`;
 };
@@ -31,10 +29,9 @@ interface PlotCanvasProps {
     onSelectUnit?: (unitId: string) => void;
     digitizationMode?: boolean;
     onDigitizeTree?: (unitId: string, x: number, y: number) => void;
-    visualizationSettings?: PlotVisualizationSettings;
+    // [Vance Fix] Update type definition
+    visualizationSettings?: ExtendedVizSettings;
     onEditTree?: (treeId: string) => void;
-
-    // [Vance Injection: The Lens]
     searchQuery?: string;
 }
 
@@ -93,7 +90,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         });
     }, [rootInstance, trees, veg, progress, viewportWidth, viewportHeight, visualizationSettings, plot]);
 
-    // 3. Grid Snapping (Logic Unchanged)
+    // 3. Grid Snapping
     const snappedPos = useMemo(() => {
         if (!mousePos || !vizModel || !plot?.configuration) return null;
         const mainPlot = vizModel.units.find(u => u.role === 'MAIN_PLOT');
@@ -115,7 +112,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         return { screenX, screenY, metersX: clampedX, metersY: clampedY };
     }, [mousePos, vizModel, plot]);
 
-    // 4. Hit Testing (Logic Unchanged)
+    // 4. Hit Testing
     const resolveContext = () => {
         if (!snappedPos || !vizModel) return null;
         const units = vizModel.units.filter(u =>
@@ -185,7 +182,6 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Handle High-DPI
         const dpr = window.devicePixelRatio || 1;
         if (canvas.width !== viewportWidth * dpr) {
             canvas.width = viewportWidth * dpr;
@@ -212,7 +208,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
             }
 
             // --- RENDER TREES ---
-            vizModel.trees.forEach((tree, i) => {
+            vizModel.trees.forEach((tree) => {
                 // Filter Logic: "The Lens"
                 let isMatch = true;
                 let opacity = 1.0;
@@ -224,9 +220,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
                 }
 
                 // Physics: "The Breath"
-                // Unique phase for each tree based on position so they don't sway in unison
                 const phase = tree.screenX * 0.1 + tree.screenY * 0.1;
-                // Only sway matches or if no search is active
                 const sway = isMatch ? Math.sin(timeRef.current + phase) * (tree.radius * 0.15) : 0;
 
                 const radius = tree.radius;
@@ -239,8 +233,34 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
                 ctx.beginPath();
                 ctx.arc(drawX, drawY, radius, 0, 2 * Math.PI);
 
-                // Color Logic: "Chromatic Taxonomy"
-                ctx.fillStyle = getSpeciesColor(tree.speciesName);
+                // [Vance Injection: Biometric Lens Logic]
+                const mode = visualizationSettings?.colorMode || 'SPECIES';
+
+                let fillStyle = '#ccc';
+
+                if (mode === 'SPECIES') {
+                    fillStyle = getSpeciesColor(tree.speciesName);
+                }
+                else if (mode === 'STRUCTURE') {
+                    // Gradient from Green (Small) -> Yellow -> Red (Massive)
+                    const gbh = tree.gbh || 10;
+                    if (gbh < 30) fillStyle = '#4ade80'; // Green-400 (Sapling)
+                    else if (gbh < 60) fillStyle = '#22c55e'; // Green-500 (Young)
+                    else if (gbh < 100) fillStyle = '#eab308'; // Yellow-500 (Mature)
+                    else if (gbh < 200) fillStyle = '#f97316'; // Orange-500 (Large)
+                    else fillStyle = '#ef4444'; // Red-500 (Giant)
+                }
+                else if (mode === 'VITALITY') {
+                    // Parse condition (Assuming string enum in Data Model)
+                    const cond = (tree.condition || 'ALIVE').toUpperCase();
+                    if (cond === 'ALIVE') fillStyle = '#22c55e'; // Green
+                    else if (cond === 'DAMAGED') fillStyle = '#f97316'; // Orange
+                    else if (cond === 'DYING') fillStyle = '#ef4444'; // Red
+                    else if (cond === 'DEAD') fillStyle = '#9ca3af'; // Gray
+                    else fillStyle = '#22c55e'; // Default
+                }
+
+                ctx.fillStyle = fillStyle;
                 ctx.strokeStyle = 'rgba(0,0,0,0.2)';
                 ctx.lineWidth = 1;
 
@@ -276,7 +296,7 @@ export const PlotCanvas: React.FC<PlotCanvasProps> = ({
 
         return () => cancelAnimationFrame(frameRef.current);
 
-    }, [vizModel, viewportWidth, viewportHeight, visualizationSettings?.showTreeVisualization, searchQuery]);
+    }, [vizModel, viewportWidth, viewportHeight, visualizationSettings, searchQuery]);
 
 
     if (isLoading || !vizModel) {
