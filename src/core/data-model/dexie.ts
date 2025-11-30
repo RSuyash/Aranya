@@ -10,6 +10,17 @@ import type {
     SurveyTrack,
 } from './types';
 
+// [THORNE] New Interface for dedicated media storage
+export interface MediaItem {
+    id: string;
+    parentId: string; // Links to Tree/Veg ID
+    type: string;     // 'BARK', 'LEAF', 'GROUND', etc.
+    blob: Blob;       // The raw binary data
+    mimeType: string;
+    timestamp: number;
+    synced: boolean;
+}
+
 export class AranyaDB extends Dexie {
     projects!: Table<Project, string>;
     modules!: Table<VegetationModule, string>;
@@ -19,12 +30,12 @@ export class AranyaDB extends Dexie {
     samplingUnits!: Table<SamplingUnitProgress, string>;
     analysisConfigs!: Table<AnalysisConfig, string>;
     surveyTracks!: Table<SurveyTrack, string>;
-    // speciesList, media, auditLogs can be added here
+    media!: Table<MediaItem, string>; // [THORNE] New Table
 
     constructor() {
         super('ProjectTerraDB_v1');
 
-        this.version(6).stores({
+        this.version(7).stores({ // Incremented Version
             projects: 'id, name, syncStatus',
             modules: 'id, projectId, type',
             plots: 'id, projectId, moduleId, syncStatus, [syncStatus+lastModifiedAt]',
@@ -35,6 +46,7 @@ export class AranyaDB extends Dexie {
             samplingUnits: 'id, projectId, plotId, moduleId, [plotId+samplingUnitId]',
             analysisConfigs: 'id, projectId, moduleId, type',
             surveyTracks: 'id, projectId, moduleId, surveyorId, [projectId+moduleId]',
+            media: 'id, parentId, type, timestamp, [parentId+type]' // [THORNE] Optimized indices
         });
     }
 }

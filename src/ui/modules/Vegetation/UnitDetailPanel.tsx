@@ -2,13 +2,12 @@ import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../core/data-model/dexie';
 import type { Plot } from '../../../core/data-model/types';
-import { Plus, Trash2, CheckCircle, X, ChevronRight, ChevronLeft, Activity, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, X, ChevronRight, ChevronLeft, Activity, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import type { ObsSummaryByUnit, ProgressByUnit } from './plotVisualizerUtils';
 import { clsx } from 'clsx';
 import { usePlotAnalytics } from '../../../hooks/usePlotAnalytics';
 import { GINI_RANGES, getGiniInsight } from '../../../analysis/insights/gini';
-
 import { Tooltip } from '../../../components/ui/Tooltip';
 
 interface UnitDetailPanelProps {
@@ -82,6 +81,16 @@ export const UnitDetailPanel: React.FC<UnitDetailPanelProps> = ({
     ) || [];
 
     const { unitStats, comparison } = usePlotAnalytics(plot, allPlotTrees, unitId, trees);
+
+    // [THORNE] Live query to check media counts for the displayed recent trees
+    const recentTreeIds = trees.slice(0, 5).map(t => t.id);
+    const recentMedia = useLiveQuery(async () => {
+        // Small query for just these IDs
+        const items = await db.media.where('parentId').anyOf(recentTreeIds).toArray();
+        const map = new Map<string, number>();
+        items.forEach(m => map.set(m.parentId, (map.get(m.parentId) || 0) + 1));
+        return map;
+    }, [recentTreeIds.join(',')]) || new Map();
 
     const handleMarkDone = async () => {
         const isDone = progress?.status === 'DONE';
@@ -317,40 +326,58 @@ export const UnitDetailPanel: React.FC<UnitDetailPanelProps> = ({
                     </button>
                 </div>
 
-                {/* 4. Recent Trees List */}
+                {/* 4. Recent Trees List (ENHANCED) */}
                 <div className="space-y-3 pb-8">
                     <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider">
                         Recent Trees ({trees.length})
                     </h3>
 
-                    {trees.slice(0, 5).map(tree => (
-                        <div
-                            key={tree.id}
-                            onClick={() => onEditTree?.(tree.id)}
-                            className="bg-app border border-border rounded-lg p-3 flex items-center justify-between group cursor-pointer hover:border-primary transition"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-panel-soft flex items-center justify-center text-primary font-mono text-xs">
-                                    {tree.tagNumber}
-                                </div>
-                                <div>
-                                    <div className="text-sm text-text-main font-medium">{tree.speciesName}</div>
-                                    <div className="text-xs text-text-muted">GBH: {(tree.gbh || 0).toFixed(1)}cm</div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm('Are you sure you want to delete this tree?')) {
-                                        db.treeObservations.delete(tree.id);
-                                    }
-                                }}
-                                className="text-text-muted hover:text-danger opacity-0 group-hover:opacity-100 transition p-2"
+                    {trees.slice(0, 5).map(tree => {
+                        const photoCount = recentMedia.get(tree.id) || 0;
+
+                        return (
+                            <div
+                                key={tree.id}
+                                onClick={() => onEditTree?.(tree.id)}
+                                className="bg-app border border-border rounded-lg p-3 flex items-center justify-between group cursor-pointer hover:border-primary transition"
                             >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ))}
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-8 h-8 shrink-0 rounded bg-panel-soft flex items-center justify-center text-primary font-mono text-xs border border-white/5">
+                                        {tree.tagNumber}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-sm text-text-main font-medium truncate">{tree.speciesName}</div>
+                                        <div className="text-xs text-text-muted flex items-center gap-2">
+                                            <span>{(tree.gbh || 0).toFixed(1)}cm</span>
+
+                                            {/* [THORNE] Media Indicator */}
+                                            {photoCount > 0 ? (
+                                                <span className="flex items-center gap-1 text-[9px] bg-primary/10 text-primary px-1.5 rounded border border-primary/20">
+                                                    <ImageIcon size={10} /> {photoCount}
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-1 text-[9px] bg-warning/10 text-warning px-1.5 rounded border border-warning/20 opacity-70">
+                                                    No Img
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (confirm('Are you sure you want to delete this tree?')) {
+                                            db.treeObservations.delete(tree.id);
+                                        }
+                                    }}
+                                    className="text-text-muted hover:text-danger opacity-0 group-hover:opacity-100 transition p-2"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        );
+                    })}
 
                     {trees.length === 0 && (
                         <div className="text-center py-8 text-text-muted text-sm bg-app/50 rounded-xl border border-dashed border-border">

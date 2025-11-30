@@ -5,14 +5,18 @@ import './index.css'
 import App from './App.tsx'
 import { seedDemoProjectIfEmpty } from './core/data-model/seed'
 import { seedAnalysisTestProject } from './core/data-model/seedAnalysisTest'
-
 import { ThemeProvider } from './context/ThemeContext'
+
+// [THORNE] Critical for Web/PC Camera Support
+import { defineCustomElements } from '@ionic/pwa-elements/loader';
+
+// Initialize the PWA Elements (Camera, Toast, etc.) for the browser
+defineCustomElements(window);
 
 // Seed the database
 seedDemoProjectIfEmpty().catch(console.error);
 
 // OPTIONAL: Uncomment to seed Analysis Test Project
-// You can call this from browser console: seedAnalysisTestProject()
 (window as any).seedAnalysisTestProject = seedAnalysisTestProject;
 
 createRoot(document.getElementById('root')!).render(

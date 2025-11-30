@@ -14,7 +14,7 @@ import { MetricsStep } from './components/MetricsStep';
 import { PhotosStep } from './components/PhotosStep';
 import { ReviewStep } from './components/ReviewStep';
 import { clsx } from 'clsx';
-import { Haptics, ImpactStyle } from '@capacitor/haptics'; // [Vance Fix: Haptics]
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     projectId,
@@ -28,6 +28,10 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
 }) => {
     const [currentStep, setCurrentStep] = useState<Step>('ID');
 
+    // [THORNE] Stable Tree ID for Media Linking
+    // We generate this ONCE on mount so we can attach photos before hitting "Save"
+    const [treeId, setTreeId] = useState<string>(() => uuidv4());
+
     // --- Form State ---
     const [tagNumber, setTagNumber] = useState('');
     const [speciesName, setSpeciesName] = useState('');
@@ -39,8 +43,11 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
         { id: uuidv4(), gbh: '' }
     ]);
     const [height, setHeight] = useState('');
-    const [hasBarkPhoto, setHasBarkPhoto] = useState(false);
-    const [hasLeafPhoto, setHasLeafPhoto] = useState(false);
+
+    // [THORNE] Deprecated boolean states for photos - now handled by DB queries in ImageInput
+    // Keeping placeholders if needed for legacy prop compatibility, but functionality is moved.
+    const hasBarkPhoto = false;
+    const hasLeafPhoto = false;
 
     // --- GPS Stats ---
     const [gpsStats, setGpsStats] = useState<{ samples: number, acc: number | null }>({ samples: 0, acc: null });
@@ -128,7 +135,6 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     }, [plotId]);
 
     const handleSave = async (addAnother: boolean) => {
-        // [Vance Fix: The "Thud"]
         try {
             await Haptics.impact({ style: ImpactStyle.Heavy });
         } catch (e) {
@@ -152,8 +158,12 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
         if (equivalentGBH > gbhThreshold) validationWarnings.push(`GBH > ${gbhThreshold}cm`);
         if (height && parseFloat(height) > heightThreshold) validationWarnings.push(`Height > ${heightThreshold}m`);
 
+        // Check for attached media (Optional validation)
+        // const mediaCount = await db.media.where('parentId').equals(treeId).count();
+        // if (moduleData?.validationSettings?.mandatoryPhotos && mediaCount === 0) ...
+
         const newTree: TreeObservation = {
-            id: uuidv4(),
+            id: treeId, // [THORNE] Use the pre-generated ID
             projectId, moduleId, plotId, samplingUnitId: unitId,
             tagNumber: tagNumber.trim().toUpperCase(),
             speciesListId: selectedSpeciesId || undefined,
@@ -175,7 +185,7 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             gpsAccuracyM: gpsResult?.accuracy || 0,
             gpsSampleCount: gpsResult?.samples || 0,
             createdAt: now, updatedAt: now,
-            images: []
+            images: [] // Images are now in 'media' table, but we keep this empty array for type compat
         };
 
         await db.treeObservations.add(newTree);
@@ -190,6 +200,9 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
 
         if (addAnother) {
             // Reset for rapid entry
+            // [THORNE] Critical: Generate NEW ID for the next tree
+            setTreeId(uuidv4());
+
             setTagNumber((prev) => (parseInt(prev) + 1).toString());
             setSpeciesName('');
             setSpeciesSearch('');
@@ -197,8 +210,6 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
             setSelectedSpeciesId(null);
             setStems([{ id: uuidv4(), gbh: '' }]);
             setHeight('');
-            setHasBarkPhoto(false);
-            setHasLeafPhoto(false);
             setCurrentStep('ID');
             gpsManager.startMeasuring();
             setGpsStats({ samples: 0, acc: null });
@@ -220,7 +231,6 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
     const progressPercent = ((currentStepIdx + 1) / stepOrder.length) * 100;
 
     return (
-        // [Vance Fix: Z-Index Adjusted to 100]
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
 
             {/* MAIN CARD CONTAINER */}
@@ -289,8 +299,10 @@ export const TreeEntryForm: React.FC<TreeEntryFormProps> = ({
                         )}
                         {currentStep === 'PHOTOS' && (
                             <PhotosStep
-                                hasBarkPhoto={hasBarkPhoto} setHasBarkPhoto={setHasBarkPhoto}
-                                hasLeafPhoto={hasLeafPhoto} setHasLeafPhoto={setHasLeafPhoto}
+                                // [THORNE] Passing Stable ID + Stubbing old props for compatibility
+                                treeId={treeId}
+                                hasBarkPhoto={hasBarkPhoto} setHasBarkPhoto={() => { }}
+                                hasLeafPhoto={hasLeafPhoto} setHasLeafPhoto={() => { }}
                                 onNext={() => setCurrentStep('REVIEW')}
                             />
                         )}

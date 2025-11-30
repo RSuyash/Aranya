@@ -23,8 +23,8 @@ export const PlotVisualizerPage: React.FC = () => {
     if (!projectId || !moduleId || !plotId) return <div>Invalid URL Parameters</div>;
 
     // Data
-    const { plot, isLoading: plotLoading, updateVisualizationSettings, unitLabelMap } = usePlotData(plotId);
-    const { trees, progress } = usePlotObservations(plotId);
+    const { plot, blueprint, isLoading: plotLoading, updateVisualizationSettings, unitLabelMap } = usePlotData(plotId);
+    const { trees, veg, progress } = usePlotObservations(plotId);
 
     // Derived state
     const progressByUnit = React.useMemo(() => normalizeProgress(progress), [progress]);
@@ -54,7 +54,6 @@ export const PlotVisualizerPage: React.FC = () => {
     const [panelHeight, setPanelHeight] = useState<number>(320);
 
     // Visualization Settings State
-    // [Vance Fix] Use ExtendedVizSettings and set default colorMode
     const defaultVizSettings: ExtendedVizSettings = {
         showQuadrants: true,
         showSubplots: true,
@@ -246,6 +245,7 @@ export const PlotVisualizerPage: React.FC = () => {
                                         trees={trees}
                                         onEditTree={handleEditTree}
                                         searchQuery={searchQuery}
+                                        unitLabelMap={unitLabelMap} // [THORNE] CONNECTED
                                     />
                                 )}
                             </div>
