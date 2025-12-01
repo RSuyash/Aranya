@@ -1,4 +1,4 @@
-package com.terra.platform;
+package com.aaranya.platform;
 
 import com.getcapacitor.BridgeActivity;
 

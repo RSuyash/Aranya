@@ -1,0 +1,17 @@
+{
+  "assets": {
+    "icon": {
+      "source": "./public/icons/app-icon.svg",
+      "background": "#FFFFFF",
+      "margin": 0.1,
+      "output": {
+        "android": {
+          "adaptive": true
+        }
+      }
+    },
+    "splash": {
+      "source": "./public/icons/app-icon.svg"
+    }
+  }
+}
